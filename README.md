@@ -230,11 +230,11 @@ Pour tester le fonctionnement hors connexion :
 ## 🤝 Organisation de l'Équipe (5 Développeurs)
 
 Consultez le fichier [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour les règles GitFlow et le découpage par développeur :
-1. **Dev 1** : Socle technique, Authentification JWT, Sécurité, Collaborateurs & Contrats.
-2. **Dev 2** : Gestion des Congés & Absences (calcul 2j/mois, workflow N+1).
-3. **Dev 3** : Module Recrutement (Pipeline Kanban, entretiens, notifications e-mail).
-4. **Dev 4** : Évaluations de la Performance & Catalogue de Formations.
-5. **Dev 5** : Paie (bulletins PDF iText, calculs IPRES/CSS) & Organigramme d'entreprise.
+1. **Ibrahima ** : Socle technique, Authentification JWT, Sécurité, Collaborateurs & Contrats.
+2. **Eric joel** : Gestion des Congés & Absences (calcul 2j/mois, workflow N+1).
+3. **Assete** : Module Recrutement (Pipeline Kanban, entretiens, notifications e-mail).
+4. **Aminata** : Évaluations de la Performance & Catalogue de Formations.
+5. **Sambay** : Paie (bulletins PDF iText, calculs IPRES/CSS) & Organigramme d'entreprise.
 
 ---
 
