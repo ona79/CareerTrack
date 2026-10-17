@@ -1,0 +1,16 @@
+{
+  "short_name": "CareerTrack",
+  "name": "CareerTrack - RH PME Sénégal",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F9FAFB",
+  "theme_color": "#1A6B3C",
+  "display": "standalone",
+  "orientation": "portrait"
+}

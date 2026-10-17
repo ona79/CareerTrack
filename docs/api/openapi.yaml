@@ -1,0 +1,2212 @@
+openapi: 3.0.1
+info:
+  title: CareerTrack API - Plateforme RH
+  description: |-
+    API REST de gestion des carrières pour PME sénégalaise (Sénégal Digital Solutions PME)
+    - Authentification JWT multi-rôles (DRH, MANAGER, EMPLOYE, DIRECTION)
+    - Conforme au Code du Travail sénégalais et calculs en Francs CFA (XOF)
+    - Gestion complète du cycle RH : dossier, congés, évaluations, formation, paie, recrutement
+  contact:
+    name: Équipe Projet CareerTrack
+    email: contact@careertrack.sn
+  license:
+    name: Projet Universitaire - Licence Académique
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Environnement Local Développement
+- url: /
+  description: Serveur Actuel
+security:
+- BearerAuth: []
+tags:
+- name: Employés
+  description: "Gestion des dossiers collaborateurs, contrats et fiches de poste"
+- name: Évaluations & Performance
+  description: "Campagnes annuelles, objectifs SMART et entretiens N+1"
+- name: Paramètres de l'Entreprise
+  description: "Règles réglementaires, taux de cotisations et plafonds légaux"
+- name: Authentification
+  description: "Endpoints d'authentification JWT, gestion de session et profil"
+- name: Notifications
+  description: Alertes in-app et notifications par courrier électronique
+- name: Organigramme
+  description: Visualisation hiérarchique de l'entreprise et relations managers/subordonnés
+- name: Documents & PDF
+  description: "Génération de documents PDF officiels (Attestations, Bulletins de\
+    \ paie, Contrats)"
+- name: Congés & Absences
+  description: "Gestion des demandes de congés, soldes et calendrier d'équipe"
+- name: Promotions & Carrières
+  description: "Propositions de promotion interne, revalorisations et simulations\
+    \ salariales"
+- name: Paie & Salaires
+  description: Gestion des bulletins de salaire et cotisations IPRES/CSS
+- name: Formations
+  description: Catalogue des compétences et sessions de formation continue
+- name: Recrutement
+  description: Pipeline Kanban des candidatures et offres d'emploi
+paths:
+  /api/v1/settings/{key}:
+    put:
+      tags:
+      - Paramètres de l'Entreprise
+      summary: Mettre à jour la valeur d'un paramètre d'entreprise
+      description: Réservé à la DRH
+      operationId: updateSetting
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: value
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseCompanySettingDto"
+  /api/v1/leaves/{id}/validate:
+    put:
+      tags:
+      - Congés & Absences
+      summary: Valider ou refuser un congé
+      description: Validation N+1 ou DRH avec décompte automatique du solde
+      operationId: validateLeave
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveApprovalDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseLeaveRequestResponseDto"
+      security:
+      - BearerAuth: []
+  /api/v1/employees/{id}:
+    get:
+      tags:
+      - Employés
+      summary: Détails d'un employé
+      description: Retourne le dossier complet d'un collaborateur par son ID
+      operationId: getEmployeeById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeResponseDto"
+      security:
+      - BearerAuth: []
+    put:
+      tags:
+      - Employés
+      summary: Mettre à jour un employé
+      description: Modifie les informations administratives d'un employé
+      operationId: updateEmployee
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeResponseDto"
+      security:
+      - BearerAuth: []
+    delete:
+      tags:
+      - Employés
+      summary: Supprimer un employé
+      description: Supprime un dossier collaborateur
+      operationId: deleteEmployee
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+      security:
+      - BearerAuth: []
+  /api/v1/trainings:
+    get:
+      tags:
+      - Formations
+      summary: Consulter le catalogue de formation
+      description: Accessible à l'ensemble des collaborateurs
+      operationId: getAllTrainings
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTrainingDto"
+    post:
+      tags:
+      - Formations
+      summary: Ajouter un nouveau module de formation au catalogue
+      description: Réservé à la DRH
+      operationId: createTraining
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingDto"
+  /api/v1/promotions:
+    get:
+      tags:
+      - Promotions & Carrières
+      summary: Lister les propositions de promotion
+      description: "Accessible à la DRH, aux managers et à la direction"
+      operationId: getAllProposals
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPromotionProposalDto"
+    post:
+      tags:
+      - Promotions & Carrières
+      summary: Soumettre une proposition de promotion ou revalorisation
+      description: Accessible au manager N+1 ou à la DRH
+      operationId: createProposal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionProposalDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePromotionProposalDto"
+  /api/v1/payroll/generate:
+    post:
+      tags:
+      - Paie & Salaires
+      summary: Générer la paie mensuelle globale pour tous les salariés
+      description: Calcul automatique des retenues IPRES et charges CSS
+      operationId: generatePayroll
+      parameters:
+      - name: period
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPayslipResponseDto"
+  /api/v1/leaves:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Lister toutes les demandes de congés
+      description: Retourne l'ensemble des demandes de congés de l'entreprise
+      operationId: getAllLeaves
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListLeaveRequestResponseDto"
+      security:
+      - BearerAuth: []
+    post:
+      tags:
+      - Congés & Absences
+      summary: Soumettre une demande de congé
+      description: Crée une nouvelle demande de congé avec vérification du solde
+      operationId: createLeaveRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveRequestCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseLeaveRequestResponseDto"
+      security:
+      - BearerAuth: []
+  /api/v1/evaluations/campaigns:
+    get:
+      tags:
+      - Évaluations & Performance
+      summary: Lister les campagnes d'évaluations
+      description: Accessible à tous les collaborateurs connectés
+      operationId: getCampaigns
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEvaluationCampaignDto"
+    post:
+      tags:
+      - Évaluations & Performance
+      summary: Lancer une nouvelle campagne annuelle d'évaluation
+      description: Réservé à la DRH
+      operationId: createCampaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationCampaignDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationCampaignDto"
+  /api/v1/employees:
+    get:
+      tags:
+      - Employés
+      summary: Liste paginée des employés
+      description: Récupère les employés avec pagination et tri
+      operationId: getAllEmployees
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      - name: sortBy
+        in: query
+        required: false
+        schema:
+          type: string
+          default: lastName
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePageResponseEmployeeResponseDto"
+      security:
+      - BearerAuth: []
+    post:
+      tags:
+      - Employés
+      summary: Créer un employé
+      description: Enregistre un nouveau collaborateur dans la plateforme
+      operationId: createEmployee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeResponseDto"
+      security:
+      - BearerAuth: []
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - Authentification
+      summary: Rafraîchir le token d'accès
+      description: Génère un nouvel Access Token à partir d'un Refresh Token valide
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseJwtResponse"
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - Authentification
+      summary: Déconnexion
+      description: Invalide le Refresh Token de session
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/v1/auth/login:
+    post:
+      tags:
+      - Authentification
+      summary: Connexion utilisateur
+      description: Authentifie l'utilisateur et retourne un Access Token (15m) et
+        un Refresh Token (7j)
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseJwtResponse"
+  /api/v1/recruitment/applications/{id}/status:
+    patch:
+      tags:
+      - Recrutement
+      summary: Déplacer une candidature (Kanban glisser-déposer)
+      description: Met à jour l'étape du pipeline et déclenche une notification e-mail
+      operationId: updateStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - RECU
+          - PRESELECTIONNE
+          - ENTRETIEN
+          - OFFRE
+          - EMBAUCHE
+          - REFUSE
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseJobApplicationDto"
+  /api/v1/promotions/{id}/status:
+    patch:
+      tags:
+      - Promotions & Carrières
+      summary: Valider ou refuser une proposition de promotion
+      description: Réservé à la DRH ou Direction Générale
+      operationId: updateStatus_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - SUBMITTED
+          - UNDER_REVIEW
+          - APPROVED
+          - REJECTED
+      - name: comment
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePromotionProposalDto"
+  /api/v1/payroll/payslips/{id}/status:
+    patch:
+      tags:
+      - Paie & Salaires
+      summary: "Modifier le statut d'un bulletin de paie (DRAFT, VALIDATED, PAID)"
+      description: Réservé à la DRH
+      operationId: updateStatus_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - DRAFT
+          - GENERATED
+          - PAID
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePayslipResponseDto"
+  /api/v1/notifications/{id}/read:
+    patch:
+      tags:
+      - Notifications
+      summary: Marquer une notification comme lue
+      description: Accessible à l'utilisateur connecté
+      operationId: markAsRead
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/v1/trainings/{id}:
+    get:
+      tags:
+      - Formations
+      summary: Obtenir le détail d'un module de formation
+      description: Accessible à l'ensemble des collaborateurs
+      operationId: getTrainingById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingDto"
+  /api/v1/settings:
+    get:
+      tags:
+      - Paramètres de l'Entreprise
+      summary: Lister les paramètres réglementaires de l'entreprise
+      description: Accessible à la DRH et Direction
+      operationId: getAllSettings
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListCompanySettingDto"
+  /api/v1/recruitment/offers:
+    get:
+      tags:
+      - Recrutement
+      summary: Lister les offres d'emploi publiées
+      description: Accessible publiquement ou en interne
+      operationId: getOffers
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListJobOffer"
+  /api/v1/recruitment/applications:
+    get:
+      tags:
+      - Recrutement
+      summary: Lister toutes les candidatures pour le tableau Kanban
+      description: Accessible à la DRH et aux Managers
+      operationId: getAllApplications
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListJobApplicationDto"
+  /api/v1/payroll/payslips:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Lister les bulletins de paie par période (YYYY-MM)
+      description: Accessible à la DRH et Direction
+      operationId: getPayslipsByPeriod
+      parameters:
+      - name: period
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPayslipResponseDto"
+  /api/v1/payroll/payslips/{id}:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Obtenir le détail d'un bulletin de paie avec toutes les lignes de déduction
+      description: Accessible aux rôles autorisés
+      operationId: getPayslipById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePayslipResponseDto"
+  /api/v1/payroll/payslips/employee/{employeeId}:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Lister l'historique des bulletins d'un collaborateur
+      description: "Accessible au collaborateur lui-même, à la DRH et Direction"
+      operationId: getPayslipsByEmployee
+      parameters:
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPayslipResponseDto"
+  /api/v1/orgchart/tree:
+    get:
+      tags:
+      - Organigramme
+      summary: Arbre complet de l'entreprise
+      description: Retourne l'organigramme complet depuis la direction générale jusqu'aux
+        collaborateurs
+      operationId: getCompanyTree
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListOrgNodeDto"
+      security:
+      - BearerAuth: []
+  /api/v1/orgchart/subordinates/{employeeId}:
+    get:
+      tags:
+      - Organigramme
+      summary: Sous-arbre hiérarchique
+      description: Retourne l'organigramme des subordonnés d'un manager spécifique
+      operationId: getSubtree
+      parameters:
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseOrgNodeDto"
+      security:
+      - BearerAuth: []
+  /api/v1/notifications/user/{userId}:
+    get:
+      tags:
+      - Notifications
+      summary: Lister les notifications d'un collaborateur
+      description: Accessible à l'utilisateur connecté
+      operationId: getUserNotifications
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListNotificationDto"
+  /api/v1/leaves/manager/{managerId}/pending:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Demandes en attente pour un manager
+      description: Retourne les demandes de congés en attente d'approbation N+1
+      operationId: getPendingLeavesForManager
+      parameters:
+      - name: managerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListLeaveRequestResponseDto"
+      security:
+      - BearerAuth: []
+  /api/v1/leaves/employee/{employeeId}:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Historique des demandes d'un employé
+      description: Retourne toutes les demandes de congés d'un collaborateur
+      operationId: getEmployeeLeaves
+      parameters:
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListLeaveRequestResponseDto"
+      security:
+      - BearerAuth: []
+  /api/v1/leaves/conflicts:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Détection des conflits de congés d'équipe
+      description: Vérifie les chevauchements d'absences dans une même équipe sur
+        une période
+      operationId: detectConflicts
+      parameters:
+      - name: departmentId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: startDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: endDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTeamLeaveConflictDto"
+      security:
+      - BearerAuth: []
+  /api/v1/leaves/balances/{employeeId}:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Soldes de congés d'un employé
+      description: "Retourne le compteur de jours acquis, utilisés et restants"
+      operationId: getBalances
+      parameters:
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 2026
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListLeaveBalanceDto"
+      security:
+      - BearerAuth: []
+  /api/v1/evaluations/{id}:
+    get:
+      tags:
+      - Évaluations & Performance
+      summary: Consulter le détail d'une fiche d'évaluation et ses objectifs SMART
+      description: "Accessible aux évaluateurs, évalués et DRH"
+      operationId: getEvaluationById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationDto"
+  /api/v1/evaluations/campaigns/{campaignId}/evaluations:
+    get:
+      tags:
+      - Évaluations & Performance
+      summary: Lister les fiches d'évaluation d'une campagne
+      description: Accessible aux managers et à la DRH
+      operationId: getEvaluationsByCampaign
+      parameters:
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEvaluationDto"
+  /api/v1/employees/department/{departmentId}:
+    get:
+      tags:
+      - Employés
+      summary: Employés par département
+      description: Retourne les employés affectés à un département donné
+      operationId: getEmployeesByDepartment
+      parameters:
+      - name: departmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEmployeeResponseDto"
+      security:
+      - BearerAuth: []
+  /api/v1/documents/bulletin-paie/exemple:
+    get:
+      tags:
+      - Documents & PDF
+      summary: Exemple de bulletin de paie PDF
+      description: "Génère et retourne un bulletin de paie PDF avec cotisations IPRES,\
+        \ CSS, IPM en FCFA"
+      operationId: getSamplePayslipPdf
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+      security:
+      - BearerAuth: []
+  /api/v1/documents/attestation/exemple:
+    get:
+      tags:
+      - Documents & PDF
+      summary: Exemple d'attestation de travail PDF
+      description: Génère et retourne un document PDF d'attestation de travail aux
+        normes sénégalaises
+      operationId: getSampleWorkCertificate
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+      security:
+      - BearerAuth: []
+  /api/v1/auth/me:
+    get:
+      tags:
+      - Authentification
+      summary: Profil de l'utilisateur connecté
+      description: Retourne les informations et rôles de l'utilisateur authentifié
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserDto"
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    ApiResponseCompanySettingDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CompanySettingDto"
+        timestamp:
+          type: string
+          format: date-time
+    CompanySettingDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        settingKey:
+          type: string
+        settingValue:
+          type: string
+        description:
+          type: string
+    LeaveApprovalDto:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED_N1
+          - APPROVED_DRH
+          - REJECTED
+          - CANCELLED
+        managerComment:
+          type: string
+    ApiResponseLeaveRequestResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/LeaveRequestResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    LeaveRequestResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        employeeName:
+          type: string
+        employeeNumber:
+          type: string
+        departmentName:
+          type: string
+        leaveTypeId:
+          type: string
+          format: uuid
+        leaveTypeName:
+          type: string
+        leaveTypeCode:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        requestedDays:
+          type: number
+        reason:
+          type: string
+        status:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED_N1
+          - APPROVED_DRH
+          - REJECTED
+          - CANCELLED
+        managerComment:
+          type: string
+        approvedById:
+          type: string
+          format: uuid
+        approvedByName:
+          type: string
+        approvedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    EmployeeCreateDto:
+      required:
+      - birthDate
+      - email
+      - employeeNumber
+      - firstName
+      - hireDate
+      - lastName
+      - nationalId
+      type: object
+      properties:
+        employeeNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        nationalId:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        hireDate:
+          type: string
+          format: date
+        departmentId:
+          type: string
+          format: uuid
+        positionId:
+          type: string
+          format: uuid
+        managerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
+    ApiResponseEmployeeResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EmployeeResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    EmployeeResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        nationalId:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        hireDate:
+          type: string
+          format: date
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        positionId:
+          type: string
+          format: uuid
+        positionTitle:
+          type: string
+        managerId:
+          type: string
+          format: uuid
+        managerName:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
+    TrainingDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        durationHours:
+          type: integer
+          format: int32
+        provider:
+          type: string
+        category:
+          type: string
+    ApiResponseTrainingDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TrainingDto"
+        timestamp:
+          type: string
+          format: date-time
+    PromotionProposalDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        employeeFullName:
+          type: string
+        proposedPositionId:
+          type: string
+          format: uuid
+        proposedPositionTitle:
+          type: string
+        proposedSalary:
+          type: number
+        currentSalary:
+          type: number
+        percentageIncrease:
+          type: number
+        justification:
+          type: string
+        status:
+          type: string
+          enum:
+          - SUBMITTED
+          - UNDER_REVIEW
+          - APPROVED
+          - REJECTED
+        effectiveDate:
+          type: string
+          format: date
+    ApiResponsePromotionProposalDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PromotionProposalDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListPayslipResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayslipResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    PayslipLineDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        lineType:
+          type: string
+          enum:
+          - BASE_SALARY
+          - OVERTIME
+          - BONUS
+          - IPRES_EMPLOYEE
+          - IPRES_EMPLOYER
+          - CSS_EMPLOYER
+          - IPM
+          - TAX_IR
+          - OTHER_DEDUCTION
+        label:
+          type: string
+        baseAmount:
+          type: number
+        rate:
+          type: number
+        amount:
+          type: number
+    PayslipResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        employeeFullName:
+          type: string
+        employeeNumber:
+          type: string
+        periodMonth:
+          type: integer
+          format: int32
+        periodYear:
+          type: integer
+          format: int32
+        period:
+          type: string
+        grossSalary:
+          type: number
+        totalDeductions:
+          type: number
+        netSalary:
+          type: number
+        employerContributions:
+          type: number
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - GENERATED
+          - PAID
+        paymentDate:
+          type: string
+          format: date
+        pdfUrl:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayslipLineDto"
+    LeaveRequestCreateDto:
+      required:
+      - employeeId
+      - endDate
+      - leaveTypeId
+      - requestedDays
+      - startDate
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        leaveTypeId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        requestedDays:
+          type: number
+        reason:
+          type: string
+    EvaluationCampaignDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        campaignYear:
+          type: integer
+          format: int32
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - PLANNED
+          - IN_PROGRESS
+          - CLOSED
+    ApiResponseEvaluationCampaignDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EvaluationCampaignDto"
+        timestamp:
+          type: string
+          format: date-time
+    RefreshTokenRequest:
+      required:
+      - refreshToken
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Token de rafraîchissement (Refresh Token)
+      description: Demande de rafraîchissement du token d'accès
+    ApiResponseJwtResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/JwtResponse"
+        timestamp:
+          type: string
+          format: date-time
+    JwtResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Token d'accès JWT
+        refreshToken:
+          type: string
+          description: Token de rafraîchissement
+        tokenType:
+          type: string
+          description: Type de token
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Durée de validité du token d'accès en millisecondes
+          format: int64
+        userId:
+          type: string
+          description: Identifiant unique de l'utilisateur
+          format: uuid
+        username:
+          type: string
+          description: Nom d'utilisateur
+        email:
+          type: string
+          description: Adresse e-mail
+        roles:
+          type: array
+          description: Rôles attribués à l'utilisateur
+          items:
+            type: string
+            description: Rôles attribués à l'utilisateur
+      description: Réponse d'authentification réussie avec Access et Refresh tokens
+    ApiResponseVoid:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+    LoginRequest:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          description: Nom d'utilisateur ou adresse e-mail
+          example: drh.ndiaye
+        password:
+          type: string
+          description: Mot de passe de l'utilisateur
+          example: password123
+      description: Demande de connexion avec nom d'utilisateur et mot de passe
+    ApiResponseJobApplicationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/JobApplicationDto"
+        timestamp:
+          type: string
+          format: date-time
+    JobApplicationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        jobOfferId:
+          type: string
+          format: uuid
+        jobOfferTitle:
+          type: string
+        candidateId:
+          type: string
+          format: uuid
+        candidateFullName:
+          type: string
+        candidateEmail:
+          type: string
+        candidatePhone:
+          type: string
+        status:
+          type: string
+          enum:
+          - RECU
+          - PRESELECTIONNE
+          - ENTRETIEN
+          - OFFRE
+          - EMBAUCHE
+          - REFUSE
+        currentStep:
+          type: string
+        rating:
+          type: integer
+          format: int32
+        notes:
+          type: string
+        cvUrl:
+          type: string
+    ApiResponsePayslipResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PayslipResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListTrainingDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListCompanySettingDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompanySettingDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListJobOffer:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/JobOffer"
+        timestamp:
+          type: string
+          format: date-time
+    Department:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastModifiedBy:
+          type: string
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        manager:
+          $ref: "#/components/schemas/Employee"
+    Employee:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastModifiedBy:
+          type: string
+        id:
+          type: string
+          format: uuid
+        user:
+          $ref: "#/components/schemas/User"
+        employeeNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        nationalId:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        hireDate:
+          type: string
+          format: date
+        department:
+          $ref: "#/components/schemas/Department"
+        position:
+          $ref: "#/components/schemas/Position"
+        manager:
+          $ref: "#/components/schemas/Employee"
+        subordinates:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
+        fullName:
+          type: string
+    JobOffer:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastModifiedBy:
+          type: string
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        department:
+          $ref: "#/components/schemas/Department"
+        position:
+          $ref: "#/components/schemas/Position"
+        contractType:
+          type: string
+          enum:
+          - CDI
+          - CDD
+          - STAGE
+          - PRESTATION
+        description:
+          type: string
+        requirements:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - OPEN
+          - CLOSED
+          - ARCHIVED
+        openPositions:
+          type: integer
+          format: int32
+        closingDate:
+          type: string
+          format: date
+    Position:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastModifiedBy:
+          type: string
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        department:
+          $ref: "#/components/schemas/Department"
+        minSalary:
+          type: number
+        maxSalary:
+          type: number
+        description:
+          type: string
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          enum:
+          - ROLE_DRH
+          - ROLE_MANAGER
+          - ROLE_EMPLOYE
+          - ROLE_DIRECTION
+        description:
+          type: string
+    User:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastModifiedBy:
+          type: string
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        enabled:
+          type: boolean
+        roles:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+    ApiResponseListJobApplicationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/JobApplicationDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListPromotionProposalDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromotionProposalDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListOrgNodeDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrgNodeDto"
+        timestamp:
+          type: string
+          format: date-time
+    OrgNodeDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        employeeNumber:
+          type: string
+        title:
+          type: string
+        department:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+      description: Nœud de l'arbre hiérarchique de l'entreprise
+    ApiResponseOrgNodeDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/OrgNodeDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListNotificationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationDto"
+        timestamp:
+          type: string
+          format: date-time
+    NotificationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        notificationType:
+          type: string
+          enum:
+          - LEAVE_STATUS
+          - EVALUATION
+          - RECRUITMENT
+          - TRAINING
+          - GENERAL
+        channel:
+          type: string
+          enum:
+          - IN_APP
+          - EMAIL
+          - BOTH
+        title:
+          type: string
+        message:
+          type: string
+        recipientId:
+          type: string
+          format: uuid
+        read:
+          type: boolean
+        sentAt:
+          type: string
+          format: date-time
+    ApiResponseListLeaveRequestResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaveRequestResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseTeamLeaveConflictDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TeamLeaveConflictDto"
+        timestamp:
+          type: string
+          format: date-time
+    TeamLeaveConflictDto:
+      type: object
+      properties:
+        departmentId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        hasConflict:
+          type: boolean
+        overlappingRequestsCount:
+          type: integer
+          format: int32
+        overlappingRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaveRequestResponseDto"
+    ApiResponseListLeaveBalanceDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaveBalanceDto"
+        timestamp:
+          type: string
+          format: date-time
+    LeaveBalanceDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        leaveTypeId:
+          type: string
+          format: uuid
+        leaveTypeName:
+          type: string
+        leaveTypeCode:
+          type: string
+        periodYear:
+          type: integer
+          format: int32
+        allocatedDays:
+          type: number
+        usedDays:
+          type: number
+        remainingDays:
+          type: number
+    ApiResponseEvaluationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EvaluationDto"
+        timestamp:
+          type: string
+          format: date-time
+    EvaluationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        campaignId:
+          type: string
+          format: uuid
+        campaignTitle:
+          type: string
+        employeeId:
+          type: string
+          format: uuid
+        employeeFullName:
+          type: string
+        evaluatorId:
+          type: string
+          format: uuid
+        evaluatorFullName:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - SELF_SUBMITTED
+          - MANAGER_EVALUATED
+          - COMPLETED
+        selfScore:
+          type: number
+        managerScore:
+          type: number
+        finalScore:
+          type: number
+        feedback:
+          type: string
+        summaryPdfUrl:
+          type: string
+        interviewDate:
+          type: string
+          format: date
+        objectives:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmartObjectiveDto"
+    SmartObjectiveDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+          - OPERATIONAL
+          - STRATEGIC
+          - MANAGERIAL
+          - BEHAVIORAL
+          - LEARNING
+        weight:
+          type: number
+        targetDate:
+          type: string
+          format: date
+        achievementRate:
+          type: number
+        status:
+          type: string
+    ApiResponseListEvaluationCampaignDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvaluationCampaignDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListEvaluationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvaluationDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponsePageResponseEmployeeResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PageResponseEmployeeResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    PageResponseEmployeeResponseDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeResponseDto"
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        last:
+          type: boolean
+    ApiResponseListEmployeeResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseUserDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/UserDto"
+        timestamp:
+          type: string
+          format: date-time
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+        enabled:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+      description: Informations de l'utilisateur connecté
+  securitySchemes:
+    BearerAuth:
+      type: http
+      description: "Insérer le token JWT sous la forme : `Bearer <votre_token>`"
+      name: BearerAuth
+      scheme: bearer
+      bearerFormat: JWT

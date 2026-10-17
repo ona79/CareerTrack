@@ -1,0 +1,82 @@
+services:
+  # ----------------------------------------------------------------------------
+  # Base de données relationnelle PostgreSQL avec volume persistant
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: careertrack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-careertrack_db}
+      POSTGRES_USER: ${DB_USER:-careertrack_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-careertrack_secure_password_2026}
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - careertrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-careertrack_user} -d ${DB_NAME:-careertrack_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # Backend Spring Boot 3 (API REST, Flyway, JWT, iTextPDF, Mail)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: careertrack-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-careertrack_db}
+      DB_USER: ${DB_USER:-careertrack_user}
+      DB_PASSWORD: ${DB_PASSWORD:-careertrack_secure_password_2026}
+      JWT_SECRET: ${JWT_SECRET:-4c9a63c6218e8d2e8b23c21a4f59e0a9b8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3}
+      JWT_ACCESS_EXPIRATION_MS: ${JWT_ACCESS_EXPIRATION_MS:-900000}
+      JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS:-604800000}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-notifications.careertrack@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-secret}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@careertrack.sn}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:*,http://127.0.0.1:*}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - careertrack-network
+
+  # ----------------------------------------------------------------------------
+  # Frontend React (Vite + TypeScript + Tailwind CSS + PWA)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: careertrack-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api/v1
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    networks:
+      - careertrack-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  careertrack-network:
+    driver: bridge

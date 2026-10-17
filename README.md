@@ -106,23 +106,50 @@ npm run dev
 
 ---
 
-## 👥 Comptes de Test Préconfigurés (Environnement Dev)
+## 👥 Comptes de Démonstration Préconfigurés (Environnement Dev & Seed V3)
 
 | Rôle | Nom d'utilisateur | Mot de passe | Accès & Droits |
 | :--- | :--- | :--- | :--- |
-| **DRH** | `drh` | `password123` | Accès complet tous modules, contrats, paie |
-| **Manager** | `manager` | `password123` | Validation des congés de son équipe, évaluations |
-| **Employé** | `saliou` | `password123` | Espace collaborateur, demande de congé, formations |
-| **Direction** | `direction` | `password123` | Tableaux de bord de synthèse, suivi effectif |
+| **DRH** | `drh.ndiaye` | `password123` | Accès complet tous modules, collaborateurs, congés, paie |
+| **Manager N+1** | `mgr.sow` | `password123` | Validation des congés de son équipe, évaluations |
+| **Collaborateur** | `emp.diallo` | `password123` | Espace collaborateur, demande de congé, formations |
+| **Direction** | `dir.fall` | `password123` | Tableaux de bord de synthèse, suivi effectif |
+
+---
+
+## 📴 Procédure de Test Manuel du Mode Hors-Ligne (PWA & Service Worker)
+
+L'application intègre un Service Worker (Workbox) avec précache de tous les bundles JavaScript/CSS (chunks lazy-loaded) et une stratégie de cache pour les données hors-ligne.
+
+Pour vérifier le bon fonctionnement hors connexion :
+1. **Connexion en ligne** : Rendez-vous sur `http://localhost:5173/login` et connectez-vous avec `drh.ndiaye` / `password123`.
+2. **Visite des pages (remplissage du précache)** : Naviguez successivement dans les modules de la barre latérale (`/dashboard`, `/employees`, `/leaves`, `/payroll`, `/orgchart`, etc.). Le Service Worker met automatiquement en cache les chunks hachés correspondants.
+3. **Passage hors connexion** :
+   - Ouvrez les outils de développement du navigateur (`F12` ou `Ctrl+Shift+I`).
+   - Rendez-vous dans l'onglet **Réseau (Network)** et sélectionnez l'état **Hors-ligne (Offline)** dans la liste déroulante d'étranglement réseau.
+4. **Rechargement de la page** :
+   - Actualisez la page (`F5` ou `Ctrl+R`).
+   - L'application se recharge instantanément sans écran blanc ni erreur 404 (servie directement depuis le Service Worker via `index.html`).
+5. **Navigation hors ligne** :
+   - Cliquez sur les onglets `/leaves` (Congés) et `/employees` (Collaborateurs).
+   - Les interfaces s'affichent et restent opérationnelles grâce au cache Workbox (`careertrack-api-cache`).
 
 ---
 
 ## 🧪 Tests & Qualité de Code
 
 ```bash
-# Exécuter les tests du backend (PostgreSQL Testcontainers + JaCoCo)
+# Exécuter les tests du backend (Tests unitaires + intégration MockMvc CORS + JaCoCo)
 cd backend
 mvn clean verify
+
+# Générer la spécification OpenAPI (docs/api/openapi.yaml) directement depuis /v3/api-docs :
+# Option A (via le serveur en cours d'exécution) :
+curl http://localhost:8080/v3/api-docs.yaml -o docs/api/openapi.yaml
+
+# Option B (hors ligne via test d'intégration Maven) :
+cd backend
+mvn test -Dtest=OpenApiExportIntegrationTest
 
 # Vérifier la compilation et le typage strict du frontend
 cd frontend
