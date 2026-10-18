@@ -38,4 +38,7 @@ public class JwtResponse {
 
     @Schema(description = "Rôles attribués à l'utilisateur")
     private List<String> roles;
+
+    @Schema(description = "Identifiant de l'employé associé si existant")
+    private UUID employeeId;
 }

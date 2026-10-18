@@ -11,6 +11,12 @@ spring:
     time-zone: Africa/Dakar
     date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 6MB
+
   # Configuration du service d'envoi d'emails (Recrutement & notifications)
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}

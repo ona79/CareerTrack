@@ -309,3 +309,29 @@ export interface SalarySimulationDto {
   simulatedAt?: string;
 }
 
+// ─── DOCUMENTS RH ─────────────────────────────────────────────────────────────
+export type DocumentType =
+  | 'CNI'
+  | 'PASSEPORT'
+  | 'DIPLOME'
+  | 'CV'
+  | 'CONTRAT'
+  | 'ATTESTATION'
+  | 'FICHE_PAIE'
+  | 'CERTIFICAT_MEDICAL'
+  | 'AUTRE';
+
+export interface DocumentResponseDto {
+  id: string;
+  employeeId: string;
+  documentType: DocumentType;
+  title: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  uploadedBy?: string;
+  downloadUrl: string;
+}
+
+

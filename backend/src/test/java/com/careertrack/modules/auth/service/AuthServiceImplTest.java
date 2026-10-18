@@ -51,6 +51,9 @@ class AuthServiceImplTest {
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Mock
+    private com.careertrack.modules.employee.repository.EmployeeRepository employeeRepository;
+
     @InjectMocks
     private AuthServiceImpl authService;
 

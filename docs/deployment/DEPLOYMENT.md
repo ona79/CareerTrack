@@ -34,6 +34,12 @@ graph LR
 1. Créez un projet sur [supabase.com](https://supabase.com).
 2. Dans **Settings > Database**, récupérez le mot de passe et l'URI direct de connexion avec SSL obligatoire.
 
+> [!NOTE]
+> **Stockage des documents & Quotas Cloud :**
+> - Les pièces jointes des dossiers collaborateurs (CNI, diplômes, contrats) sont stockées directement dans la base de données PostgreSQL (table `employee_document_contents`, colonne `bytea`). Cela garantit qu'aucun document n'est perdu lors des redéploiements ou mises en veille du conteneur applicatif backend.
+> - **Quotas d'hébergement gratuits :** Neon / Supabase proposent généralement entre 500 Mo et 1 Go de stockage gratuit (*valeur indicative à vérifier selon les conditions de chaque fournisseur*). Avec un plafond strict de 5 Mo par fichier pour une PME, ce volume est largement suffisant.
+> - Sur Render Free, le système de fichiers local est éphémère (les disques persistants nécessitent un plan payant estimé à ~7 $/mois, *à vérifier*). L'approche en base de données permet de rester 100% gratuit et sans perte de données.
+
 ---
 
 ## 2. Backend : Spring Boot 3 sur Render ou Railway

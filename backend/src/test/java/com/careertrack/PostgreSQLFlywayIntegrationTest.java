@@ -52,7 +52,7 @@ class PostgreSQLFlywayIntegrationTest {
 
         assertThat(tables).contains(
                 "users", "roles", "user_roles", "refresh_tokens",
-                "departments", "positions", "employees", "contracts", "salary_histories", "employee_documents",
+                "departments", "positions", "employees", "contracts", "salary_histories", "employee_documents", "employee_document_contents",
                 "payslips", "payslip_lines",
                 "leave_types", "leave_balances", "leave_requests",
                 "evaluation_campaigns", "evaluations", "objectives",
