@@ -5,6 +5,7 @@ import com.careertrack.common.exception.ResourceNotFoundException;
 import com.careertrack.common.payload.PageResponse;
 import com.careertrack.modules.employee.dto.EmployeeCreateDto;
 import com.careertrack.modules.employee.dto.EmployeeResponseDto;
+import com.careertrack.modules.employee.dto.EmployeeSummaryDto;
 import com.careertrack.modules.employee.entity.Department;
 import com.careertrack.modules.employee.entity.Employee;
 import com.careertrack.modules.employee.entity.Position;
@@ -82,17 +83,31 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<EmployeeResponseDto> getAllEmployees(Pageable pageable) {
+    public PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable) {
         Page<Employee> page = employeeRepository.findAll(pageable);
-        List<EmployeeResponseDto> dtoList = employeeMapper.toDtoList(page.getContent());
+        List<EmployeeSummaryDto> content = page.getContent().stream()
+                .map(this::toSummary)
+                .toList();
 
-        return PageResponse.<EmployeeResponseDto>builder()
-                .content(dtoList)
+        return PageResponse.<EmployeeSummaryDto>builder()
+                .content(content)
                 .pageNumber(page.getNumber())
                 .pageSize(page.getSize())
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
                 .last(page.isLast())
+                .build();
+    }
+
+    private EmployeeSummaryDto toSummary(Employee e) {
+        return EmployeeSummaryDto.builder()
+                .id(e.getId())
+                .employeeNumber(e.getEmployeeNumber())
+                .fullName(e.getFullName())
+                .departmentName(e.getDepartment() != null ? e.getDepartment().getName() : null)
+                .positionTitle(e.getPosition() != null ? e.getPosition().getTitle() : null)
+                .status(e.getStatus())
+                .hireDate(e.getHireDate())
                 .build();
     }
 

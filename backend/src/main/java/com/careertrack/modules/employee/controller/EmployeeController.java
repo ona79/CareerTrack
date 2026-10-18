@@ -4,6 +4,7 @@ import com.careertrack.common.payload.ApiResponse;
 import com.careertrack.common.payload.PageResponse;
 import com.careertrack.modules.employee.dto.EmployeeCreateDto;
 import com.careertrack.modules.employee.dto.EmployeeResponseDto;
+import com.careertrack.modules.employee.dto.EmployeeSummaryDto;
 import com.careertrack.modules.employee.service.EmployeeService;
 import com.careertrack.common.security.EmployeeSecurityService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,12 +35,12 @@ public class EmployeeController {
     @GetMapping
     @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
     @Operation(summary = "Liste paginée des employés", description = "Récupère les employés avec pagination et tri (DRH et Managers)")
-    public ResponseEntity<ApiResponse<PageResponse<EmployeeResponseDto>>> getAllEmployees(
+    public ResponseEntity<ApiResponse<PageResponse<EmployeeSummaryDto>>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "lastName") String sortBy
     ) {
-        PageResponse<EmployeeResponseDto> response = employeeService.getAllEmployees(
+        PageResponse<EmployeeSummaryDto> response = employeeService.getAllEmployees(
                 PageRequest.of(page, size, Sort.by(sortBy).ascending()));
         return ResponseEntity.ok(ApiResponse.success(response));
     }

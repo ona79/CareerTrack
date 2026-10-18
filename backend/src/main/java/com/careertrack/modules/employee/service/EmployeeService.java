@@ -3,6 +3,7 @@ package com.careertrack.modules.employee.service;
 import com.careertrack.common.payload.PageResponse;
 import com.careertrack.modules.employee.dto.EmployeeCreateDto;
 import com.careertrack.modules.employee.dto.EmployeeResponseDto;
+import com.careertrack.modules.employee.dto.EmployeeSummaryDto;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public interface EmployeeService {
     EmployeeResponseDto createEmployee(EmployeeCreateDto createDto);
     EmployeeResponseDto getEmployeeById(UUID id);
     EmployeeResponseDto getEmployeeByNumber(String employeeNumber);
-    PageResponse<EmployeeResponseDto> getAllEmployees(Pageable pageable);
+    PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable);
     List<EmployeeResponseDto> getEmployeesByDepartment(UUID departmentId);
     List<EmployeeResponseDto> getSubordinates(UUID managerId);
     EmployeeResponseDto updateEmployee(UUID id, EmployeeCreateDto updateDto);
