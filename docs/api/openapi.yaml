@@ -335,7 +335,7 @@ paths:
       tags:
       - Employés
       summary: Liste paginée des employés
-      description: Récupère les employés avec pagination et tri
+      description: Récupère les employés avec pagination et tri (DRH et Managers)
       operationId: getAllEmployees
       parameters:
       - name: page
@@ -907,7 +907,7 @@ paths:
       tags:
       - Employés
       summary: Employés par département
-      description: Retourne les employés affectés à un département donné
+      description: Retourne les employés affectés à un département donné (DRH et Managers)
       operationId: getEmployeesByDepartment
       parameters:
       - name: departmentId

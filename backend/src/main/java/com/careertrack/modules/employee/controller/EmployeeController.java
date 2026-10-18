@@ -30,8 +30,8 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION')")
-    @Operation(summary = "Liste paginée des employés", description = "Récupère les employés avec pagination et tri")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @Operation(summary = "Liste paginée des employés", description = "Récupère les employés avec pagination et tri (DRH et Managers)")
     public ResponseEntity<ApiResponse<PageResponse<EmployeeResponseDto>>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -78,8 +78,8 @@ public class EmployeeController {
     }
 
     @GetMapping("/department/{departmentId}")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION')")
-    @Operation(summary = "Employés par département", description = "Retourne les employés affectés à un département donné")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @Operation(summary = "Employés par département", description = "Retourne les employés affectés à un département donné (DRH et Managers)")
     public ResponseEntity<ApiResponse<List<EmployeeResponseDto>>> getEmployeesByDepartment(@PathVariable UUID departmentId) {
         List<EmployeeResponseDto> response = employeeService.getEmployeesByDepartment(departmentId);
         return ResponseEntity.ok(ApiResponse.success(response));

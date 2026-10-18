@@ -33,15 +33,15 @@
 | **Authentification** | `POST /api/v1/auth/refresh` | 🌐 | 🌐 | 🌐 | 🌐 | `permitAll()` — Rotation du token d'accès avec refresh token valide |
 | **Authentification** | `POST /api/v1/auth/logout` | ✅ | ✅ | ✅ | ✅ | `isAuthenticated()` — Révocation du refresh token en base |
 | **Authentification** | `GET /api/v1/auth/me` | ✅ | ✅ | ✅ | ✅ | `isAuthenticated()` — Profil personnel de l'utilisateur connecté |
-| **Documents RH** | `GET /api/v1/documents/attestation/{id}` | ✅ | ⚠️ Subordonné | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessWorkCertificate(#id)` |
-| **Documents RH** | `GET /api/v1/documents/payslip/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessPayslip(#id)` |
-| **Documents RH** | `GET /api/v1/documents/contract/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessContract(#id)` |
-| **Dossiers Employés** | `GET /api/v1/employees` | ✅ | ✅ | ❌ | ✅ | `hasAnyRole('DRH', 'MANAGER', 'DIRECTION')` (Annuaire d'entreprise) |
+| **Documents RH** | `GET /api/v1/documents/attestation/{id}` | ✅ | ⚠️ Subordonné | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessWorkCertificate(#id)` (Direction exclue de tout document nominatif) |
+| **Documents RH** | `GET /api/v1/documents/payslip/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessPayslip(#id)` (Direction exclue) |
+| **Documents RH** | `GET /api/v1/documents/contract/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessContract(#id)` (Direction exclue) |
+| **Dossiers Employés** | `GET /api/v1/employees` | ✅ | ✅ | ❌ | ❌ | `hasAnyRole('DRH', 'MANAGER')` (Direction exclue des listes nominatives) |
 | **Dossiers Employés** | `GET /api/v1/employees/{id}` | ✅ | ⚠️ Subordonné/Soi | ⚠️ Soi-même | ❌ | `@employeeSecurity.canAccessEmployee(#id)` (Dossier nominatif privé) |
 | **Dossiers Employés** | `POST /api/v1/employees` | ✅ | ❌ | ❌ | ❌ | `hasRole('DRH')` |
 | **Dossiers Employés** | `PUT /api/v1/employees/{id}` | ✅ | ❌ | ❌ | ❌ | `hasRole('DRH')` |
 | **Dossiers Employés** | `DELETE /api/v1/employees/{id}` | ✅ | ❌ | ❌ | ❌ | `hasRole('DRH')` |
-| **Dossiers Employés** | `GET /api/v1/employees/department/{id}`| ✅ | ✅ | ❌ | ✅ | `hasAnyRole('DRH', 'MANAGER', 'DIRECTION')` |
+| **Dossiers Employés** | `GET /api/v1/employees/department/{id}`| ✅ | ✅ | ❌ | ❌ | `hasAnyRole('DRH', 'MANAGER')` (Direction exclue) |
 | **Paie & Salaires** | `GET /api/v1/payroll/payslips?period=` | ✅ | ❌ | ❌ | ❌ | `hasRole('DRH')` (Liste nominative des salaires mensuels) |
 | **Paie & Salaires** | `GET /api/v1/payroll/payslips/employee/{id}`| ✅ | ❌ | ⚠️ Soi-même | ❌ | `@payrollSecurity.canAccessEmployeePayslips(#id)` |
 | **Paie & Salaires** | `GET /api/v1/payroll/payslips/{id}` | ✅ | ❌ | ⚠️ Soi-même | ❌ | `@payrollSecurity.canAccessPayslip(#id)` |

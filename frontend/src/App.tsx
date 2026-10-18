@@ -79,7 +79,14 @@ export const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/documents" element={<DocumentListPage />} />
+                <Route
+                  path="/documents"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE']}>
+                      <DocumentListPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/orgchart" element={<OrgChartPage />} />
                 <Route
                   path="/evaluations"

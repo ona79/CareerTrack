@@ -32,7 +32,7 @@ const navItems: NavItemConfig[] = [
   { label: 'Promotions & Carrières', to: '/promotions', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Plans de Formation', to: '/trainings', icon: GraduationCap },
   { label: 'Organigramme', to: '/orgchart', icon: Network },
-  { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet },
+  { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
 ];
 
 import { X } from 'lucide-react';
