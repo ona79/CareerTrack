@@ -201,4 +201,66 @@ class EmployeeControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + directionToken))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("La liste ne contient aucune donnée sensible")
+    void list_contains_no_sensitive_fields() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode content = objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("data").get("content");
+        assertThat(content.size()).isEqualTo(3);
+        for (JsonNode item : content) {
+            assertThat(item.has("fullName")).isTrue();
+            assertThat(item.has("nationalId")).isFalse();
+            assertThat(item.has("phone")).isFalse();
+            assertThat(item.has("address")).isFalse();
+            assertThat(item.has("birthDate")).isFalse();
+            assertThat(item.has("email")).isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("Un tri sur un champ interdit est refusé (400)")
+    void list_rejects_forbidden_sort_field() throws Exception {
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("sortBy", "nationalId")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("MANAGER ne voit que son équipe dans la liste")
+    void manager_list_is_limited_to_his_team() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode content = objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("data").get("content");
+        List<String> names = new java.util.ArrayList<>();
+        content.forEach(item -> names.add(item.get("fullName").asText()));
+
+        assertThat(names).containsExactlyInAnyOrder("Amadou Diallo", "Moussa Sarr");
+        assertThat(names).doesNotContain("Fatou Diop");
+    }
+
+    @Test
+    @DisplayName("La recherche par nom ne renvoie que les employés correspondants")
+    void list_search_filters_by_name() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/employees")
+                        .param("search", "sarr")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode content = objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("data").get("content");
+        assertThat(content.size()).isEqualTo(1);
+        assertThat(content.get(0).get("fullName").asText()).isEqualTo("Moussa Sarr");
+    }
 }
