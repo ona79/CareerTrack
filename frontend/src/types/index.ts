@@ -5,10 +5,14 @@ export interface Page<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  number: number;
-  size: number;
-  first: boolean;
+  // Aligné sur PageResponse backend
+  pageNumber: number;
+  pageSize: number;
   last: boolean;
+  // Champs historiques côté front (facultatifs, conservés pour compat)
+  number?: number;
+  size?: number;
+  first?: boolean;
 }
 
 // Réponse API standard
@@ -59,7 +63,7 @@ export type RoleType =
   | 'ROLE_DIRECTION';
 
 // ─── EMPLOYEE ─────────────────────────────────────────────────────────────────
-export type EmployeeStatus = 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'RESIGNED' | 'RETIRED';
+export type EmployeeStatus = 'ACTIVE' | 'ON_LEAVE' | 'PROBATION' | 'SUSPENDED' | 'TERMINATED';
 export type ContractType   = 'CDI' | 'CDD' | 'STAGE' | 'ALTERNANCE';
 export type Gender         = 'M' | 'F';
 
@@ -69,19 +73,33 @@ export interface Employee {
   firstName: string;
   lastName: string;
   fullName: string;
-  gender: Gender;
-  birthDate?: string;
+  email: string;
+  nationalId?: string;
   phone?: string;
-  personalEmail?: string;
-  professionalEmail?: string;
+  address?: string;
+  birthDate?: string;
   hireDate: string;
   status: EmployeeStatus;
+
+  // Champs aplatis renvoyés par EmployeeResponseDto
+  departmentId?: string;
+  departmentName?: string;
+  positionId?: string;
+  positionTitle?: string;
+  managerId?: string;
+  managerName?: string;
+
+  // Champs historiques (facultatifs, conservés pour compatibilité avec
+  // LeaveRequest, Evaluation, Payroll, etc.)
+  gender?: Gender;
+  personalEmail?: string;
+  professionalEmail?: string;
   department?: Department;
   position?: Position;
   manager?: Employee;
   avatarUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Department {
@@ -308,4 +326,3 @@ export interface SalarySimulationDto {
   totalCostImpact: number;
   simulatedAt?: string;
 }
-
