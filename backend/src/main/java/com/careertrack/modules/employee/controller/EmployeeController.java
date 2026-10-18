@@ -5,6 +5,7 @@ import com.careertrack.common.payload.PageResponse;
 import com.careertrack.modules.employee.dto.EmployeeCreateDto;
 import com.careertrack.modules.employee.dto.EmployeeResponseDto;
 import com.careertrack.modules.employee.service.EmployeeService;
+import com.careertrack.common.security.EmployeeSecurityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final EmployeeSecurityService employeeSecurity;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
@@ -47,6 +49,12 @@ public class EmployeeController {
     @Operation(summary = "Détails d'un employé", description = "Retourne le dossier complet d'un collaborateur par son ID")
     public ResponseEntity<ApiResponse<EmployeeResponseDto>> getEmployeeById(@PathVariable UUID id) {
         EmployeeResponseDto response = employeeService.getEmployeeById(id);
+        if (!employeeSecurity.canSeeSensitiveData(id)) {
+            response.setNationalId(null);
+            response.setBirthDate(null);
+            response.setPhone(null);
+            response.setAddress(null);
+        }
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
