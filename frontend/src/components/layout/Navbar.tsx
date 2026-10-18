@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Search, Globe, ChevronDown, Menu } from 'lucide-react';
+import { Bell, Search, Globe, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
@@ -7,7 +7,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <header className="topbar">
@@ -75,8 +75,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
               {user?.roles?.[0]?.replace('ROLE_', '')}
             </span>
           </div>
-          <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
         </div>
+
+        {/* Déconnexion */}
+        <button
+          type="button"
+          onClick={logout}
+          title="Se déconnecter de CareerTrack"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors cursor-pointer shrink-0"
+        >
+          <LogOut className="w-3.5 h-3.5 text-red-600" />
+          <span className="hidden sm:inline">Déconnexion</span>
+        </button>
       </div>
     </header>
   );
