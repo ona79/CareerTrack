@@ -28,17 +28,19 @@ spring:
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: ${SWAGGER_ENABLED:true}
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
     tagsSorter: alpha
+    enabled: ${SWAGGER_ENABLED:true}
 
 # Paramètres Métier et Réglementaires CareerTrack (Configurables)
 careertrack:
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
   currency: ${CAREERTRACK_CURRENCY:XOF}
-  company-name: "Sénégal Digital Solutions PME"
+  company-name: ${CAREERTRACK_COMPANY_NAME:Teranga Tech PME SARL (démo)}
   mail:
     from: ${MAIL_FROM:no-reply@careertrack.sn}
 

@@ -92,11 +92,11 @@ Chaque section ci-dessous est prête à être convertie en **Ticket / Issue GitH
 
 - **Fichier frontend concerné** : `frontend/src/pages/documents/DocumentListPage.tsx`
 - **État actuel** :
-  - `mockDocs` liste 4 documents fictifs (attestations, contrats de travail, bulletins).
-  - Les liens de téléchargement pointent sur des URL de démonstration.
-- **Tâches à réaliser** :
+  - **Étape 0 (Terminé)** : Raccordement temporaire en mode développement (`import.meta.env.DEV`) aux UUIDs réels du seed V3 pour valider le téléchargement sécurisé des PDF via `downloadFile`. Les lignes fictives sont désactivées et le profil de production affiche un état vide propre.
+  - **TODO Étape 2 (Lot 1)** : Ce tableau de test sera remplacé par la consommation de l'API de listing dynamique des documents archivés de l'employé (`GET /api/v1/documents`).
+- **Tâches à réaliser (Étape 2)** :
   1. Raccorder à l'API de listing des documents archivés ou générés de l'employé.
-  2. Connecter les actions de téléchargement au contrôleur iTextPDF (`GET /api/v1/documents/attestation/{employeeId}`, `GET /api/v1/documents/contract/{employeeId}`).
+  2. Gérer l'upload sécurisé des pièces (CNI, diplômes, contrats) avec contrôle MIME réel et stockage sécurisé.
 
 ---
 

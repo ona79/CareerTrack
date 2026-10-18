@@ -58,7 +58,7 @@ public class LeaveController {
     }
 
     @GetMapping("/employee/{employeeId}")
-    @PreAuthorize("hasAnyRole('EMPLOYE', 'MANAGER', 'DRH')")
+    @PreAuthorize("@leaveSecurity.canAccessEmployeeLeaves(#employeeId)")
     @Operation(summary = "Historique des demandes d'un employé", description = "Retourne toutes les demandes de congés d'un collaborateur")
     public ResponseEntity<ApiResponse<List<LeaveRequestResponseDto>>> getEmployeeLeaves(@PathVariable UUID employeeId) {
         List<LeaveRequestResponseDto> response = leaveService.getEmployeeLeaveRequests(employeeId);
@@ -74,7 +74,7 @@ public class LeaveController {
     }
 
     @GetMapping("/balances/{employeeId}")
-    @PreAuthorize("hasAnyRole('EMPLOYE', 'MANAGER', 'DRH')")
+    @PreAuthorize("@leaveSecurity.canAccessEmployeeBalances(#employeeId)")
     @Operation(summary = "Soldes de congés d'un employé", description = "Retourne le compteur de jours acquis, utilisés et restants")
     public ResponseEntity<ApiResponse<List<LeaveBalanceDto>>> getBalances(
             @PathVariable UUID employeeId,

@@ -37,6 +37,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     @Operation(summary = "Déconnexion", description = "Invalide le Refresh Token de session")
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request.getRefreshToken());
@@ -44,6 +45,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     @Operation(summary = "Profil de l'utilisateur connecté", description = "Retourne les informations et rôles de l'utilisateur authentifié")
     @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {

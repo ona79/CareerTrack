@@ -55,9 +55,10 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints publics : Authentification et Documentation Swagger
+                        // Endpoints publics stricts : Connexion, Rafraîchissement et Documentation Swagger
                         .requestMatchers(
-                                "/api/v1/auth/**",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml",
                                 "/swagger-ui/**",
@@ -81,7 +82,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(patterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

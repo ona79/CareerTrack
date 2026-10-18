@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,6 +31,46 @@ import java.util.UUID;
 public class DocumentController {
 
     private final PdfGeneratorService pdfGeneratorService;
+    private final com.careertrack.modules.document.service.DocumentService documentService;
+
+    @GetMapping("/attestation/{employeeId}")
+    @PreAuthorize("@documentSecurity.canAccessWorkCertificate(#employeeId)")
+    @Operation(summary = "Télécharger l'attestation de travail officielle en PDF", description = "Accessible à la DRH, à l'employé pour lui-même et au Manager pour son équipe directe")
+    public ResponseEntity<byte[]> getWorkCertificatePdf(@PathVariable UUID employeeId) {
+        byte[] pdfBytes = documentService.generateWorkCertificate(employeeId);
+        String filename = documentService.getWorkCertificateFilename(employeeId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    @GetMapping("/payslip/{payslipId}")
+    @PreAuthorize("@documentSecurity.canAccessPayslip(#payslipId)")
+    @Operation(summary = "Télécharger le bulletin de paie officiel en PDF", description = "Accessible à la DRH et à l'employé concerné uniquement")
+    public ResponseEntity<byte[]> getPayslipPdf(@PathVariable UUID payslipId) {
+        byte[] pdfBytes = documentService.generatePayslip(payslipId);
+        String filename = documentService.getPayslipFilename(payslipId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    @GetMapping("/contract/{employeeId}")
+    @PreAuthorize("@documentSecurity.canAccessContract(#employeeId)")
+    @Operation(summary = "Télécharger le contrat de travail officiel en PDF", description = "Accessible à la DRH et à l'employé concerné uniquement")
+    public ResponseEntity<byte[]> getEmploymentContractPdf(@PathVariable UUID employeeId) {
+        byte[] pdfBytes = documentService.generateEmploymentContract(employeeId);
+        String filename = documentService.getContractFilename(employeeId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
 
     @GetMapping("/attestation/exemple")
     @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'EMPLOYE', 'DIRECTION')")
