@@ -932,6 +932,54 @@ paths:
                 $ref: "#/components/schemas/ApiResponseListEmployeeResponseDto"
       security:
       - BearerAuth: []
+  /api/v1/documents/payslip/{payslipId}:
+    get:
+      tags:
+      - Documents & PDF
+      summary: Télécharger le bulletin de paie officiel en PDF
+      description: Accessible à la DRH et à l'employé concerné uniquement
+      operationId: getPayslipPdf
+      parameters:
+      - name: payslipId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+      security:
+      - BearerAuth: []
+  /api/v1/documents/contract/{employeeId}:
+    get:
+      tags:
+      - Documents & PDF
+      summary: Télécharger le contrat de travail officiel en PDF
+      description: Accessible à la DRH et à l'employé concerné uniquement
+      operationId: getEmploymentContractPdf
+      parameters:
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+      security:
+      - BearerAuth: []
   /api/v1/documents/bulletin-paie/exemple:
     get:
       tags:
@@ -940,6 +988,31 @@ paths:
       description: "Génère et retourne un bulletin de paie PDF avec cotisations IPRES,\
         \ CSS, IPM en FCFA"
       operationId: getSamplePayslipPdf
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+      security:
+      - BearerAuth: []
+  /api/v1/documents/attestation/{employeeId}:
+    get:
+      tags:
+      - Documents & PDF
+      summary: Télécharger l'attestation de travail officielle en PDF
+      description: "Accessible à la DRH, à l'employé pour lui-même et au Manager pour\
+        \ son équipe directe"
+      operationId: getWorkCertificatePdf
+      parameters:
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: OK
