@@ -232,29 +232,68 @@ export interface Training {
 }
 
 // ─── PAIE ─────────────────────────────────────────────────────────────────────
-export type PayslipStatus = 'DRAFT' | 'VALIDATED' | 'PAID';
-export type PayslipLineType = 'EARNING' | 'DEDUCTION' | 'EMPLOYER_CONTRIBUTION';
-
-export interface Payslip {
-  id: string;
-  employee: Pick<Employee, 'id' | 'fullName' | 'employeeNumber'>;
-  period: string;         // Format: YYYY-MM
-  grossSalary: number;
-  netSalary: number;
-  status: PayslipStatus;
-  generatedAt?: string;
-  paidAt?: string;
-}
+export type PayslipStatus = 'GENERATED' | 'VALIDATED' | 'PAID' | 'CANCELLED';
+export type PayslipLineCategory = 'GAIN_BRUT' | 'DEDUCTION_SALARIALE' | 'COTISATION_PATRONALE';
 
 export interface PayslipLine {
   id: string;
-  payslipId: string;
-  lineType: PayslipLineType;
+  lineType: string;
+  category?: PayslipLineCategory;
   label: string;
-  base?: number;
+  baseAmount?: number;
   rate?: number;
   amount: number;
-  sortOrder: number;
+}
+
+export interface Payslip {
+  id: string;
+  employeeId?: string;
+  employeeNumber?: string;
+  employeeFullName?: string;
+  departmentName?: string;
+  periodYear: number;
+  periodMonth: number;
+  grossSalary: number;
+  taxableGross?: number;
+  taxParts?: number;
+  netSalary: number;
+  totalDeductions?: number;
+  employerContributions?: number;
+  paymentDate?: string;
+  status: PayslipStatus;
+  cancelledBy?: string;
+  cancelledAt?: string;
+  lines?: PayslipLine[];
+}
+
+export interface PayrollParameter {
+  id: string;
+  paramKey: string;
+  paramValue: string;
+  category: string;
+  status: string;
+  source: string;
+  validFrom: string;
+}
+
+export interface DepartmentPayrollStats {
+  departmentName: string;
+  employeeCount: number;
+  totalGrossSalary: number;
+  totalNetSalary: number;
+  totalEmployerContributions: number;
+}
+
+export interface PayrollStats {
+  periodYear: number;
+  periodMonth: number;
+  totalEmployeesPaid: number;
+  totalGrossSalary: number;
+  totalNetSalary: number;
+  totalEmployerContributions: number;
+  totalPayrollCost: number;
+  anonymized: boolean;
+  departmentBreakdowns: DepartmentPayrollStats[];
 }
 
 // ─── NOTIFICATION ─────────────────────────────────────────────────────────────
@@ -308,4 +347,30 @@ export interface SalarySimulationDto {
   totalCostImpact: number;
   simulatedAt?: string;
 }
+
+// ─── DOCUMENTS RH ─────────────────────────────────────────────────────────────
+export type DocumentType =
+  | 'CNI'
+  | 'PASSEPORT'
+  | 'DIPLOME'
+  | 'CV'
+  | 'CONTRAT'
+  | 'ATTESTATION'
+  | 'FICHE_PAIE'
+  | 'CERTIFICAT_MEDICAL'
+  | 'AUTRE';
+
+export interface DocumentResponseDto {
+  id: string;
+  employeeId: string;
+  documentType: DocumentType;
+  title: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  uploadedBy?: string;
+  downloadUrl: string;
+}
+
 

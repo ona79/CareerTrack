@@ -36,6 +36,10 @@
 | **Documents RH** | `GET /api/v1/documents/attestation/{id}` | ✅ | ⚠️ Subordonné | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessWorkCertificate(#id)` (Direction exclue de tout document nominatif) |
 | **Documents RH** | `GET /api/v1/documents/payslip/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessPayslip(#id)` (Direction exclue) |
 | **Documents RH** | `GET /api/v1/documents/contract/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessContract(#id)` (Direction exclue) |
+| **Documents Collaborateur** | `POST /api/v1/documents` | ✅ | ⚠️ Soi-même (hors CONTRAT) | ⚠️ Soi-même (hors CONTRAT) | ❌ | `@documentSecurity.canUploadDocument(#employeeId, #type)` (DRH tous types ; EMPLOYE & MANAGER CNI, DIPLOME, AUTRE pour eux-mêmes uniquement ; CONTRAT réservé DRH ; subordonnés 403) |
+| **Documents Collaborateur** | `GET /api/v1/documents/employee/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canListEmployeeDocuments(#id)` (DRH tous ; EMPLOYE & MANAGER leurs propres documents ; 403 sur subordonnés et tiers ; Direction exclue) |
+| **Documents Collaborateur** | `GET /api/v1/documents/{id}/download` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canDownloadDocument(#id)` (DRH tous ; EMPLOYE & MANAGER leurs propres documents ; 403 sur subordonnés et tiers ; Direction exclue) |
+| **Documents Collaborateur** | `DELETE /api/v1/documents/{id}` | ✅ | ⚠️ Soi-même (déposé par lui) | ⚠️ Soi-même (déposé par lui) | ❌ | `@documentSecurity.canDeleteDocument(#id)` (DRH tous ; EMPLOYE & MANAGER uniquement les documents qu'ils ont eux-mêmes déposés ; 403 sur subordonnés et tiers) |
 | **Dossiers Employés** | `GET /api/v1/employees` | ✅ | ✅ | ❌ | ❌ | `hasAnyRole('DRH', 'MANAGER')` (Direction exclue des listes nominatives) |
 | **Dossiers Employés** | `GET /api/v1/employees/{id}` | ✅ | ⚠️ Subordonné/Soi | ⚠️ Soi-même | ❌ | `@employeeSecurity.canAccessEmployee(#id)` (Dossier nominatif privé) |
 | **Dossiers Employés** | `POST /api/v1/employees` | ✅ | ❌ | ❌ | ❌ | `hasRole('DRH')` |

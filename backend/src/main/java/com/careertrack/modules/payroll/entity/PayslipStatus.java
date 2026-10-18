@@ -3,5 +3,7 @@ package com.careertrack.modules.payroll.entity;
 public enum PayslipStatus {
     DRAFT,
     GENERATED,
-    PAID
+    VALIDATED,
+    PAID,
+    CANCELLED
 }

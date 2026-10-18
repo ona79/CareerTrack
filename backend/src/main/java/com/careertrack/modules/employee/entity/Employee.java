@@ -75,6 +75,18 @@ public class Employee extends AuditableEntity {
     @Builder.Default
     private EmployeeStatus status = EmployeeStatus.ACTIVE;
 
+    @Column(name = "is_cadre", nullable = false)
+    @Builder.Default
+    private boolean isCadre = false;
+
+    @Column(name = "marital_status", length = 30, nullable = false)
+    @Builder.Default
+    private String maritalStatus = "CELIBATAIRE";
+
+    @Column(name = "dependents_count", nullable = false)
+    @Builder.Default
+    private int dependentsCount = 0;
+
     public String getFullName() {
         return firstName + " " + lastName;
     }

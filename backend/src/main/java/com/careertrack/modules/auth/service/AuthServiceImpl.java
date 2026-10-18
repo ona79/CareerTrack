@@ -35,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final com.careertrack.modules.employee.repository.EmployeeRepository employeeRepository;
 
     @Value("${careertrack.jwt.refresh-expiration-ms:604800000}")
     private long refreshExpirationMs;
@@ -59,6 +60,10 @@ public class AuthServiceImpl implements AuthService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
+        UUID employeeId = employeeRepository.findByUserId(userPrincipal.getId())
+                .map(com.careertrack.modules.employee.entity.Employee::getId)
+                .orElse(null);
+
         return JwtResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.getToken())
@@ -68,6 +73,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(userPrincipal.getUsername())
                 .email(userPrincipal.getEmail())
                 .roles(roles)
+                .employeeId(employeeId)
                 .build();
     }
 
@@ -90,6 +96,10 @@ public class AuthServiceImpl implements AuthService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
+        UUID employeeId = employeeRepository.findByUserId(user.getId())
+                .map(com.careertrack.modules.employee.entity.Employee::getId)
+                .orElse(null);
+
         return JwtResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshToken.getToken())
@@ -99,6 +109,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .roles(roles)
+                .employeeId(employeeId)
                 .build();
     }
 
@@ -125,12 +136,17 @@ public class AuthServiceImpl implements AuthService {
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList());
 
+        UUID employeeId = employeeRepository.findByUserId(user.getId())
+                .map(com.careertrack.modules.employee.entity.Employee::getId)
+                .orElse(null);
+
         return UserDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .enabled(user.isEnabled())
                 .roles(roles)
+                .employeeId(employeeId)
                 .build();
     }
 

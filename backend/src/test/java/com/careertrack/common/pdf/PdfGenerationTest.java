@@ -199,9 +199,11 @@ class PdfGenerationTest {
         // Statut traduit
         assertThat(text).contains("Statut : Généré");
         assertThat(text).doesNotContain("GENERATED");
-        // Seules les lignes enregistrées : pas d'IPM, pas de charges patronales
+        // Lignes enregistrées et colonnes salariales / patronales étape 4
         assertThat(text).doesNotContain("IPM");
-        assertThat(text).doesNotContain("patronal");
+        assertThat(text).contains("Part Patronale");
+        assertThat(text).contains("TOTAL COTISATIONS PATRONALES");
+        assertThat(text).contains("COÛT GLOBAL EMPLOYEUR");
         assertThat(text).contains("Modèle de démonstration, taux à valider");
         assertThat(text).contains("Page 1 / 1");
     }
