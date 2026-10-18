@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: CareerTrack API - Plateforme RH
   description: |-
-    API REST de gestion des carrières pour PME sénégalaise (Sénégal Digital Solutions PME)
+    API REST de gestion des carrières pour PME sénégalaise (Teranga Tech PME SARL (démo))
     - Authentification JWT multi-rôles (DRH, MANAGER, EMPLOYE, DIRECTION)
     - Conforme au Code du Travail sénégalais et calculs en Francs CFA (XOF)
     - Gestion complète du cycle RH : dossier, congés, évaluations, formation, paie, recrutement
