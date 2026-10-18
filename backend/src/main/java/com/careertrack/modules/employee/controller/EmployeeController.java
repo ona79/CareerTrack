@@ -1,5 +1,6 @@
 package com.careertrack.modules.employee.controller;
 
+import com.careertrack.common.exception.BadRequestException;
 import com.careertrack.common.payload.ApiResponse;
 import com.careertrack.common.payload.PageResponse;
 import com.careertrack.modules.employee.dto.EmployeeCreateDto;
@@ -20,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +34,10 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final EmployeeSecurityService employeeSecurity;
 
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final Set<String> SORTABLE_FIELDS =
+            Set.of("lastName", "firstName", "employeeNumber", "hireDate", "status");
+
     @GetMapping
     @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
     @Operation(summary = "Liste paginée des employés", description = "Récupère les employés avec pagination et tri (DRH et Managers)")
@@ -40,8 +46,14 @@ public class EmployeeController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "lastName") String sortBy
     ) {
+        if (!SORTABLE_FIELDS.contains(sortBy)) {
+            throw new BadRequestException("Tri non autorisé : " + sortBy);
+        }
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+
         PageResponse<EmployeeSummaryDto> response = employeeService.getAllEmployees(
-                PageRequest.of(page, size, Sort.by(sortBy).ascending()));
+                PageRequest.of(safePage, safeSize, Sort.by(sortBy).ascending()));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
