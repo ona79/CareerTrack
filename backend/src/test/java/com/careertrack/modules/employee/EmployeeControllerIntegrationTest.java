@@ -263,4 +263,16 @@ class EmployeeControllerIntegrationTest {
         assertThat(content.size()).isEqualTo(1);
         assertThat(content.get(0).get("fullName").asText()).isEqualTo("Moussa Sarr");
     }
+
+    @Test
+    @DisplayName("DELETE désactive l'employé sans supprimer son dossier")
+    void delete_deactivates_employee() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .delete("/api/v1/employees/" + employee2.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk());
+
+        Employee reloaded = employeeRepository.findById(employee2.getId()).orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(EmployeeStatus.TERMINATED);
+    }
 }

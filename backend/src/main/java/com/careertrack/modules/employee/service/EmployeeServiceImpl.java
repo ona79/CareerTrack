@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.careertrack.modules.employee.entity.EmployeeStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -170,9 +171,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public void deleteEmployee(UUID id) {
-        if (!employeeRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Employé", "id", id);
-        }
-        employeeRepository.deleteById(id);
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employé", "id", id));
+        employee.setStatus(EmployeeStatus.TERMINATED);
+        employeeRepository.save(employee);
     }
 }

@@ -101,9 +101,9 @@ public class EmployeeController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('DRH')")
-    @Operation(summary = "Supprimer un employé", description = "Supprime un dossier collaborateur")
+    @Operation(summary = "Désactiver un employé", description = "Passe le dossier au statut TERMINATED sans le supprimer, pour conserver l'historique")
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable UUID id) {
         employeeService.deleteEmployee(id);
-        return ResponseEntity.ok(ApiResponse.success("Employé supprimé avec succès", null));
+        return ResponseEntity.ok(ApiResponse.success("Employé désactivé avec succès", null));
     }
 }
