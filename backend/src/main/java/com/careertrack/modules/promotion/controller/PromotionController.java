@@ -23,8 +23,8 @@ public class PromotionController {
     private final PromotionService promotionService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION')")
-    @Operation(summary = "Lister les propositions de promotion", description = "Accessible à la DRH, aux managers et à la direction")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @Operation(summary = "Lister les propositions de promotion", description = "Accessible à la DRH et aux managers")
     public ResponseEntity<ApiResponse<List<PromotionProposalDto>>> getAllProposals() {
         return ResponseEntity.ok(ApiResponse.success(promotionService.getAllProposals()));
     }
@@ -37,8 +37,8 @@ public class PromotionController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
-    @Operation(summary = "Valider ou refuser une proposition de promotion", description = "Réservé à la DRH ou Direction Générale")
+    @PreAuthorize("hasRole('DRH')")
+    @Operation(summary = "Valider ou refuser une proposition de promotion", description = "Réservé à la DRH uniquement")
     public ResponseEntity<ApiResponse<PromotionProposalDto>> updateStatus(
             @PathVariable UUID id,
             @RequestParam PromotionStatus status,

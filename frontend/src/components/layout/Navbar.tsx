@@ -46,6 +46,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
         <button
           type="button"
           aria-label="Notifications"
+          onClick={async () => {
+            try {
+              const res = await (await import('@/lib/axios')).default.get('/notifications/me');
+              const notifs = res.data?.data || res.data || [];
+              const unread = notifs.filter((n: { read?: boolean }) => !n.read).length;
+              alert(`Vous avez ${unread} notification(s) non lue(s).`);
+            } catch {
+              // ignore
+            }
+          }}
           className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
         >
           <Bell className="w-5 h-5" />

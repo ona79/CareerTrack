@@ -68,6 +68,7 @@ graph LR
 | `MAIL_PORT` | `587` | Port TLS |
 | `MAIL_USERNAME` | `votre-email@gmail.com` | Compte expéditeur |
 | `MAIL_PASSWORD` | `votre-mot-de-passe-app` | Mot de passe d'application Google |
+| `SWAGGER_ENABLED` | `false` (ou `true`) | Active Swagger UI et OpenAPI en production (`false` par défaut en profil `prod`, `true` en dev et demo). Requis si le jury souhaite consulter la documentation interactive de l'API. |
 
 6. Cliquez sur **Create Web Service**. Au premier démarrage, **Flyway exécutera automatiquement** les migrations `V1__init_schema.sql` et `V2__reference_data.sql`.
 

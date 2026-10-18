@@ -43,7 +43,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'EMPLOYE', 'DIRECTION')")
+    @PreAuthorize("@employeeSecurity.canAccessEmployee(#id)")
     @Operation(summary = "Détails d'un employé", description = "Retourne le dossier complet d'un collaborateur par son ID")
     public ResponseEntity<ApiResponse<EmployeeResponseDto>> getEmployeeById(@PathVariable UUID id) {
         EmployeeResponseDto response = employeeService.getEmployeeById(id);

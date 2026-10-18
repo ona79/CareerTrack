@@ -212,7 +212,7 @@ paths:
       tags:
       - Promotions & Carrières
       summary: Lister les propositions de promotion
-      description: "Accessible à la DRH, aux managers et à la direction"
+      description: Accessible à la DRH et aux managers
       operationId: getAllProposals
       responses:
         "200":
@@ -487,7 +487,7 @@ paths:
       tags:
       - Promotions & Carrières
       summary: Valider ou refuser une proposition de promotion
-      description: Réservé à la DRH ou Direction Générale
+      description: Réservé à la DRH uniquement
       operationId: updateStatus_1
       parameters:
       - name: id
@@ -609,7 +609,7 @@ paths:
       tags:
       - Recrutement
       summary: Lister les offres d'emploi publiées
-      description: Accessible publiquement ou en interne
+      description: Accessible aux utilisateurs authentifiés
       operationId: getOffers
       responses:
         "200":
@@ -637,7 +637,7 @@ paths:
       tags:
       - Paie & Salaires
       summary: Lister les bulletins de paie par période (YYYY-MM)
-      description: Accessible à la DRH et Direction
+      description: Accessible à la DRH uniquement
       operationId: getPayslipsByPeriod
       parameters:
       - name: period
@@ -657,7 +657,7 @@ paths:
       tags:
       - Paie & Salaires
       summary: Obtenir le détail d'un bulletin de paie avec toutes les lignes de déduction
-      description: Accessible aux rôles autorisés
+      description: Accessible au collaborateur concerné et à la DRH
       operationId: getPayslipById
       parameters:
       - name: id
@@ -678,7 +678,7 @@ paths:
       tags:
       - Paie & Salaires
       summary: Lister l'historique des bulletins d'un collaborateur
-      description: "Accessible au collaborateur lui-même, à la DRH et Direction"
+      description: Accessible au collaborateur lui-même et à la DRH
       operationId: getPayslipsByEmployee
       parameters:
       - name: employeeId
@@ -734,20 +734,13 @@ paths:
                 $ref: "#/components/schemas/ApiResponseOrgNodeDto"
       security:
       - BearerAuth: []
-  /api/v1/notifications/user/{userId}:
+  /api/v1/notifications/me:
     get:
       tags:
       - Notifications
-      summary: Lister les notifications d'un collaborateur
-      description: Accessible à l'utilisateur connecté
-      operationId: getUserNotifications
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
+      summary: Lister les notifications de l'utilisateur connecté
+      description: Accessible à l'utilisateur authentifié
+      operationId: getMyNotifications
       responses:
         "200":
           description: OK
@@ -872,7 +865,7 @@ paths:
       tags:
       - Évaluations & Performance
       summary: Consulter le détail d'une fiche d'évaluation et ses objectifs SMART
-      description: "Accessible aux évaluateurs, évalués et DRH"
+      description: "Accessible à l'évaluateur, à l'évalué et à la DRH"
       operationId: getEvaluationById
       parameters:
       - name: id

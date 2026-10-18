@@ -21,11 +21,12 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Lister les notifications d'un collaborateur", description = "Accessible à l'utilisateur connecté")
-    public ResponseEntity<ApiResponse<List<NotificationDto>>> getUserNotifications(@PathVariable UUID userId) {
-        return ResponseEntity.ok(ApiResponse.success(notificationService.getNotificationsForUser(userId)));
+    @Operation(summary = "Lister les notifications de l'utilisateur connecté", description = "Accessible à l'utilisateur authentifié")
+    public ResponseEntity<ApiResponse<List<NotificationDto>>> getMyNotifications(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.careertrack.common.security.UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(notificationService.getNotificationsForUser(principal.getId())));
     }
 
     @PatchMapping("/{id}/read")

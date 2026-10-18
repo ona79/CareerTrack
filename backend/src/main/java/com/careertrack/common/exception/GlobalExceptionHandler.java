@@ -76,15 +76,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class, IllegalArgumentException.class})
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatchException(
-            Exception ex, HttpServletRequest request) {
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
 
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(Instant.now())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                .message("Paramètre de requête invalide ou format d'identifiant incorrect : " + ex.getMessage())
+                .message("Paramètre de requête invalide ou format d'identifiant incorrect")
                 .path(request.getRequestURI())
                 .build();
 
@@ -144,7 +144,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message("Une erreur interne inattendue s'est produite : " + ex.getMessage())
+                .message("Une erreur interne inattendue s'est produite. Veuillez contacter l'administrateur.")
                 .path(request.getRequestURI())
                 .build();
 

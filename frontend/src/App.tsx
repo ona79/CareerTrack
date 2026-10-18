@@ -49,7 +49,7 @@ export const App: React.FC = () => {
                 <Route
                   path="/employees"
                   element={
-                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION']}>
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER']}>
                       <EmployeeListPage />
                     </ProtectedRoute>
                   }
@@ -58,7 +58,7 @@ export const App: React.FC = () => {
                 <Route
                   path="/payroll"
                   element={
-                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_DIRECTION']}>
+                    <ProtectedRoute roles={['ROLE_DRH']}>
                       <PayrollListPage />
                     </ProtectedRoute>
                   }
@@ -74,14 +74,21 @@ export const App: React.FC = () => {
                 <Route
                   path="/promotions"
                   element={
-                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION']}>
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER']}>
                       <PromotionListPage />
                     </ProtectedRoute>
                   }
                 />
                 <Route path="/documents" element={<DocumentListPage />} />
                 <Route path="/orgchart" element={<OrgChartPage />} />
-                <Route path="/evaluations" element={<EvaluationListPage />} />
+                <Route
+                  path="/evaluations"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE']}>
+                      <EvaluationListPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/trainings" element={<TrainingListPage />} />
               </Route>
 

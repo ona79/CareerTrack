@@ -37,15 +37,15 @@ public class EvaluationController {
     }
 
     @GetMapping("/campaigns/{campaignId}/evaluations")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
     @Operation(summary = "Lister les fiches d'évaluation d'une campagne", description = "Accessible aux managers et à la DRH")
     public ResponseEntity<ApiResponse<List<EvaluationDto>>> getEvaluationsByCampaign(@PathVariable UUID campaignId) {
         return ResponseEntity.ok(ApiResponse.success(evaluationService.getEvaluationsByCampaign(campaignId)));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Consulter le détail d'une fiche d'évaluation et ses objectifs SMART", description = "Accessible aux évaluateurs, évalués et DRH")
+    @PreAuthorize("@evaluationSecurity.canAccessEvaluation(#id)")
+    @Operation(summary = "Consulter le détail d'une fiche d'évaluation et ses objectifs SMART", description = "Accessible à l'évaluateur, à l'évalué et à la DRH")
     public ResponseEntity<ApiResponse<EvaluationDto>> getEvaluationById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(evaluationService.getEvaluationById(id)));
     }
