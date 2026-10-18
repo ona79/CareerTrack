@@ -159,7 +159,7 @@ Consultez la [Matrice Complète des Droits d'Accès aux Documents](./docs/securi
    - **Écran Documents (`/documents`)** :
      - Cliquer sur **« Télécharger PDF »** pour l'attestation $\rightarrow$ Télécharge l'attestation de travail.
      - Cliquer sur **« Télécharger PDF »** pour le bulletin de paie $\rightarrow$ Télécharge le bulletin de paie avec cotisations IPRES/CSS.
-     - Cliquer sur **« Télécharger PDF »** pour le contrat de travail $\rightarrow$ Télécharge le contrat CDI conforme à la loi 97-17.
+     - Cliquer sur **« Télécharger PDF »** pour le contrat de travail $\rightarrow$ Télécharge le modèle de contrat CDI (comportant la mention obligatoire « Modèle de démonstration, à faire valider par un juriste ou le service RH avant tout usage réel »).
      - Constater que la ligne de démonstration fictive est explicitement désactivée (`Désactivé (Mock)`).
    - **Écran Paie (`/payroll`)** :
      - Cliquer sur **« Télécharger PDF »** pour le bulletin d'Ousmane Diallo (Période 2026-09) $\rightarrow$ Télécharge `bulletin-paie-2026-09-EMP-004.pdf`.

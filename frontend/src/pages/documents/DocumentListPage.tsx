@@ -18,54 +18,58 @@ interface GeneratedDoc {
   isRealUuid: boolean;
 }
 
-// Documents réels basés sur les UUIDs du jeu de test seed V3
-const demoDocuments: GeneratedDoc[] = [
-  {
-    id: 'real-doc-1',
-    employeeName: 'Ousmane Diallo (EMP-004)',
-    docType: 'ATTESTATION',
-    date: '2026-09-30',
-    endpoint: '/documents/attestation/55555555-5555-5555-5555-555555555504',
-    filename: 'attestation-EMP-004.pdf',
-    isRealUuid: true,
-  },
-  {
-    id: 'real-doc-2',
-    employeeName: 'Ousmane Diallo (EMP-004)',
-    docType: 'BULLETIN_PAIE',
-    date: '2026-09-30',
-    endpoint: '/documents/payslip/99999999-9999-9999-9999-999999999901',
-    filename: 'bulletin-paie-2026-09-EMP-004.pdf',
-    isRealUuid: true,
-  },
-  {
-    id: 'real-doc-3',
-    employeeName: 'Ousmane Diallo (EMP-004)',
-    docType: 'CONTRAT',
-    date: '2022-06-01',
-    endpoint: '/documents/contract/55555555-5555-5555-5555-555555555504',
-    filename: 'contrat-EMP-004.pdf',
-    isRealUuid: true,
-  },
-  {
-    id: 'real-doc-4',
-    employeeName: 'Mamadou Sow (EMP-003)',
-    docType: 'ATTESTATION',
-    date: '2026-09-30',
-    endpoint: '/documents/attestation/55555555-5555-5555-5555-555555555503',
-    filename: 'attestation-EMP-003.pdf',
-    isRealUuid: true,
-  },
-  {
-    id: 'mock-doc-fictif',
-    employeeName: 'Exemple fictif non persisté',
-    docType: 'ATTESTATION',
-    date: '2025-01-01',
-    endpoint: '/documents/attestation/mock-fictif',
-    filename: 'attestation-fictive.pdf',
-    isRealUuid: false,
-  },
-];
+// TODO (Étape 2 - Lot 1) : Ce raccordement avec les UUIDs du seed V3 est temporaire pour prouver le bon fonctionnement de l'étape 0.
+// Il sera remplacé à l'étape 2 par la récupération dynamique des documents via l'API /api/v1/documents.
+// En production (sans seed V3), le tableau est vide et affiche un état vide propre.
+const demoDocuments: GeneratedDoc[] = import.meta.env.DEV
+  ? [
+      {
+        id: 'real-doc-1',
+        employeeName: 'Ousmane Diallo (EMP-004)',
+        docType: 'ATTESTATION',
+        date: '2026-09-30',
+        endpoint: '/documents/attestation/55555555-5555-5555-5555-555555555504',
+        filename: 'attestation-EMP-004.pdf',
+        isRealUuid: true,
+      },
+      {
+        id: 'real-doc-2',
+        employeeName: 'Ousmane Diallo (EMP-004)',
+        docType: 'BULLETIN_PAIE',
+        date: '2026-09-30',
+        endpoint: '/documents/payslip/99999999-9999-9999-9999-999999999901',
+        filename: 'bulletin-paie-2026-09-EMP-004.pdf',
+        isRealUuid: true,
+      },
+      {
+        id: 'real-doc-3',
+        employeeName: 'Ousmane Diallo (EMP-004)',
+        docType: 'CONTRAT',
+        date: '2022-06-01',
+        endpoint: '/documents/contract/55555555-5555-5555-5555-555555555504',
+        filename: 'contrat-EMP-004.pdf',
+        isRealUuid: true,
+      },
+      {
+        id: 'real-doc-4',
+        employeeName: 'Mamadou Sow (EMP-003)',
+        docType: 'ATTESTATION',
+        date: '2026-09-30',
+        endpoint: '/documents/attestation/55555555-5555-5555-5555-555555555503',
+        filename: 'attestation-EMP-003.pdf',
+        isRealUuid: true,
+      },
+      {
+        id: 'mock-doc-fictif',
+        employeeName: 'Exemple fictif non persisté',
+        docType: 'ATTESTATION',
+        date: '2025-01-01',
+        endpoint: '/documents/attestation/mock-fictif',
+        filename: 'attestation-fictive.pdf',
+        isRealUuid: false,
+      },
+    ]
+  : [];
 
 export const DocumentListPage: React.FC = () => {
   const [filterType, setFilterType] = useState('ALL');
@@ -167,57 +171,65 @@ export const DocumentListPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((doc) => {
-              const isLoading = downloadingId === doc.id;
-              return (
-                <tr key={doc.id}>
-                  <td className="font-semibold text-xs text-gray-900">{doc.employeeName}</td>
-                  <td>
-                    <span className="badge badge-primary font-mono text-[10px]">
-                      {doc.docType}
-                    </span>
-                  </td>
-                  <td className="text-xs text-gray-500">{doc.date}</td>
-                  <td>
-                    <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded font-bold">
-                      PDF iText
-                    </span>
-                  </td>
-                  <td className="text-right">
-                    {doc.isRealUuid ? (
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(doc)}
-                        disabled={isLoading}
-                        className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1A6B3C]" />
-                            Génération...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-3.5 h-3.5 text-[#1A6B3C]" />
-                            Télécharger PDF
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        title="Donnée de démonstration non persistée (non téléchargeable)"
-                        className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1 opacity-50 cursor-not-allowed"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-gray-400" />
-                        Désactivé (Mock)
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-8 text-xs text-gray-500">
+                  Aucun document disponible pour le moment.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((doc) => {
+                const isLoading = downloadingId === doc.id;
+                return (
+                  <tr key={doc.id}>
+                    <td className="font-semibold text-xs text-gray-900">{doc.employeeName}</td>
+                    <td>
+                      <span className="badge badge-primary font-mono text-[10px]">
+                        {doc.docType}
+                      </span>
+                    </td>
+                    <td className="text-xs text-gray-500">{doc.date}</td>
+                    <td>
+                      <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded font-bold">
+                        PDF iText
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      {doc.isRealUuid ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDownload(doc)}
+                          disabled={isLoading}
+                          className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1A6B3C]" />
+                              Génération...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-3.5 h-3.5 text-[#1A6B3C]" />
+                              Télécharger PDF
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          title="Donnée de démonstration non persistée (non téléchargeable)"
+                          className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1 opacity-50 cursor-not-allowed"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-gray-400" />
+                          Désactivé (Mock)
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

@@ -92,7 +92,7 @@ class PdfGenerationTest {
     }
 
     @Test
-    @DisplayName("Génère un contrat de travail valide conforme au Code du Travail sénégalais au format PDF")
+    @DisplayName("Génère un contrat de travail (modèle de démonstration) au format PDF")
     void shouldGenerateContractPdf() {
         Department dept = Department.builder()
                 .name("Ingénierie & Systèmes")

@@ -77,9 +77,11 @@ class DocumentControllerIntegrationTest {
     private String employee1Token;
     private String employee2Token;
     private String directionToken;
+    private String managerToken;
 
     private Employee employee1;
     private Employee employee2;
+    private Employee managerEmployee;
     private Payslip employee1Payslip;
 
     @BeforeEach
@@ -94,6 +96,7 @@ class DocumentControllerIntegrationTest {
         Role roleDrh = roleRepository.save(Role.builder().name(RoleType.ROLE_DRH).description("DRH").build());
         Role roleEmp = roleRepository.save(Role.builder().name(RoleType.ROLE_EMPLOYE).description("Employe").build());
         Role roleDir = roleRepository.save(Role.builder().name(RoleType.ROLE_DIRECTION).description("Direction").build());
+        Role roleMgr = roleRepository.save(Role.builder().name(RoleType.ROLE_MANAGER).description("Manager").build());
 
         // 2. Utilisateurs
         User userDrh = userRepository.save(User.builder()
@@ -102,6 +105,14 @@ class DocumentControllerIntegrationTest {
                 .password("$2a$10$xyz")
                 .enabled(true)
                 .roles(Set.of(roleDrh))
+                .build());
+
+        User userMgr = userRepository.save(User.builder()
+                .username("test.mgr")
+                .email("mgr@test.sn")
+                .password("$2a$10$xyz")
+                .enabled(true)
+                .roles(Set.of(roleMgr))
                 .build());
 
         User userEmp1 = userRepository.save(User.builder()
@@ -141,6 +152,21 @@ class DocumentControllerIntegrationTest {
                 .build());
 
         // 4. Salariés
+        managerEmployee = employeeRepository.save(Employee.builder()
+                .user(userMgr)
+                .employeeNumber("EMP-MGR-001")
+                .firstName("Amadou")
+                .lastName("Diallo")
+                .nationalId("1 985 1985 99999")
+                .email("amadou.diallo@careertrack.sn")
+                .phone("+221770001122")
+                .birthDate(LocalDate.of(1985, 3, 12))
+                .hireDate(LocalDate.of(2020, 6, 1))
+                .department(dept)
+                .position(pos)
+                .status(EmployeeStatus.ACTIVE)
+                .build());
+
         employee1 = employeeRepository.save(Employee.builder()
                 .user(userEmp1)
                 .employeeNumber("EMP-IT-001")
@@ -153,6 +179,7 @@ class DocumentControllerIntegrationTest {
                 .hireDate(LocalDate.of(2023, 1, 15))
                 .department(dept)
                 .position(pos)
+                .manager(managerEmployee)
                 .status(EmployeeStatus.ACTIVE)
                 .build());
 
@@ -168,6 +195,7 @@ class DocumentControllerIntegrationTest {
                 .hireDate(LocalDate.of(2024, 2, 1))
                 .department(dept)
                 .position(pos)
+                .manager(null)
                 .status(EmployeeStatus.ACTIVE)
                 .build());
 
@@ -209,6 +237,10 @@ class DocumentControllerIntegrationTest {
         drhToken = jwtTokenProvider.generateAccessTokenFromPrincipal(UserPrincipal.builder()
                 .id(userDrh.getId()).username(userDrh.getUsername()).email(userDrh.getEmail())
                 .authorities(List.of(new SimpleGrantedAuthority("ROLE_DRH"))).build());
+
+        managerToken = jwtTokenProvider.generateAccessTokenFromPrincipal(UserPrincipal.builder()
+                .id(userMgr.getId()).username(userMgr.getUsername()).email(userMgr.getEmail())
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_MANAGER"))).build());
 
         employee1Token = jwtTokenProvider.generateAccessTokenFromPrincipal(UserPrincipal.builder()
                 .id(userEmp1.getId()).username(userEmp1.getUsername()).email(userEmp1.getEmail())
@@ -330,5 +362,44 @@ class DocumentControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/documents/attestation/" + randomId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Manager peut télécharger l'attestation de travail d'un subordonné direct (200 OK + %PDF-)")
+    void managerShouldDownloadDirectSubordinateCertificate() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/documents/attestation/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE))
+                .andExpect(header().exists(HttpHeaders.CONTENT_DISPOSITION))
+                .andReturn();
+
+        byte[] content = result.getResponse().getContentAsByteArray();
+        assertThat(content).isNotEmpty();
+        assertThat(new String(content, 0, 5)).isEqualTo("%PDF-");
+    }
+
+    @Test
+    @DisplayName("Manager NE PEUT PAS télécharger l'attestation d'un employé hors de son équipe (403 Forbidden)")
+    void managerShouldNotDownloadNonSubordinateCertificate() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/attestation/" + employee2.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager NE PEUT PAS télécharger la fiche de paie d'un subordonné (403 Forbidden)")
+    void managerShouldNotDownloadSubordinatePayslip() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/payslip/" + employee1Payslip.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager NE PEUT PAS télécharger le contrat de travail d'un subordonné (403 Forbidden)")
+    void managerShouldNotDownloadSubordinateContract() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/contract/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
     }
 }

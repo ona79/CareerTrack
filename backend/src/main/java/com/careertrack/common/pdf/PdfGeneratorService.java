@@ -206,7 +206,7 @@ public class PdfGeneratorService {
     }
 
     /**
-     * Génère un Contrat de Travail officiel conforme au Code du Travail de la République du Sénégal.
+     * Génère un modèle de Contrat de Travail (démonstration).
      */
     public byte[] generateEmploymentContract(Employee employee, Contract contract) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -244,11 +244,11 @@ public class PdfGeneratorService {
                     "2. M./Mme " + employee.getFullName() + ", titulaire de la CNI n° " + employee.getNationalId() + ",\n" +
                     "Demeurant à : " + (employee.getAddress() != null ? employee.getAddress() : "Dakar, Sénégal") + ",\n" +
                     "Ci-après dénommé(e) « Le Salarié »,\n\nD'AUTRE PART.\n\n" +
-                    "IL A ÉTÉ CONVENU CE QUI SUIT CONFORMÉMENT AU CODE DU TRAVAIL SÉNÉGALAIS (LOI N° 97-17) :\n\n" +
+                    "IL A ÉTÉ CONVENU CE QUI SUIT :\n\n" +
                     "Article 1 - Engagement et Fonction : Le Salarié est engagé en qualité de " + posTitle + " au sein du département " + deptTitle + ".\n\n" +
                     "Article 2 - Prise d'effet et Durée : Le présent contrat prend effet le " + startDateStr + " sous le régime " + typeTitle + ".\n\n" +
                     "Article 3 - Rémunération : Le Salarié percevra un salaire brut mensuel de " + salaryStr + ", soumis aux cotisations obligatoires (IPRES, CSS, IPM).\n\n" +
-                    "Article 4 - Congés payés : Le Salarié acquiert 2 jours ouvrables de congé par mois de service effectif, conformément à la réglementation sénégalaise.";
+                    "Article 4 - Congés payés : Le Salarié acquiert 2 jours ouvrables de congé par mois de service effectif, conformément aux règles de l'entreprise.";
 
             document.add(new Paragraph(body).setFontSize(10).setFontColor(TEXT_DARK).setMultipliedLeading(1.3f).setMarginBottom(30));
 
@@ -261,6 +261,14 @@ public class PdfGeneratorService {
             sigTable.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph("Le Salarié\n(Précédé de la mention « Lu et approuvé »)").setFontSize(9).setItalic().setFontColor(TEXT_MUTED)));
             sigTable.addCell(new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT).add(new Paragraph("Pour l'Employeur\nLa Direction Générale\n[Cachet et Signature]").setFontSize(9).setBold().setFontColor(TEXT_DARK)));
             document.add(sigTable);
+
+            // Avertissement légal
+            document.add(new Paragraph("Modèle de démonstration, à faire valider par un juriste ou le service RH avant tout usage réel.")
+                    .setFontSize(8)
+                    .setItalic()
+                    .setFontColor(TEXT_MUTED)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(30));
 
             document.close();
             return baos.toByteArray();
