@@ -17,16 +17,18 @@ Les couleurs officielles définies dans `PdfTheme` sont :
 - **Gris Clair (Fond de table)** : `#F8FAFC` (Lignes paires des tableaux zebra-striped).
 - **Gris Bordure** : `#E2E8F0` (Lignes de séparation fines et contours discrets).
 
-### 1.2 Typographie et Formatage Sénégalais
-- **Gestion des caractères spéciaux et accents français** : utilisation de la police standard Helvetica sous encodage `PdfEncodings.CP1252` (ou polices TrueType système compatibles) supportant l'intégralité des diacritiques français (`é`, `è`, `ê`, `à`, `ç`, `ô`, `î`, `ù`, etc.).
-- **Séparateur de milliers (Montants FCFA)** : `PdfFormatUtils.formatCurrency(BigDecimal)` utilise explicitement l'espace insécable standard (`\u00A0`), évitant l'espace fine (`\u202F`) non supportée par Helvetica. Exemple : `450 000 FCFA`, `950 000 FCFA`.
-- **Dates** : format français normalisé `dd/MM/yyyy` via `PdfFormatUtils.formatDate(LocalDate)`.
+### 1.2 Typographie et Limites des Polices (Helvetica / Latin-1)
+- **Gestion des caractères spéciaux et accents français** : utilisation de la police standard `Helvetica` (14 polices PDF standard, non embarquée pour préserver la légèreté des documents, environ 2 à 3 Ko par PDF).
+- **Limite technique essentielle (Latin-1 / WinAnsi)** : la police standard Helvetica ne dispose pas de glyphes hors de la table Latin-1 / Windows-1252. **Tout caractère hors Latin-1 est interdit** (par exemple l'espace fine insécable `U+202F`, les caractères cyrilliques, arabes ou émojis) car il ne s'affichera pas ou déclenchera une erreur iText.
+- **Séparateur de milliers (Montants FCFA)** : `PdfFormatUtils.formatCurrency(BigDecimal)` et `PdfFormatUtils.formatAmount(BigDecimal)` utilisent impérativement l'espace insécable standard Latin-1 `\u00A0` (NBSP). De plus, une espace insécable `\u00A0` relie le montant et l'acronyme `FCFA` (ex: `950\u00A0000\u00A0FCFA`), garantissant que le montant ne sera jamais coupé par un saut de ligne automatique.
+- **Dates & Nombres** : format français normalisé `dd/MM/yyyy` via `PdfFormatUtils.formatDate(LocalDate)` et décimales à la française avec virgule et sans zéros superflus (`2`, `2,5`, `4,6 / 5`) via `PdfFormatUtils.formatDecimal(BigDecimal)`.
 
-### 1.3 En-tête et Pied de Page Dynamiques
-- **En-tête entreprise** : lit dynamiquement les paramètres `COMPANY_NAME`, `COMPANY_CITY`, `COMPANY_NINEA`, `COMPANY_RCCM` depuis la table `company_settings`. Si une clé est absente en base, sa ligne disparaît sans inventer de valeur. En mode développement ou démonstration sans configuration, un fallback explicite `Teranga Tech PME SARL` est utilisé.
-- **Pied de page paginé** : géré automatiquement par `PdfHeaderFooterEventHandler` sous la forme :
-  `[Mention légale éventuelle] — Document généré le dd/MM/yyyy   Page X`
-- **Zones de signature** : génère automatiquement les blocs d'émargement "Fait à [Ville], le [Date]" avec zone réservée aux signatures et cachets.
+### 1.3 En-tête, Pied de Page Dynamiques & Provenance des Données
+- **En-tête entreprise** : lit dynamiquement les paramètres `COMPANY_NAME`, `COMPANY_CITY`, `COMPANY_NINEA`, `COMPANY_RCCM` depuis la table `company_settings`. Si une clé est absente en base, sa ligne disparaît sans inventer de valeur (ex: si pas de ville, pas de ligne "Siège :" et mention neutre "Fait le jj/mm/aaaa").
+- **Provenance NINEA et RCCM** : En production (`V2__reference_data.sql`), aucune valeur d'entreprise fictive n'est insérée. Les valeurs de démo (`DEMO-000000000`, `SN.DKR.DEMO.0000`) proviennent exclusivement du seed de développement (`db/dev-migration/V4__dev_company_identity.sql`) et ne sont jamais injectées en production. En production, elles sont configurées par la DRH dans les paramètres.
+- **Pied de page paginé (Page X / Y)** : géré automatiquement par `PdfDocumentBuilder` et `PdfHeaderFooterEventHandler` sous la forme :
+  `[Mention légale éventuelle] — Document généré le dd/MM/yyyy   Page X / Y` (calcul exact du total de pages `Y` à la finalisation du document).
+- **Zones de signature** : bloc "Fait à [Ville], le [Date]" (ou "Fait le [Date]" sans ville) avec signature unilatérale employeur pour l'attestation ou bilatérale pour le contrat et l'évaluation.
 
 ---
 

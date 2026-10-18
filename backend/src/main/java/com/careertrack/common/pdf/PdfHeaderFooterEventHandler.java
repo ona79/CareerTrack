@@ -34,13 +34,22 @@ public class PdfHeaderFooterEventHandler implements IEventHandler {
         this(companyName, null);
     }
 
+    /**
+     * Compatibilité IEventHandler : sans total connu, affiche "Page X / X courant".
+     * PdfDocumentBuilder appelle directement {@link #decoratePage} à la finalisation.
+     */
     @Override
     public void handleEvent(Event event) {
         PdfDocumentEvent docEvent = (PdfDocumentEvent) event;
         PdfDocument pdfDoc = docEvent.getDocument();
         PdfPage page = docEvent.getPage();
-        int pageNumber = pdfDoc.getPageNumber(page);
+        decoratePage(pdfDoc, page, pdfDoc.getPageNumber(page), pdfDoc.getNumberOfPages());
+    }
 
+    /**
+     * Dessine en-tête (pages 2+) et pied de page "… Page X / Y".
+     */
+    public void decoratePage(PdfDocument pdfDoc, PdfPage page, int pageNumber, int totalPages) {
         Rectangle pageSize = page.getPageSize();
         PdfCanvas pdfCanvas = new PdfCanvas(page.newContentStreamBefore(), page.getResources(), pdfDoc);
         Canvas canvas = new Canvas(pdfCanvas, pageSize);
@@ -87,8 +96,8 @@ public class PdfHeaderFooterEventHandler implements IEventHandler {
                 .setFontColor(PdfTheme.TEXT_SECONDARY);
         canvas.showTextAligned(footerLeft, marginHorizontal, footerY, TextAlignment.LEFT);
 
-        // 4. Pied de page droit : Page X
-        Paragraph footerRight = new Paragraph("Page " + pageNumber)
+        // 4. Pied de page droit : Page X / Y
+        Paragraph footerRight = new Paragraph("Page " + pageNumber + " / " + totalPages)
                 .setFontSize(7)
                 .setFontColor(PdfTheme.TEXT_SECONDARY);
         canvas.showTextAligned(footerRight, pageSize.getWidth() - marginHorizontal, footerY, TextAlignment.RIGHT);
