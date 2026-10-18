@@ -1,5 +1,6 @@
 package com.careertrack.common.pdf;
 
+import com.careertrack.common.exception.BadRequestException;
 import com.careertrack.common.pdf.template.AnnualEvaluationPdfData;
 import com.careertrack.common.pdf.template.TrainingCertificatePdfData;
 import com.careertrack.modules.employee.entity.Contract;
@@ -17,9 +18,10 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,17 +35,37 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PdfGeneratorService {
 
     private final CompanySettingRepository companySettingRepository;
+    private final Environment environment;
 
-    public PdfGeneratorService() {
-        this.companySettingRepository = null;
+    @Value("${careertrack.company-name:Teranga Tech PME SARL (démo)}")
+    private String defaultCompanyName = "Teranga Tech PME SARL (démo)";
+
+    @Autowired
+    public PdfGeneratorService(CompanySettingRepository companySettingRepository, Environment environment) {
+        this.companySettingRepository = companySettingRepository;
+        this.environment = environment;
     }
 
-    @Value("${careertrack.company-name:Entreprise de démonstration (fictive)}")
-    private String defaultCompanyName = "Entreprise de démonstration (fictive)";
+    public PdfGeneratorService(CompanySettingRepository companySettingRepository) {
+        this(companySettingRepository, null);
+    }
+
+    public PdfGeneratorService() {
+        this(null, null);
+    }
+
+    private boolean isProdProfile() {
+        if (environment == null) return false;
+        for (String profile : environment.getActiveProfiles()) {
+            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private String getSetting(String key, String fallback) {
         if (companySettingRepository == null) return fallback;
@@ -58,8 +80,16 @@ public class PdfGeneratorService {
     }
 
     private String getCompanyName() {
-        // Repli clairement fictif, réservé au dev / à la démo (COMPANY_NAME absent).
-        return getSetting("COMPANY_NAME", defaultCompanyName);
+        String companyName = getSetting("COMPANY_NAME", null);
+        if (companyName != null && !companyName.isBlank()) {
+            return companyName;
+        }
+        // En profil prod : aucun nom inventé. Une erreur claire en français exige la configuration des paramètres.
+        if (isProdProfile() || (defaultCompanyName != null && defaultCompanyName.isBlank())) {
+            throw new BadRequestException("Les informations de l'entreprise (raison sociale) doivent être renseignées dans les paramètres avant de générer un document officiel.");
+        }
+        // En dev / démo uniquement : nom de repli fictif pour le confort de test.
+        return defaultCompanyName;
     }
 
     private String getCompanyCity() {

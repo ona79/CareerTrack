@@ -37,6 +37,7 @@ springdoc:
 careertrack:
   jwt:
     secret: ${JWT_SECRET}
+  company-name: ""
 
 logging:
   level:

@@ -272,7 +272,7 @@ class PdfGenerationTest {
                 .grossSalary(new BigDecimal("450000")).build();
 
         String cert = extractText(service.generateWorkCertificate(emp, c));
-        assertThat(cert).contains("(fictive)");
+        assertThat(cert).contains("Teranga Tech PME SARL");
         assertThat(cert).doesNotContain("Siège");
         assertThat(cert).doesNotContain("NINEA");
         assertThat(cert).doesNotContain("R.C.C.M");
@@ -282,6 +282,53 @@ class PdfGenerationTest {
         String contract = extractText(service.generateEmploymentContract(emp, c));
         assertThat(contract).contains("450\u00A0000\u00A0FCFA");
         assertThat(contract).doesNotContain("Article 4");
+    }
+
+    @Test
+    @DisplayName("En profil prod : lève une BadRequestException claire si COMPANY_NAME n'est pas configuré")
+    void shouldThrowBadRequestInProdIfCompanyNameMissing() {
+        CompanySettingRepository emptyRepo = Mockito.mock(CompanySettingRepository.class);
+        when(emptyRepo.findBySettingKey(Mockito.anyString())).thenReturn(Optional.empty());
+        org.springframework.core.env.Environment prodEnv = Mockito.mock(org.springframework.core.env.Environment.class);
+        when(prodEnv.getActiveProfiles()).thenReturn(new String[]{"prod"});
+
+        PdfGeneratorService prodService = new PdfGeneratorService(emptyRepo, prodEnv);
+
+        Employee emp = Employee.builder().employeeNumber("EMP-020").firstName("Modou").lastName("Ndiaye")
+                .hireDate(LocalDate.of(2024, 2, 1)).build();
+        Contract c = Contract.builder().contractType(ContractType.CDI).startDate(LocalDate.of(2024, 2, 1)).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> prodService.generateWorkCertificate(emp, c))
+                .isInstanceOf(com.careertrack.common.exception.BadRequestException.class)
+                .hasMessageContaining("Les informations de l'entreprise (raison sociale) doivent être renseignées dans les paramètres");
+    }
+
+    @Test
+    @DisplayName("En profil prod : génère avec la raison sociale configurée et sans nom/ville inventés si le reste est vide")
+    void shouldGenerateInProdWithConfiguredNameAndNoInventedFields() throws IOException {
+        CompanySettingRepository repo = Mockito.mock(CompanySettingRepository.class);
+        when(repo.findBySettingKey("COMPANY_NAME"))
+                .thenReturn(Optional.of(CompanySetting.builder().settingKey("COMPANY_NAME").settingValue("Cabinet Sénégal Conseil SARL").build()));
+        when(repo.findBySettingKey(Mockito.argThat(k -> !"COMPANY_NAME".equals(k)))).thenReturn(Optional.empty());
+
+        org.springframework.core.env.Environment prodEnv = Mockito.mock(org.springframework.core.env.Environment.class);
+        when(prodEnv.getActiveProfiles()).thenReturn(new String[]{"prod"});
+
+        PdfGeneratorService prodService = new PdfGeneratorService(repo, prodEnv);
+
+        Employee emp = Employee.builder().employeeNumber("EMP-021").firstName("Fatou").lastName("Diop")
+                .hireDate(LocalDate.of(2024, 3, 1)).build();
+        Contract c = Contract.builder().contractType(ContractType.CDI).startDate(LocalDate.of(2024, 3, 1))
+                .grossSalary(new BigDecimal("500000")).build();
+
+        String cert = extractText(prodService.generateWorkCertificate(emp, c));
+        assertThat(cert).contains("CABINET SÉNÉGAL CONSEIL SARL");
+        assertThat(cert).doesNotContain("Teranga");
+        assertThat(cert).doesNotContain("Siège");
+        assertThat(cert).doesNotContain("NINEA");
+        assertThat(cert).doesNotContain("R.C.C.M");
+        assertThat(cert).doesNotContain("Fait à");
+        assertThat(cert).contains("Fait le ");
     }
 
     @Test

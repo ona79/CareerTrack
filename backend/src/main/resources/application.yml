@@ -40,7 +40,7 @@ careertrack:
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
   currency: ${CAREERTRACK_CURRENCY:XOF}
-  company-name: "Sénégal Digital Solutions PME"
+  company-name: ${CAREERTRACK_COMPANY_NAME:Teranga Tech PME SARL (démo)}
   mail:
     from: ${MAIL_FROM:no-reply@careertrack.sn}
 
