@@ -11,11 +11,11 @@ Chaque membre de l'équipe prend en charge un module complet de bout en bout (Ba
 
 | Développeur | Domaine / Module | Packages Backend | Écrans Frontend | Dépendances / Tiers |
 | :--- | :--- | :--- | :--- | :--- |
-| **Dev 1 (Lead)** | **Socle, Auth & Employés** | `common.*`, `modules.auth.*`, `modules.employee.*` | `/login`, `/employees`, Dashboard global | Spring Security, JWT, BCrypt, Auditing |
-| **Dev 2** | **Congés & Présences** | `modules.leave.*` | `/leaves` (demandes, soldes, approbation) | Règle 2j ouvrables/mois, calendrier |
-| **Dev 3** | **Recrutement & Candidats** | `modules.recruitment.*`, `modules.notification.*` | `/recruitment` (Kanban, offres, entretiens) | Mail JavaMailSender, dnd-kit Kanban |
-| **Dev 4** | **Évaluations & Formations** | `modules.evaluation.*`, `modules.training.*` | `/evaluations`, `/trainings` | Notations objectifs, catalogues formations |
-| **Dev 5** | **Paie, Documents & Organigramme** | `modules.payroll.*`, `modules.document.*`, `modules.orgchart.*` | `/payroll`, `/orgchart` | iTextPDF (bulletins, attestations), cotisations IPRES/CSS |
+| **Ibrahima DIALLO (Lead)** | **Socle, Auth & Employés** | `common.*`, `modules.auth.*`, `modules.employee.*` | `/login`, `/employees`, Dashboard global | Spring Security, JWT, BCrypt, Auditing |
+| **Eric Joel** | **Congés & Présences** | `modules.leave.*` | `/leaves` (demandes, soldes, approbation) | Règle 2j ouvrables/mois, calendrier |
+| **Assete fall** | **Recrutement & Candidats** | `modules.recruitment.*`, `modules.notification.*` | `/recruitment` (Kanban, offres, entretiens) | Mail JavaMailSender, dnd-kit Kanban |
+| **Aminata touré** | **Évaluations & Formations** | `modules.evaluation.*`, `modules.training.*` | `/evaluations`, `/trainings` | Notations objectifs, catalogues formations |
+| **Sambay** | **Paie, Documents & Organigramme** | `modules.payroll.*`, `modules.document.*`, `modules.orgchart.*` | `/payroll`, `/orgchart` | iTextPDF (bulletins, attestations), cotisations IPRES/CSS |
 
 ---
 
