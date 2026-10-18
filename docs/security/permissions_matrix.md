@@ -36,6 +36,10 @@
 | **Documents RH** | `GET /api/v1/documents/attestation/{id}` | ✅ | ⚠️ Subordonné | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessWorkCertificate(#id)` (Direction exclue de tout document nominatif) |
 | **Documents RH** | `GET /api/v1/documents/payslip/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessPayslip(#id)` (Direction exclue) |
 | **Documents RH** | `GET /api/v1/documents/contract/{id}` | ✅ | ⚠️ Soi-même | ⚠️ Soi-même | ❌ | `@documentSecurity.canAccessContract(#id)` (Direction exclue) |
+| **Documents Collaborateur** | `POST /api/v1/documents` | ✅ | ❌ | ⚠️ Soi-même (hors CONTRAT) | ❌ | `@documentSecurity.canUploadDocument(#employeeId, #type)` (DRH tous types ; EMPLOYE CNI, DIPLOME, AUTRE pour lui-même uniquement ; CONTRAT réservé DRH) |
+| **Documents Collaborateur** | `GET /api/v1/documents/employee/{id}` | ✅ | ❌ | ⚠️ Soi-même | ❌ | `@documentSecurity.canListEmployeeDocuments(#id)` (DRH tous ; EMPLOYE ses documents ; Manager et Direction exclus) |
+| **Documents Collaborateur** | `GET /api/v1/documents/{id}/download` | ✅ | ❌ | ⚠️ Soi-même | ❌ | `@documentSecurity.canDownloadDocument(#id)` (DRH tous ; EMPLOYE ses documents ; Manager et Direction exclus) |
+| **Documents Collaborateur** | `DELETE /api/v1/documents/{id}` | ✅ | ❌ | ⚠️ Soi-même (déposé par lui) | ❌ | `@documentSecurity.canDeleteDocument(#id)` (DRH tous ; EMPLOYE uniquement les documents qu'il a lui-même déposés) |
 | **Dossiers Employés** | `GET /api/v1/employees` | ✅ | ✅ | ❌ | ❌ | `hasAnyRole('DRH', 'MANAGER')` (Direction exclue des listes nominatives) |
 | **Dossiers Employés** | `GET /api/v1/employees/{id}` | ✅ | ⚠️ Subordonné/Soi | ⚠️ Soi-même | ❌ | `@employeeSecurity.canAccessEmployee(#id)` (Dossier nominatif privé) |
 | **Dossiers Employés** | `POST /api/v1/employees` | ✅ | ❌ | ❌ | ❌ | `hasRole('DRH')` |

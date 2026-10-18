@@ -1,6 +1,9 @@
 package com.careertrack.modules.document.controller;
 
+import com.careertrack.common.payload.ApiResponse;
 import com.careertrack.common.pdf.PdfGeneratorService;
+import com.careertrack.modules.document.dto.DocumentResponseDto;
+import com.careertrack.modules.document.service.EmployeeDocumentService;
 import com.careertrack.modules.employee.entity.*;
 import com.careertrack.modules.payroll.entity.Payslip;
 import com.careertrack.modules.payroll.entity.PayslipLine;
@@ -9,16 +12,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -26,12 +30,70 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
-@Tag(name = "Documents & PDF", description = "Génération de documents PDF officiels (Attestations, Bulletins de paie, Contrats)")
+@Tag(name = "Documents & PDF", description = "Gestion documentaire (envoi, téléchargement, suppression) et génération de documents PDF officiels")
 @SecurityRequirement(name = "BearerAuth")
 public class DocumentController {
 
     private final PdfGeneratorService pdfGeneratorService;
     private final com.careertrack.modules.document.service.DocumentService documentService;
+    private final EmployeeDocumentService employeeDocumentService;
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@documentSecurity.canUploadDocument(#employeeId, #type)")
+    @Operation(summary = "Téléverser un document pour un employé", description = "Accessible à la DRH (tous types) et à l'employé pour lui-même (CNI, DIPLOME, AUTRE - hors CONTRAT)")
+    public ResponseEntity<ApiResponse<DocumentResponseDto>> uploadDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("employeeId") UUID employeeId,
+            @RequestParam("type") DocumentType type,
+            @RequestParam("title") String title) {
+
+        DocumentResponseDto response = employeeDocumentService.uploadDocument(file, employeeId, type, title);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Document téléversé avec succès", response));
+    }
+
+    @GetMapping("/employee/{employeeId}")
+    @PreAuthorize("@documentSecurity.canListEmployeeDocuments(#employeeId)")
+    @Operation(summary = "Lister les documents d'un employé (métadonnées uniquement)", description = "Accessible à la DRH et à l'employé pour ses propres documents. Aucun contenu binaire renvoyé.")
+    public ResponseEntity<ApiResponse<List<DocumentResponseDto>>> getEmployeeDocuments(@PathVariable UUID employeeId) {
+        List<DocumentResponseDto> documents = employeeDocumentService.getDocumentsByEmployee(employeeId);
+        return ResponseEntity.ok(ApiResponse.success(documents));
+    }
+
+    @GetMapping("/{id}/download")
+    @PreAuthorize("@documentSecurity.canDownloadDocument(#id)")
+    @Operation(summary = "Télécharger un document téléversé", description = "Accessible à la DRH et au collaborateur concerné")
+    public ResponseEntity<byte[]> downloadDocument(@PathVariable UUID id) {
+        EmployeeDocument metadata = employeeDocumentService.getDocumentMetadata(id);
+        byte[] data = employeeDocumentService.downloadDocument(id);
+
+        String disposition = ContentDisposition.attachment()
+                .filename(metadata.getFileName(), StandardCharsets.UTF_8)
+                .build()
+                .toString();
+
+        MediaType contentType = MediaType.APPLICATION_OCTET_STREAM;
+        if (metadata.getMimeType() != null && !metadata.getMimeType().isBlank()) {
+            try {
+                contentType = MediaType.parseMediaType(metadata.getMimeType());
+            } catch (Exception ignored) {
+            }
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
+                .header("X-Content-Type-Options", "nosniff")
+                .contentType(contentType)
+                .body(data);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@documentSecurity.canDeleteDocument(#id)")
+    @Operation(summary = "Supprimer un document téléversé", description = "Accessible à la DRH ou à l'employé pour les documents qu'il a lui-même téléversés")
+    public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable UUID id) {
+        employeeDocumentService.deleteDocument(id);
+        return ResponseEntity.ok(ApiResponse.success("Document supprimé avec succès", null));
+    }
 
     @GetMapping("/attestation/{employeeId}")
     @PreAuthorize("@documentSecurity.canAccessWorkCertificate(#employeeId)")

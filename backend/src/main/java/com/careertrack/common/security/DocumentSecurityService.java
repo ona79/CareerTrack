@@ -11,6 +11,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.careertrack.modules.document.repository.EmployeeDocumentRepository;
+import com.careertrack.modules.employee.entity.DocumentType;
+import com.careertrack.modules.employee.entity.EmployeeDocument;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +25,7 @@ public class DocumentSecurityService {
 
     private final EmployeeRepository employeeRepository;
     private final PayslipRepository payslipRepository;
+    private final EmployeeDocumentRepository employeeDocumentRepository;
 
     private Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
@@ -133,4 +138,103 @@ public class DocumentSecurityService {
         Optional<Employee> currentEmpOpt = getCurrentEmployee();
         return currentEmpOpt.isPresent() && currentEmpOpt.get().getId().equals(employeeId);
     }
+
+    /**
+     * Envoi d'un document collaborateur (CNI, DIPLOME, AUTRE) :
+     * - DRH : Oui pour n'importe quel employé et tout type de document
+     * - DIRECTION : Non
+     * - MANAGER : Non (sauf si pour lui-même en tant qu'employé hors contrat)
+     * - EMPLOYE : Uniquement pour lui-même ET PAS de type CONTRAT (réservé DRH)
+     */
+    public boolean canUploadDocument(UUID employeeId, DocumentType type) {
+        if (hasRole("DRH")) {
+            return true;
+        }
+        if (hasRole("DIRECTION")) {
+            return false;
+        }
+
+        // Un collaborateur (ou manager pour lui-même) ne peut pas téléverser de contrat
+        if (type == DocumentType.CONTRAT) {
+            return false;
+        }
+
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        return currentEmpOpt.isPresent() && currentEmpOpt.get().getId().equals(employeeId);
+    }
+
+    /**
+     * Liste des documents d'un collaborateur (métadonnées) :
+     * - DRH : Oui (tous les collaborateurs)
+     * - DIRECTION : Non (aucun document nominatif)
+     * - MANAGER : Non (aucun accès aux pièces d'identité ni aux diplômes de ses subordonnés)
+     * - EMPLOYE : Uniquement ses propres documents
+     */
+    public boolean canListEmployeeDocuments(UUID employeeId) {
+        if (hasRole("DRH")) {
+            return true;
+        }
+        if (hasRole("DIRECTION")) {
+            return false;
+        }
+
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        return currentEmpOpt.isPresent() && currentEmpOpt.get().getId().equals(employeeId);
+    }
+
+    /**
+     * Téléchargement d'un document :
+     * - DRH : Oui (tout document)
+     * - DIRECTION : Non
+     * - MANAGER : Non (aucun accès aux pièces d'identité / diplômes des subordonnés)
+     * - EMPLOYE : Uniquement ses propres documents
+     */
+    public boolean canDownloadDocument(UUID documentId) {
+        if (hasRole("DRH")) {
+            return true;
+        }
+        if (hasRole("DIRECTION")) {
+            return false;
+        }
+
+        Optional<EmployeeDocument> docOpt = employeeDocumentRepository.findById(documentId);
+        if (docOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Document introuvable avec l'identifiant : " + documentId);
+        }
+
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        return currentEmpOpt.isPresent() && docOpt.get().getEmployee().getId().equals(currentEmpOpt.get().getId());
+    }
+
+    /**
+     * Suppression d'un document :
+     * - DRH : Oui (tout document)
+     * - DIRECTION : Non
+     * - MANAGER : Non
+     * - EMPLOYE : Uniquement ses propres documents qu'il a lui-même déposés (uploaded_by)
+     */
+    public boolean canDeleteDocument(UUID documentId) {
+        if (hasRole("DRH")) {
+            return true;
+        }
+        if (hasRole("DIRECTION")) {
+            return false;
+        }
+
+        Optional<EmployeeDocument> docOpt = employeeDocumentRepository.findById(documentId);
+        if (docOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Document introuvable avec l'identifiant : " + documentId);
+        }
+
+        EmployeeDocument doc = docOpt.get();
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        if (currentEmpOpt.isEmpty() || !doc.getEmployee().getId().equals(currentEmpOpt.get().getId())) {
+            return false;
+        }
+
+        // Vérification fine : le document doit avoir été téléversé par l'utilisateur connecté
+        UserPrincipal currentUser = getCurrentUser();
+        return currentUser != null && doc.getUploadedBy() != null && doc.getUploadedBy().getId().equals(currentUser.getId());
+    }
 }
+

@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -37,8 +38,11 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -85,6 +89,12 @@ class DocumentControllerIntegrationTest {
     @Autowired
     private com.careertrack.modules.leave.repository.LeaveBalanceRepository leaveBalanceRepository;
 
+    @Autowired
+    private com.careertrack.modules.document.repository.EmployeeDocumentRepository employeeDocumentRepository;
+
+    @Autowired
+    private com.careertrack.modules.document.repository.EmployeeDocumentContentRepository employeeDocumentContentRepository;
+
     private String drhToken;
     private String employee1Token;
     private String employee2Token;
@@ -98,6 +108,8 @@ class DocumentControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        employeeDocumentContentRepository.deleteAll();
+        employeeDocumentRepository.deleteAll();
         evaluationRepository.deleteAll();
         evaluationCampaignRepository.deleteAll();
         leaveRequestRepository.deleteAll();
@@ -452,4 +464,329 @@ class DocumentControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee2Token))
                 .andExpect(status().isForbidden());
     }
+
+    // =========================================================================
+    // TESTS DU LOT 1 - ÉTAPE 2 : DOCUMENTS (UPLOAD, STOCKAGE, TÉLÉCHARGEMENT)
+    // =========================================================================
+
+    private static final byte[] VALID_PDF_BYTES = "%PDF-1.4 test document content for testing".getBytes();
+    private static final byte[] VALID_PNG_BYTES = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00};
+
+    @Test
+    @DisplayName("DRH peut téléverser un document pour un employé (201 Created + métadonnées sans octets)")
+    void drhShouldUploadDocumentSuccessfully() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni_officielle.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult result = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Carte Nationale d'Identité")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.title").value("Carte Nationale d'Identité"))
+                .andExpect(jsonPath("$.data.documentType").value("CNI"))
+                .andExpect(jsonPath("$.data.fileName").value("cni_officielle.pdf"))
+                .andExpect(jsonPath("$.data.mimeType").value("application/pdf"))
+                .andExpect(jsonPath("$.data.downloadUrl").exists())
+                .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        // Prouver que la réponse ne contient pas le contenu binaire
+        assertThat(responseBody).doesNotContain("\"fileData\"");
+        assertThat(responseBody).doesNotContain("\"data\":[");
+    }
+
+    @Test
+    @DisplayName("Rejette le téléversement si le champ file est absent (400 Bad Request)")
+    void shouldRejectUploadWithMissingFile() throws Exception {
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Titre sans fichier")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Rejette le téléversement d'un fichier trop gros (> 5 Mo) (413 Payload Too Large ou 400)")
+    void shouldRejectUploadWithFileSizeOver5Mb() throws Exception {
+        byte[] largeBytes = new byte[5 * 1024 * 1024 + 1024]; // > 5 Mo
+        System.arraycopy(VALID_PDF_BYTES, 0, largeBytes, 0, VALID_PDF_BYTES.length);
+        MockMultipartFile largeFile = new MockMultipartFile(
+                "file", "grand_fichier.pdf", "application/pdf", largeBytes);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(largeFile)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "AUTRE")
+                        .param("title", "Gros document")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().is(org.hamcrest.Matchers.isOneOf(413, 400)));
+    }
+
+    @Test
+    @DisplayName("Rejette un faux PDF qui est du texte brut (400 Bad Request)")
+    void shouldRejectUploadWithFakePdf() throws Exception {
+        MockMultipartFile fakeFile = new MockMultipartFile(
+                "file", "faux.pdf", "application/pdf", "Ceci est du texte pur et non un PDF".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(fakeFile)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Faux PDF")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Format de fichier non supporté")));
+    }
+
+    @Test
+    @DisplayName("Rejette un PNG renommé en .pdf (incohérence signature/extension) (400 Bad Request)")
+    void shouldRejectUploadWithPngRenamedToPdf() throws Exception {
+        MockMultipartFile evilFile = new MockMultipartFile(
+                "file", "image_renommee.pdf", "application/pdf", VALID_PNG_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(evilFile)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Image PNG déguisée en PDF")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("ne correspond pas à son format réel (PNG détecté)")));
+    }
+
+    @Test
+    @DisplayName("Employé peut téléverser un DIPLOME ou une CNI pour lui-même (201 Created)")
+    void employeeShouldUploadForHimself() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "diplome_master.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "DIPLOME")
+                        .param("title", "Diplôme de Master 2")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.documentType").value("DIPLOME"));
+    }
+
+    @Test
+    @DisplayName("Employé NE PEUT PAS téléverser de type CONTRAT (réservé à la DRH) (403 Forbidden)")
+    void employeeShouldNotUploadContract() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "mon_contrat.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CONTRAT")
+                        .param("title", "Tentative de contrat par employé")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Employé NE PEUT PAS téléverser un document pour un autre employé (403 Forbidden)")
+    void employeeShouldNotUploadForOtherEmployee() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee2.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Tentative cross-employee")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Employé peut lister ses propres documents sans contenu binaire (200 OK)")
+    void employeeShouldListHisOwnDocumentsWithoutBinaryContent() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Ma CNI")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isCreated());
+
+        MvcResult result = mockMvc.perform(get("/api/v1/documents/employee/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].title").value("Ma CNI"))
+                .andExpect(jsonPath("$.data[0].downloadUrl").exists())
+                .andReturn();
+
+        String json = result.getResponse().getContentAsString();
+        // Preuve : aucun octet ni champ binaire dans la liste
+        assertThat(json).doesNotContain("\"fileData\"");
+        assertThat(json).contains("\"title\":\"Ma CNI\"");
+        assertThat(json).contains("\"downloadUrl\"");
+    }
+
+    @Test
+    @DisplayName("Employé NE PEUT PAS lister les documents d'un autre employé (403 Forbidden)")
+    void employeeShouldNotListOtherEmployeeDocuments() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/employee/" + employee2.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager NE PEUT PAS lister les documents de ses subordonnés (403 Forbidden)")
+    void managerShouldNotListEmployeeDocuments() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/employee/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Direction NE PEUT PAS lister les documents individuels (403 Forbidden)")
+    void directionShouldNotListEmployeeDocuments() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/employee/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + directionToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Employé peut télécharger son propre document avec en-têtes sécurisés (200 OK + nosniff)")
+    void employeeShouldDownloadHisOwnDocument() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "Diplôme_Licence.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "DIPLOME")
+                        .param("title", "Diplôme Licence Pro")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String downloadUrl = com.jayway.jsonpath.JsonPath.read(uploadRes.getResponse().getContentAsString(), "$.data.downloadUrl");
+
+        mockMvc.perform(get(downloadUrl)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.containsString("filename*="),
+                        org.hamcrest.Matchers.containsString("Dipl%C3%B4me_Licence.pdf")
+                )))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Employé NE PEUT PAS télécharger le document d'un autre (403 Forbidden)")
+    void employeeShouldNotDownloadOtherEmployeeDocument() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni_emp1.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "CNI confidentielle")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String downloadUrl = com.jayway.jsonpath.JsonPath.read(uploadRes.getResponse().getContentAsString(), "$.data.downloadUrl");
+
+        mockMvc.perform(get(downloadUrl)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee2Token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Téléchargement d'un document inexistant retourne 404 Not Found")
+    void shouldReturn404WhenDownloadingNonExistentDocument() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/" + UUID.randomUUID() + "/download")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Identifiant invalide (non-UUID) retourne 400 Bad Request")
+    void shouldReturn400WhenInvalidUuidPassed() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/not-a-valid-uuid/download")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Employé peut supprimer un document qu'il a lui-même téléversé (200 OK)")
+    void employeeShouldDeleteHisOwnUploadedDocument() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "mon_attestation.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "AUTRE")
+                        .param("title", "Autre pièce personnelle")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String docId = com.jayway.jsonpath.JsonPath.read(uploadRes.getResponse().getContentAsString(), "$.data.id");
+
+        mockMvc.perform(delete("/api/v1/documents/" + docId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isOk());
+
+        // Le téléchargement doit désormais renvoyer 404
+        mockMvc.perform(get("/api/v1/documents/" + docId + "/download")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Employé NE PEUT PAS supprimer un document déposé par la DRH (403 Forbidden)")
+    void employeeShouldNotDeleteDocumentUploadedByDrh() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "contrat_drh.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CONTRAT")
+                        .param("title", "Contrat de travail déposé par la DRH")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String docId = com.jayway.jsonpath.JsonPath.read(uploadRes.getResponse().getContentAsString(), "$.data.id");
+
+        // L'employé essaie de supprimer le document déposé par la DRH -> 403 Forbidden
+        mockMvc.perform(delete("/api/v1/documents/" + docId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Téléversement pour un employé inexistant retourne 404 Not Found")
+    void shouldRejectUploadForNonExistentEmployee() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", UUID.randomUUID().toString())
+                        .param("type", "CNI")
+                        .param("title", "CNI employé inconnu")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isNotFound());
+    }
 }
+
