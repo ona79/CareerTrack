@@ -90,6 +90,12 @@ class SecurityAccessIntegrationTest {
     @Autowired
     private EvaluationRepository evaluationRepository;
 
+    @Autowired
+    private com.careertrack.modules.document.repository.EmployeeDocumentRepository employeeDocumentRepository;
+
+    @Autowired
+    private com.careertrack.modules.document.repository.EmployeeDocumentContentRepository employeeDocumentContentRepository;
+
     private String drhToken;
     private String mgrToken;
     private String empToken;
@@ -105,6 +111,8 @@ class SecurityAccessIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        employeeDocumentContentRepository.deleteAll();
+        employeeDocumentRepository.deleteAll();
         evaluationRepository.deleteAll();
         campaignRepository.deleteAll();
         leaveRequestRepository.deleteAll();
