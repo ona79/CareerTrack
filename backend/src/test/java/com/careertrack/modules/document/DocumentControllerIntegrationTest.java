@@ -73,6 +73,18 @@ class DocumentControllerIntegrationTest {
     @Autowired
     private PayslipRepository payslipRepository;
 
+    @Autowired
+    private com.careertrack.modules.evaluation.repository.EvaluationRepository evaluationRepository;
+
+    @Autowired
+    private com.careertrack.modules.evaluation.repository.EvaluationCampaignRepository evaluationCampaignRepository;
+
+    @Autowired
+    private com.careertrack.modules.leave.repository.LeaveRequestRepository leaveRequestRepository;
+
+    @Autowired
+    private com.careertrack.modules.leave.repository.LeaveBalanceRepository leaveBalanceRepository;
+
     private String drhToken;
     private String employee1Token;
     private String employee2Token;
@@ -86,9 +98,15 @@ class DocumentControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        evaluationRepository.deleteAll();
+        evaluationCampaignRepository.deleteAll();
+        leaveRequestRepository.deleteAll();
+        leaveBalanceRepository.deleteAll();
         payslipRepository.deleteAll();
         contractRepository.deleteAll();
         employeeRepository.deleteAll();
+        positionRepository.deleteAll();
+        departmentRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
 
@@ -400,6 +418,38 @@ class DocumentControllerIntegrationTest {
     void managerShouldNotDownloadSubordinateContract() throws Exception {
         mockMvc.perform(get("/api/v1/documents/contract/" + employee1.getId())
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Un employé NE PEUT PAS télécharger le contrat de travail d'un autre (403 Forbidden)")
+    void employeeShouldNotDownloadOtherEmployeeContract() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/contract/" + employee2.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("La Direction ne peut pas télécharger de fiche de paie (403 Forbidden)")
+    void directionShouldNotDownloadPayslip() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/payslip/" + employee1Payslip.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + directionToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("La Direction ne peut pas télécharger de contrat de travail (403 Forbidden)")
+    void directionShouldNotDownloadContract() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/contract/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + directionToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager NE PEUT PAS télécharger la fiche de paie d'un employé hors de son équipe (403 Forbidden)")
+    void managerShouldNotDownloadNonSubordinatePayslip() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/payslip/" + employee1Payslip.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee2Token))
                 .andExpect(status().isForbidden());
     }
 }

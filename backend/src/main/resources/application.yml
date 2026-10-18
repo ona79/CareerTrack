@@ -28,10 +28,12 @@ spring:
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: ${SWAGGER_ENABLED:true}
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
     tagsSorter: alpha
+    enabled: ${SWAGGER_ENABLED:true}
 
 # Paramètres Métier et Réglementaires CareerTrack (Configurables)
 careertrack:

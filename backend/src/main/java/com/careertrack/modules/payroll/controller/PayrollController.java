@@ -23,22 +23,22 @@ public class PayrollController {
     private final PayrollService payrollService;
 
     @GetMapping("/payslips")
-    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
-    @Operation(summary = "Lister les bulletins de paie par période (YYYY-MM)", description = "Accessible à la DRH et Direction")
+    @PreAuthorize("hasRole('DRH')")
+    @Operation(summary = "Lister les bulletins de paie par période (YYYY-MM)", description = "Accessible à la DRH uniquement")
     public ResponseEntity<ApiResponse<List<PayslipResponseDto>>> getPayslipsByPeriod(@RequestParam String period) {
         return ResponseEntity.ok(ApiResponse.success(payrollService.getPayslipsByPeriod(period)));
     }
 
     @GetMapping("/payslips/employee/{employeeId}")
-    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION', 'EMPLOYE')")
-    @Operation(summary = "Lister l'historique des bulletins d'un collaborateur", description = "Accessible au collaborateur lui-même, à la DRH et Direction")
+    @PreAuthorize("@payrollSecurity.canAccessEmployeePayslips(#employeeId)")
+    @Operation(summary = "Lister l'historique des bulletins d'un collaborateur", description = "Accessible au collaborateur lui-même et à la DRH")
     public ResponseEntity<ApiResponse<List<PayslipResponseDto>>> getPayslipsByEmployee(@PathVariable UUID employeeId) {
         return ResponseEntity.ok(ApiResponse.success(payrollService.getPayslipsByEmployee(employeeId)));
     }
 
     @GetMapping("/payslips/{id}")
-    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION', 'EMPLOYE')")
-    @Operation(summary = "Obtenir le détail d'un bulletin de paie avec toutes les lignes de déduction", description = "Accessible aux rôles autorisés")
+    @PreAuthorize("@payrollSecurity.canAccessPayslip(#id)")
+    @Operation(summary = "Obtenir le détail d'un bulletin de paie avec toutes les lignes de déduction", description = "Accessible au collaborateur concerné et à la DRH")
     public ResponseEntity<ApiResponse<PayslipResponseDto>> getPayslipById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(payrollService.getPayslipById(id)));
     }

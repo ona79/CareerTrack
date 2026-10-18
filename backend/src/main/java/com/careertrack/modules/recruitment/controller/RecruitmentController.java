@@ -43,7 +43,8 @@ public class RecruitmentController {
     }
 
     @GetMapping("/offers")
-    @Operation(summary = "Lister les offres d'emploi publiées", description = "Accessible publiquement ou en interne")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Lister les offres d'emploi publiées", description = "Accessible aux utilisateurs authentifiés")
     public ResponseEntity<ApiResponse<List<JobOffer>>> getOffers() {
         return ResponseEntity.ok(ApiResponse.success(recruitmentService.getPublishedOffers()));
     }

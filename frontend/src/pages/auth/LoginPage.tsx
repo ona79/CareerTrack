@@ -4,8 +4,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('drh.ndiaye');
-  const [password, setPassword] = useState('password123');
+  const [username, setUsername] = useState(import.meta.env.DEV ? 'drh.ndiaye' : '');
+  const [password, setPassword] = useState(import.meta.env.DEV ? 'password123' : '');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,7 +89,7 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="form-control has-icon-left text-sm"
                   style={{ paddingLeft: '2.75rem' }}
-                  placeholder="Ex : drh.ndiaye"
+                  placeholder="Ex : prenom.nom"
                 />
               </div>
             </div>

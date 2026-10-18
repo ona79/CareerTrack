@@ -28,6 +28,12 @@ spring:
       - classpath:db/migration
       - classpath:db/dev-migration
 
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+
 logging:
   level:
     root: INFO

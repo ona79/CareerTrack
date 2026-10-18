@@ -24,14 +24,15 @@ interface NavItemConfig {
 
 const navItems: NavItemConfig[] = [
   { label: 'Tableau de bord', to: '/dashboard', icon: LayoutDashboard },
-  { label: 'Employés & Contrats', to: '/employees', icon: Users, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION'] },
+  { label: 'Employés & Contrats', to: '/employees', icon: Users, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Congés & Absences', to: '/leaves', icon: Calendar },
-  { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_DIRECTION'] },
+  { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH'] },
   { label: 'Recrutement (Kanban)', to: '/recruitment', icon: Briefcase, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
-  { label: 'Promotions & Carrières', to: '/promotions', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION'] },
+  { label: 'Évaluations Annuelles', to: '/evaluations', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
+  { label: 'Promotions & Carrières', to: '/promotions', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Plans de Formation', to: '/trainings', icon: GraduationCap },
   { label: 'Organigramme', to: '/orgchart', icon: Network },
-  { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet },
+  { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
 ];
 
 import { X } from 'lucide-react';
