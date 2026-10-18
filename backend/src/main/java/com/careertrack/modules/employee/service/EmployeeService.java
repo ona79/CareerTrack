@@ -13,7 +13,7 @@ public interface EmployeeService {
     EmployeeResponseDto createEmployee(EmployeeCreateDto createDto);
     EmployeeResponseDto getEmployeeById(UUID id);
     EmployeeResponseDto getEmployeeByNumber(String employeeNumber);
-    PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable);
+    PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable, String search, UUID departmentId);
     List<EmployeeResponseDto> getEmployeesByDepartment(UUID departmentId);
     List<EmployeeResponseDto> getSubordinates(UUID managerId);
     EmployeeResponseDto updateEmployee(UUID id, EmployeeCreateDto updateDto);

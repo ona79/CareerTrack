@@ -12,10 +12,12 @@ import com.careertrack.modules.employee.entity.Position;
 import com.careertrack.modules.employee.mapper.EmployeeMapper;
 import com.careertrack.modules.employee.repository.DepartmentRepository;
 import com.careertrack.modules.employee.repository.EmployeeRepository;
+import com.careertrack.modules.employee.repository.EmployeeSpecifications;
 import com.careertrack.modules.employee.repository.PositionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,8 +85,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable) {
-        Page<Employee> page = employeeRepository.findAll(pageable);
+    public PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable, String search, UUID departmentId) {
+        Specification<Employee> spec = EmployeeSpecifications.withDetails()
+                .and(EmployeeSpecifications.inDepartment(departmentId))
+                .and(EmployeeSpecifications.matchesSearch(search));
+        Page<Employee> page = employeeRepository.findAll(spec, pageable);
         List<EmployeeSummaryDto> content = page.getContent().stream()
                 .map(this::toSummary)
                 .toList();

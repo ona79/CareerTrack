@@ -44,7 +44,9 @@ public class EmployeeController {
     public ResponseEntity<ApiResponse<PageResponse<EmployeeSummaryDto>>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "lastName") String sortBy
+            @RequestParam(defaultValue = "lastName") String sortBy,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) UUID departmentId
     ) {
         if (!SORTABLE_FIELDS.contains(sortBy)) {
             throw new BadRequestException("Tri non autorisé : " + sortBy);
@@ -52,8 +54,12 @@ public class EmployeeController {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
 
+        if (search != null && search.length() > 100) {
+            throw new BadRequestException("Recherche trop longue (100 caractères maximum)");
+        }
+
         PageResponse<EmployeeSummaryDto> response = employeeService.getAllEmployees(
-                PageRequest.of(safePage, safeSize, Sort.by(sortBy).ascending()));
+                PageRequest.of(safePage, safeSize, Sort.by(sortBy).ascending()), search, departmentId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
