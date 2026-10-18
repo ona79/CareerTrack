@@ -106,12 +106,4 @@ public class EmployeeController {
         employeeService.deleteEmployee(id);
         return ResponseEntity.ok(ApiResponse.success("Employé supprimé avec succès", null));
     }
-
-    @GetMapping("/department/{departmentId}")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
-    @Operation(summary = "Employés par département", description = "Retourne les employés affectés à un département donné (DRH et Managers)")
-    public ResponseEntity<ApiResponse<List<EmployeeResponseDto>>> getEmployeesByDepartment(@PathVariable UUID departmentId) {
-        List<EmployeeResponseDto> response = employeeService.getEmployeesByDepartment(departmentId);
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
 }
