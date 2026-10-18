@@ -8,6 +8,7 @@ import com.careertrack.modules.employee.dto.EmployeeResponseDto;
 import com.careertrack.modules.employee.dto.EmployeeSummaryDto;
 import com.careertrack.modules.employee.service.EmployeeService;
 import com.careertrack.common.security.EmployeeSecurityService;
+import com.careertrack.modules.employee.security.EmployeeListScope;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,7 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
     private final EmployeeSecurityService employeeSecurity;
+    private final EmployeeListScope employeeListScope;
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> SORTABLE_FIELDS =
@@ -59,7 +61,8 @@ public class EmployeeController {
         }
 
         PageResponse<EmployeeSummaryDto> response = employeeService.getAllEmployees(
-                PageRequest.of(safePage, safeSize, Sort.by(sortBy).ascending()), search, departmentId);
+                PageRequest.of(safePage, safeSize, Sort.by(sortBy).ascending()),
+                search, departmentId, employeeListScope.managerScopeOrNull());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

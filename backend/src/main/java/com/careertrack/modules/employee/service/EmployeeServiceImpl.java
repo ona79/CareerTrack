@@ -85,10 +85,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable, String search, UUID departmentId) {
+    public PageResponse<EmployeeSummaryDto> getAllEmployees(Pageable pageable, String search, UUID departmentId, UUID teamOfManagerId) {
         Specification<Employee> spec = EmployeeSpecifications.withDetails()
                 .and(EmployeeSpecifications.inDepartment(departmentId))
-                .and(EmployeeSpecifications.matchesSearch(search));
+                .and(EmployeeSpecifications.matchesSearch(search))
+                .and(EmployeeSpecifications.inTeamOf(teamOfManagerId));
         Page<Employee> page = employeeRepository.findAll(spec, pageable);
         List<EmployeeSummaryDto> content = page.getContent().stream()
                 .map(this::toSummary)

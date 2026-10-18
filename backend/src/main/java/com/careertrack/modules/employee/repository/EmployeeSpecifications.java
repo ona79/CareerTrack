@@ -44,4 +44,12 @@ public final class EmployeeSpecifications {
             );
         };
     }
+
+    public static Specification<Employee> inTeamOf(UUID managerEmployeeId) {
+        return (root, query, cb) -> managerEmployeeId == null
+                ? cb.conjunction()
+                : cb.or(
+                        cb.equal(root.get("id"), managerEmployeeId),
+                        cb.equal(root.get("manager").get("id"), managerEmployeeId));
+    }
 }
