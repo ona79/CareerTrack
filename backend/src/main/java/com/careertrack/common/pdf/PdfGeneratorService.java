@@ -8,6 +8,7 @@ import com.careertrack.modules.employee.entity.Employee;
 import com.careertrack.modules.employee.entity.EmployeeStatus;
 import com.careertrack.modules.payroll.entity.Payslip;
 import com.careertrack.modules.payroll.entity.PayslipLine;
+import com.careertrack.modules.payroll.entity.PayslipLineCategory;
 import com.careertrack.modules.payroll.entity.PayslipLineType;
 import com.careertrack.modules.payroll.entity.PayslipStatus;
 import com.careertrack.modules.setting.repository.CompanySettingRepository;
@@ -300,6 +301,9 @@ public class PdfGeneratorService {
         String empName = emp != null ? emp.getFullName() : "N/A";
         String empNumber = emp != null ? emp.getEmployeeNumber() : "N/A";
         String empPosition = (emp != null && emp.getPosition() != null) ? emp.getPosition().getTitle() : "N/A";
+        if (emp != null && emp.isCadre()) {
+            empPosition += " (Cadre)";
+        }
         String empDept = (emp != null && emp.getDepartment() != null) ? emp.getDepartment().getName() : "N/A";
         String paymentDateStr = (payslip != null && payslip.getPaymentDate() != null)
                 ? PdfFormatUtils.formatDate(payslip.getPaymentDate()) : "N/A";
@@ -318,9 +322,12 @@ public class PdfGeneratorService {
                         .setFontColor(PdfTheme.TEXT_DARK));
 
         String statusLabel = payslip != null ? payslipStatusLabel(payslip.getStatus()) : null;
+        String periodStr = payslip != null ? String.format("%02d/%04d", payslip.getPeriodMonth(), payslip.getPeriodYear()) : "N/A";
+
         Cell rightInfo = new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT)
-                .add(new Paragraph("Date de règlement : " + paymentDateStr + "\n" +
+                .add(new Paragraph("Période : " + periodStr + "\n" +
+                        "Date de règlement : " + paymentDateStr + "\n" +
                         "Devise : FCFA" +
                         (statusLabel != null ? "\nStatut : " + statusLabel : ""))
                         .setFont(builder.getFontRegular())
@@ -331,15 +338,16 @@ public class PdfGeneratorService {
         infoTable.addCell(rightInfo);
         builder.getDocument().add(infoTable);
 
-        // Tableau des Rubriques de paie réelles
-        Table linesTable = new Table(UnitValue.createPercentArray(new float[]{42, 20, 18, 20}))
+        // Tableau des Rubriques de paie réelles (5 colonnes)
+        Table linesTable = new Table(UnitValue.createPercentArray(new float[]{38, 16, 14, 16, 16}))
                 .useAllAvailableWidth()
                 .setMarginBottom(15);
 
         linesTable.addHeaderCell(createHeaderCell("Rubrique de paie", builder));
         linesTable.addHeaderCell(createHeaderCell("Base (FCFA)", builder));
-        linesTable.addHeaderCell(createHeaderCell("Taux appliqué", builder));
-        linesTable.addHeaderCell(createHeaderCell("Montant (FCFA)", builder));
+        linesTable.addHeaderCell(createHeaderCell("Taux", builder));
+        linesTable.addHeaderCell(createHeaderCell("Part Salariale", builder));
+        linesTable.addHeaderCell(createHeaderCell("Part Patronale", builder));
 
         List<PayslipLine> lines = (payslip != null && payslip.getLines() != null) ? payslip.getLines() : List.of();
         boolean alternate = false;
@@ -348,16 +356,24 @@ public class PdfGeneratorService {
             alternate = !alternate;
             String label = line.getLabel() != null ? line.getLabel() : "Rubrique";
             String baseStr = line.getBaseAmount() != null ? PdfFormatUtils.formatAmount(line.getBaseAmount()) : "-";
-            // Pas de taux pour le salaire de base (taux 100 % sans signification).
             boolean isBaseSalary = line.getLineType() == PayslipLineType.BASE_SALARY;
             String rateStr = !isBaseSalary && line.getRate() != null && line.getRate().compareTo(BigDecimal.ZERO) > 0
                     ? PdfFormatUtils.formatRate(line.getRate()) : "-";
-            String amountStr = line.getAmount() != null ? PdfFormatUtils.formatAmount(line.getAmount()) : "0";
+
+            String salarialAmountStr = "-";
+            String patronalAmountStr = "-";
+
+            if (line.getCategory() == PayslipLineCategory.COTISATION_PATRONALE) {
+                patronalAmountStr = line.getAmount() != null ? PdfFormatUtils.formatAmount(line.getAmount()) : "0";
+            } else {
+                salarialAmountStr = line.getAmount() != null ? PdfFormatUtils.formatAmount(line.getAmount()) : "0";
+            }
 
             linesTable.addCell(createDataCell(label, alternate, TextAlignment.LEFT, builder));
             linesTable.addCell(createDataCell(baseStr, alternate, TextAlignment.RIGHT, builder));
             linesTable.addCell(createDataCell(rateStr, alternate, TextAlignment.CENTER, builder));
-            linesTable.addCell(createDataCell(amountStr, alternate, TextAlignment.RIGHT, builder));
+            linesTable.addCell(createDataCell(salarialAmountStr, alternate, TextAlignment.RIGHT, builder));
+            linesTable.addCell(createDataCell(patronalAmountStr, alternate, TextAlignment.RIGHT, builder));
         }
 
         builder.getDocument().add(linesTable);
@@ -366,6 +382,8 @@ public class PdfGeneratorService {
         BigDecimal gross = payslip != null && payslip.getGrossSalary() != null ? payslip.getGrossSalary() : BigDecimal.ZERO;
         BigDecimal deductions = payslip != null && payslip.getTotalDeductions() != null ? payslip.getTotalDeductions() : BigDecimal.ZERO;
         BigDecimal net = payslip != null && payslip.getNetSalary() != null ? payslip.getNetSalary() : BigDecimal.ZERO;
+        BigDecimal employerContrib = payslip != null && payslip.getEmployerContributions() != null ? payslip.getEmployerContributions() : BigDecimal.ZERO;
+        BigDecimal totalEmployerCost = gross.add(employerContrib);
 
         Table totalTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .useAllAvailableWidth()
@@ -398,6 +416,13 @@ public class PdfGeneratorService {
 
         totalTable.addCell(netLabelCell);
         totalTable.addCell(netAmountCell);
+
+        totalTable.addCell(createTotalCell("TOTAL COTISATIONS PATRONALES :", false, builder));
+        totalTable.addCell(createTotalAmountCell(PdfFormatUtils.formatCurrency(employerContrib), false, builder));
+
+        totalTable.addCell(createTotalCell("COÛT GLOBAL EMPLOYEUR :", false, builder));
+        totalTable.addCell(createTotalAmountCell(PdfFormatUtils.formatCurrency(totalEmployerCost), false, builder));
+
         builder.getDocument().add(totalTable);
 
         builder.addNoticeBox("Modèle de démonstration, taux à valider");
@@ -410,7 +435,9 @@ public class PdfGeneratorService {
         return switch (status) {
             case DRAFT -> "Brouillon";
             case GENERATED -> "Généré";
+            case VALIDATED -> "Validé";
             case PAID -> "Payé";
+            case CANCELLED -> "Annulé";
         };
     }
 

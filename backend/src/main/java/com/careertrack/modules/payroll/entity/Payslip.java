@@ -37,11 +37,23 @@ public class Payslip extends AuditableEntity {
     @Column(name = "gross_salary", precision = 14, scale = 2, nullable = false)
     private BigDecimal grossSalary;
 
+    @Column(name = "taxable_gross", precision = 14, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal taxableGross = BigDecimal.ZERO;
+
+    @Column(name = "tax_parts", precision = 4, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal taxParts = BigDecimal.ONE;
+
     @Column(name = "net_salary", precision = 14, scale = 2, nullable = false)
     private BigDecimal netSalary;
 
     @Column(name = "total_deductions", precision = 14, scale = 2, nullable = false)
     private BigDecimal totalDeductions;
+
+    @Column(name = "employer_contributions", precision = 14, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal employerContributions = BigDecimal.ZERO;
 
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
@@ -50,6 +62,12 @@ public class Payslip extends AuditableEntity {
     @Column(name = "status", length = 30, nullable = false)
     @Builder.Default
     private PayslipStatus status = PayslipStatus.GENERATED;
+
+    @Column(name = "cancelled_by", length = 100)
+    private String cancelledBy;
+
+    @Column(name = "cancelled_at")
+    private java.time.Instant cancelledAt;
 
     @Column(name = "pdf_url", length = 500)
     private String pdfUrl;

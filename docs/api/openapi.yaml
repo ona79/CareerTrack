@@ -22,6 +22,8 @@ security:
 tags:
 - name: Employés
   description: "Gestion des dossiers collaborateurs, contrats et fiches de poste"
+- name: Paie & Salaires
+  description: "Gestion des bulletins de salaire, cotisations et masse salariale"
 - name: Documents & PDF
   description: "Gestion documentaire (envoi, téléchargement, suppression) et géné\
     ration de documents PDF officiels"
@@ -40,8 +42,6 @@ tags:
 - name: Promotions & Carrières
   description: "Propositions de promotion interne, revalorisations et simulations\
     \ salariales"
-- name: Paie & Salaires
-  description: Gestion des bulletins de salaire et cotisations IPRES/CSS
 - name: Formations
   description: Catalogue des compétences et sessions de formation continue
 - name: Recrutement
@@ -244,8 +244,8 @@ paths:
     post:
       tags:
       - Paie & Salaires
-      summary: Générer la paie mensuelle globale pour tous les salariés
-      description: Calcul automatique des retenues IPRES et charges CSS
+      summary: Générer la paie mensuelle globale pour tous les salariés actifs
+      description: Calcul automatique des cotisations sociales et retenues fiscales
       operationId: generatePayroll
       parameters:
       - name: period
@@ -259,7 +259,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseListPayslipResponseDto"
+                $ref: "#/components/schemas/ApiResponsePayrollGenerationResultDto"
   /api/v1/leaves:
     get:
       tags:
@@ -577,7 +577,7 @@ paths:
     patch:
       tags:
       - Paie & Salaires
-      summary: "Modifier le statut d'un bulletin de paie (DRAFT, VALIDATED, PAID)"
+      summary: "Modifier le statut d'un bulletin de paie (VALIDATED, PAID, CANCELLED)"
       description: Réservé à la DRH
       operationId: updateStatus_2
       parameters:
@@ -595,7 +595,9 @@ paths:
           enum:
           - DRAFT
           - GENERATED
+          - VALIDATED
           - PAID
+          - CANCELLED
       responses:
         "200":
           description: OK
@@ -687,6 +689,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListJobApplicationDto"
+  /api/v1/payroll/stats:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Statistiques globales et ventilation de la masse salariale
+      description: Accessible à la DRH et à la Direction Générale. Respecte l'anonymat
+        (< 3 salariés groupés dans Autres)
+      operationId: getPayrollStats
+      parameters:
+      - name: period
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePayrollStatsResponseDto"
   /api/v1/payroll/payslips:
     get:
       tags:
@@ -711,7 +734,7 @@ paths:
     get:
       tags:
       - Paie & Salaires
-      summary: Obtenir le détail d'un bulletin de paie avec toutes les lignes de déduction
+      summary: Obtenir le détail d'un bulletin de paie avec toutes les lignes
       description: Accessible au collaborateur concerné et à la DRH
       operationId: getPayslipById
       parameters:
@@ -749,6 +772,20 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListPayslipResponseDto"
+  /api/v1/payroll/parameters:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Consulter les paramètres légaux et taux de paie en lecture seule
+      description: Accessible à la DRH et à la Direction
+      operationId: getPayrollParameters
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPayrollParameterResponseDto"
   /api/v1/orgchart/tree:
     get:
       tags:
@@ -1467,7 +1504,7 @@ components:
         timestamp:
           type: string
           format: date-time
-    ApiResponseListPayslipResponseDto:
+    ApiResponsePayrollGenerationResultDto:
       type: object
       properties:
         success:
@@ -1475,12 +1512,34 @@ components:
         message:
           type: string
         data:
-          type: array
-          items:
-            $ref: "#/components/schemas/PayslipResponseDto"
+          $ref: "#/components/schemas/PayrollGenerationResultDto"
         timestamp:
           type: string
           format: date-time
+    PayrollGenerationResultDto:
+      type: object
+      properties:
+        period:
+          type: string
+        totalProcessed:
+          type: integer
+          format: int32
+        totalGenerated:
+          type: integer
+          format: int32
+        totalSkipped:
+          type: integer
+          format: int32
+        totalGross:
+          type: number
+        totalNet:
+          type: number
+        totalEmployerContributions:
+          type: number
+        payslips:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayslipResponseDto"
     PayslipLineDto:
       type: object
       properties:
@@ -1495,10 +1554,25 @@ components:
           - BONUS
           - IPRES_EMPLOYEE
           - IPRES_EMPLOYER
+          - IPRES_RG_EMPLOYEE
+          - IPRES_RG_EMPLOYER
+          - IPRES_RC_EMPLOYEE
+          - IPRES_RC_EMPLOYER
           - CSS_EMPLOYER
+          - CSS_PF
+          - CSS_AT
+          - CFCE
           - IPM
+          - IPM_EMPLOYER
           - TAX_IR
+          - TRIMF
           - OTHER_DEDUCTION
+        category:
+          type: string
+          enum:
+          - GAIN_BRUT
+          - DEDUCTION_SALARIALE
+          - COTISATION_PATRONALE
         label:
           type: string
         baseAmount:
@@ -1530,6 +1604,10 @@ components:
           type: string
         grossSalary:
           type: number
+        taxableGross:
+          type: number
+        taxParts:
+          type: number
         totalDeductions:
           type: number
         netSalary:
@@ -1541,10 +1619,17 @@ components:
           enum:
           - DRAFT
           - GENERATED
+          - VALIDATED
           - PAID
+          - CANCELLED
         paymentDate:
           type: string
           format: date
+        cancelledBy:
+          type: string
+        cancelledAt:
+          type: string
+          format: date-time
         pdfUrl:
           type: string
         lines:
@@ -1942,8 +2027,15 @@ components:
           - PROBATION
           - SUSPENDED
           - TERMINATED
+        maritalStatus:
+          type: string
+        dependentsCount:
+          type: integer
+          format: int32
         fullName:
           type: string
+        cadre:
+          type: boolean
     JobOffer:
       type: object
       properties:
@@ -2092,6 +2184,103 @@ components:
         timestamp:
           type: string
           format: date-time
+    ApiResponsePayrollStatsResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PayrollStatsResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    DepartmentPayrollStatsDto:
+      type: object
+      properties:
+        departmentName:
+          type: string
+        employeeCount:
+          type: integer
+          format: int32
+        grossSalary:
+          type: number
+        netSalary:
+          type: number
+        employerCost:
+          type: number
+    PayrollStatsResponseDto:
+      type: object
+      properties:
+        period:
+          type: string
+        totalEmployeesPaid:
+          type: integer
+          format: int32
+        totalGrossSalary:
+          type: number
+        totalNetSalary:
+          type: number
+        totalDeductions:
+          type: number
+        totalEmployerContributions:
+          type: number
+        totalEmployerCost:
+          type: number
+        departmentBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentPayrollStatsDto"
+    ApiResponseListPayslipResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayslipResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListPayrollParameterResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayrollParameterResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    PayrollParameterResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        value:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        validFrom:
+          type: string
+          format: date
     ApiResponseListOrgNodeDto:
       type: object
       properties:

@@ -65,19 +65,8 @@ careertrack:
     monthly-leave-days: ${CAREERTRACK_LEAVE_DAYS_PER_MONTH:2.0}
     max-cdd-months: ${CAREERTRACK_MAX_CDD_MONTHS:24}
     standard-working-hours-per-week: 40
-    # IPRES
-    ipres-rate-employee: ${CAREERTRACK_IPRES_RATE_EMPLOYEE:0.056}  # 5,6% retenue salariale (Plafond 432 000 FCFA à intégrer)
-    ipres-rate-employer: ${CAREERTRACK_IPRES_RATE_EMPLOYER:0.084}  # 8,4% cotisation patronale
-    ipres-ceiling-general: 432000                                  # Plafond mensuel IPRES régime général (FCFA)
-    ipres-ceiling-cadre: 1296000                                   # Plafond mensuel IPRES cadre RCC (FCFA)
-    # CSS (100% patronale, 0% salariale)
-    css-rate-employer: ${CAREERTRACK_CSS_RATE_EMPLOYER:0.070}      # 7,0% patronal
-    css-rate-employee: 0.000                                       # 0% salarial (confirmé formellement)
-    css-ceiling-monthly: 63000                                     # Plafond mensuel d'assiette CSS (FCFA)
-    # Fiscalité salariale sénégalaise
-    default-ir-rate-estimate: ${CAREERTRACK_DEFAULT_IR_RATE:0.12}  # Estimation provisoire (À REMPLACER par barème progressif CGI)
-    trimf-monthly-amount: ${CAREERTRACK_TRIMF_MONTHLY:900}          # TRIMF forfaitaire mensuelle (selon tranche CGI)
-    cfce-rate-employer: ${CAREERTRACK_CFCE_RATE_EMPLOYER:0.030}    # Contribution Forfaitaire Charge Employeur 3% (patronal)
+    # Note : Les paramètres de paie (IPRES, CSS, IPM, CFCE, IR, TRIMF) sont désormais
+    # gérés dynamiquement avec date d'effet dans les tables payroll_parameters et payroll_tax_brackets.
 
   jwt:
     secret: ${JWT_SECRET:4c9a63c6218e8d2e8b23c21a4f59e0a9b8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3}
