@@ -58,7 +58,7 @@ export const App: React.FC = () => {
                 <Route
                   path="/payroll"
                   element={
-                    <ProtectedRoute roles={['ROLE_DRH']}>
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE']}>
                       <PayrollListPage />
                     </ProtectedRoute>
                   }

@@ -17,6 +17,9 @@ public interface EmployeeMapper {
     @Mapping(target = "position", ignore = true)
     @Mapping(target = "manager", ignore = true)
     @Mapping(target = "subordinates", ignore = true)
+    @Mapping(target = "isCadre", ignore = true)
+    @Mapping(target = "maritalStatus", ignore = true)
+    @Mapping(target = "dependentsCount", ignore = true)
     Employee toEntity(EmployeeCreateDto dto);
 
     @Mapping(source = "department.id", target = "departmentId")

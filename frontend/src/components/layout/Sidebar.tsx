@@ -26,7 +26,7 @@ const navItems: NavItemConfig[] = [
   { label: 'Tableau de bord', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Employés & Contrats', to: '/employees', icon: Users, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Congés & Absences', to: '/leaves', icon: Calendar },
-  { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH'] },
+  { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
   { label: 'Recrutement (Kanban)', to: '/recruitment', icon: Briefcase, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Évaluations Annuelles', to: '/evaluations', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
   { label: 'Promotions & Carrières', to: '/promotions', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },

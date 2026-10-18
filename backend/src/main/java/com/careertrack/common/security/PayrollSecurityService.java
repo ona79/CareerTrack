@@ -61,7 +61,7 @@ public class PayrollSecurityService {
         if (hasRole("DRH")) {
             return true;
         }
-        if (hasRole("DIRECTION") || hasRole("MANAGER")) {
+        if (hasRole("DIRECTION")) {
             return false;
         }
 

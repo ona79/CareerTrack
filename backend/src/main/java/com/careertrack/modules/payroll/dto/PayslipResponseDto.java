@@ -1,5 +1,6 @@
 package com.careertrack.modules.payroll.dto;
 
+import com.careertrack.modules.payroll.entity.PayslipLineCategory;
 import com.careertrack.modules.payroll.entity.PayslipLineType;
 import com.careertrack.modules.payroll.entity.PayslipStatus;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -25,11 +27,15 @@ public class PayslipResponseDto {
     private int periodYear;
     private String period; // Format "YYYY-MM"
     private BigDecimal grossSalary;
+    private BigDecimal taxableGross;
+    private BigDecimal taxParts;
     private BigDecimal totalDeductions;
     private BigDecimal netSalary;
     private BigDecimal employerContributions;
     private PayslipStatus status;
     private LocalDate paymentDate;
+    private String cancelledBy;
+    private Instant cancelledAt;
     private String pdfUrl;
     private List<PayslipLineDto> lines;
 
@@ -40,6 +46,7 @@ public class PayslipResponseDto {
     public static class PayslipLineDto {
         private UUID id;
         private PayslipLineType lineType;
+        private PayslipLineCategory category;
         private String label;
         private BigDecimal baseAmount;
         private BigDecimal rate;
