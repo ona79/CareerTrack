@@ -131,16 +131,16 @@ export const EvaluationListPage: React.FC = () => {
               <span className="badge badge-success text-xs font-bold px-2.5 py-1">
                 Score Global : {selectedEval.finalScore} / 5
               </span>
-              {/* Bouton de téléchargement du PDF officiel */}
-              <a
-                href={`/api/v1/documents/attestation/${selectedEval.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary btn-sm text-xs inline-flex items-center gap-1.5"
+              {/* Bouton de téléchargement du PDF officiel (désactivé jusqu'au lot 4) */}
+              <button
+                type="button"
+                disabled
+                title="Disponible prochainement"
+                className="btn btn-secondary btn-sm text-xs inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed"
               >
-                <Download className="w-4 h-4 text-[#1A6B3C]" />
+                <Download className="w-4 h-4 text-gray-400" />
                 Télécharger Bilan Entretien (PDF)
-              </a>
+              </button>
             </div>
           </div>
 

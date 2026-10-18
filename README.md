@@ -148,6 +148,32 @@ npm run dev
 
 ---
 
+## 📑 Procédure de Test Manuel des Téléchargements PDF & Matrice RBAC (Étape 0)
+
+Consultez la [Matrice Complète des Droits d'Accès aux Documents](./docs/security/documents_permissions_matrix.md).
+
+### Étapes de validation dans le navigateur :
+1. **Connexion en tant que DRH** :
+   - Se connecter sur [http://localhost:5173/login](http://localhost:5173/login) avec `drh.ndiaye` / `password123`.
+   - **Écran Collaborateurs (`/employees`)** : Cliquer sur le bouton **« PDF iText »** ou **« Attestation PDF »** sur la ligne d'Ousmane Diallo $\rightarrow$ Le fichier `attestation-EMP-004.pdf` est téléchargé instantanément et s'ouvre avec l'en-tête officiel et les mentions réglementaires sénégalaises.
+   - **Écran Documents (`/documents`)** :
+     - Cliquer sur **« Télécharger PDF »** pour l'attestation $\rightarrow$ Télécharge l'attestation de travail.
+     - Cliquer sur **« Télécharger PDF »** pour le bulletin de paie $\rightarrow$ Télécharge le bulletin de paie avec cotisations IPRES/CSS.
+     - Cliquer sur **« Télécharger PDF »** pour le contrat de travail $\rightarrow$ Télécharge le contrat CDI conforme à la loi 97-17.
+     - Constater que la ligne de démonstration fictive est explicitement désactivée (`Désactivé (Mock)`).
+   - **Écran Paie (`/payroll`)** :
+     - Cliquer sur **« Télécharger PDF »** pour le bulletin d'Ousmane Diallo (Période 2026-09) $\rightarrow$ Télécharge `bulletin-paie-2026-09-EMP-004.pdf`.
+     - Constater que la ligne d'exemple fictif est sécuritairement désactivée (`Désactivé (Mock)`).
+   - **Écran Évaluations (`/evaluations`)** :
+     - Constater que le bouton d'entretien annuel est désactivé avec l'infobulle *« Disponible prochainement »* jusqu'au lot 4.
+
+2. **Validation de l'isolation des droits (Collaborateur vs Pair)** :
+   - Se déconnecter puis se reconnecter avec `emp.diallo` / `password123`.
+   - Aller sur `/documents` : Ousmane Diallo peut télécharger ses propres documents.
+   - Si un appel est tenté sur l'attestation d'un autre salarié (ex: `EMP-003`), le backend renvoie un `403 Forbidden` clair et le frontend affiche l'alerte d'accès refusé.
+
+---
+
 ## 🏗️ Architecture Technique
 
 ```

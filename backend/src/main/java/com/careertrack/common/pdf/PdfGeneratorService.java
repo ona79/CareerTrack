@@ -204,4 +204,69 @@ public class PdfGeneratorService {
             throw new RuntimeException("Échec de génération du bulletin de paie : " + ex.getMessage(), ex);
         }
     }
+
+    /**
+     * Génère un Contrat de Travail officiel conforme au Code du Travail de la République du Sénégal.
+     */
+    public byte[] generateEmploymentContract(Employee employee, Contract contract) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc, PageSize.A4);
+            document.setMargins(40, 50, 40, 50);
+
+            // 1. En-tête
+            document.add(new Paragraph(companyName.toUpperCase())
+                    .setFontSize(14).setBold().setFontColor(PRIMARY_BLUE));
+            document.add(new Paragraph("Société à Responsabilité Limitée (SARL) - Capital : 10 000 000 FCFA\n" +
+                    "Siège social : Avenue Cheikh Anta Diop, Dakar, Sénégal\n" +
+                    "NINEA : 006548972 2V2 - R.C.C.M : SN.DKR.2018.B.1425")
+                    .setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(20));
+
+            // Titre
+            String typeTitle = (contract != null && contract.getContractType() != null)
+                    ? contract.getContractType().name() : "CDI";
+            document.add(new Paragraph("CONTRAT DE TRAVAIL (" + typeTitle + ")")
+                    .setFontSize(16).setBold().setTextAlignment(TextAlignment.CENTER).setFontColor(TEXT_DARK).setMarginBottom(20));
+
+            // Parties
+            String posTitle = (employee.getPosition() != null) ? employee.getPosition().getTitle() : "Collaborateur";
+            String deptTitle = (employee.getDepartment() != null) ? employee.getDepartment().getName() : "Non spécifié";
+            String salaryStr = (contract != null && contract.getGrossSalary() != null)
+                    ? CURRENCY_FORMATTER.format(contract.getGrossSalary()) + " FCFA" : "À convenir";
+            String startDateStr = (contract != null && contract.getStartDate() != null)
+                    ? contract.getStartDate().format(DATE_FORMATTER) : LocalDate.now().format(DATE_FORMATTER);
+
+            String body = "ENTRE LES SOUSSIGNÉS :\n\n" +
+                    "1. La société " + companyName + ", représentée par sa Direction des Ressources Humaines,\n" +
+                    "Ci-après dénommée « L'Employeur »,\n\nD'UNE PART,\n\n" +
+                    "ET :\n\n" +
+                    "2. M./Mme " + employee.getFullName() + ", titulaire de la CNI n° " + employee.getNationalId() + ",\n" +
+                    "Demeurant à : " + (employee.getAddress() != null ? employee.getAddress() : "Dakar, Sénégal") + ",\n" +
+                    "Ci-après dénommé(e) « Le Salarié »,\n\nD'AUTRE PART.\n\n" +
+                    "IL A ÉTÉ CONVENU CE QUI SUIT CONFORMÉMENT AU CODE DU TRAVAIL SÉNÉGALAIS (LOI N° 97-17) :\n\n" +
+                    "Article 1 - Engagement et Fonction : Le Salarié est engagé en qualité de " + posTitle + " au sein du département " + deptTitle + ".\n\n" +
+                    "Article 2 - Prise d'effet et Durée : Le présent contrat prend effet le " + startDateStr + " sous le régime " + typeTitle + ".\n\n" +
+                    "Article 3 - Rémunération : Le Salarié percevra un salaire brut mensuel de " + salaryStr + ", soumis aux cotisations obligatoires (IPRES, CSS, IPM).\n\n" +
+                    "Article 4 - Congés payés : Le Salarié acquiert 2 jours ouvrables de congé par mois de service effectif, conformément à la réglementation sénégalaise.";
+
+            document.add(new Paragraph(body).setFontSize(10).setFontColor(TEXT_DARK).setMultipliedLeading(1.3f).setMarginBottom(30));
+
+            // Signatures
+            String todayStr = LocalDate.now().format(DATE_FORMATTER);
+            document.add(new Paragraph("Fait en deux originaux à Dakar, le " + todayStr)
+                    .setFontSize(10).setTextAlignment(TextAlignment.RIGHT).setMarginBottom(20));
+
+            Table sigTable = new Table(UnitValue.createPercentArray(new float[]{50, 50})).useAllAvailableWidth();
+            sigTable.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph("Le Salarié\n(Précédé de la mention « Lu et approuvé »)").setFontSize(9).setItalic().setFontColor(TEXT_MUTED)));
+            sigTable.addCell(new Cell().setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT).add(new Paragraph("Pour l'Employeur\nLa Direction Générale\n[Cachet et Signature]").setFontSize(9).setBold().setFontColor(TEXT_DARK)));
+            document.add(sigTable);
+
+            document.close();
+            return baos.toByteArray();
+        } catch (Exception ex) {
+            log.error("Erreur lors de la génération du contrat de travail: {}", ex.getMessage());
+            throw new RuntimeException("Échec de génération du contrat : " + ex.getMessage(), ex);
+        }
+    }
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/axios';
+import { downloadFile } from '@/lib/downloadFile';
 import {
   Users,
   Search,
@@ -265,14 +266,13 @@ export const EmployeeListPage: React.FC = () => {
                   </div>
                 </td>
                 <td className="text-right">
-                  <a
-                    href={`/api/v1/documents/attestation/${emp.id}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => downloadFile(`/documents/attestation/${emp.id}`, `attestation-${emp.employeeNumber || emp.id}.pdf`)}
                     className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5"
                   >
                     PDF iText
-                  </a>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -305,14 +305,13 @@ export const EmployeeListPage: React.FC = () => {
 
             <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
               <span className="text-gray-400 text-[11px]">Embauche : {emp.hireDate}</span>
-              <a
-                href={`/api/v1/documents/attestation/${emp.id}`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => downloadFile(`/documents/attestation/${emp.id}`, `attestation-${emp.employeeNumber || emp.id}.pdf`)}
                 className="btn btn-secondary btn-sm text-[11px] py-1 px-2"
               >
                 Attestation PDF
-              </a>
+              </button>
             </div>
           </div>
         ))}

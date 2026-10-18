@@ -90,4 +90,42 @@ class PdfGenerationTest {
         assertThat(pdfBytes).isNotEmpty();
         assertThat(new String(pdfBytes, 0, 5)).isEqualTo("%PDF-");
     }
+
+    @Test
+    @DisplayName("Génère un contrat de travail valide conforme au Code du Travail sénégalais au format PDF")
+    void shouldGenerateContractPdf() {
+        Department dept = Department.builder()
+                .name("Ingénierie & Systèmes")
+                .code("DEP-TECH")
+                .build();
+
+        Position pos = Position.builder()
+                .title("Développeur Fullstack Senior")
+                .code("POS-DEV-SR")
+                .department(dept)
+                .build();
+
+        Employee emp = Employee.builder()
+                .id(UUID.randomUUID())
+                .employeeNumber("EMP-004")
+                .firstName("Ousmane")
+                .lastName("Diallo")
+                .nationalId("1 996 1996 00321")
+                .address("Liberté 6, Dakar")
+                .hireDate(LocalDate.of(2022, 6, 1))
+                .department(dept)
+                .position(pos)
+                .build();
+
+        Contract contract = Contract.builder()
+                .contractType(ContractType.CDI)
+                .grossSalary(new BigDecimal("950000"))
+                .startDate(LocalDate.of(2022, 6, 1))
+                .build();
+
+        byte[] pdfBytes = pdfGeneratorService.generateEmploymentContract(emp, contract);
+
+        assertThat(pdfBytes).isNotEmpty();
+        assertThat(new String(pdfBytes, 0, 5)).isEqualTo("%PDF-");
+    }
 }

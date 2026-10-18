@@ -1,58 +1,98 @@
 import React, { useState } from 'react';
 import {
-  FileText,
   Download,
-  Search,
-  Filter,
-  CheckCircle,
-  FileCheck
+  AlertCircle,
+  RefreshCw,
+  Loader2,
+  FileText
 } from 'lucide-react';
+import { downloadFile } from '@/lib/downloadFile';
 
 interface GeneratedDoc {
   id: string;
   employeeName: string;
   docType: 'ATTESTATION' | 'CONTRAT' | 'BULLETIN_PAIE';
   date: string;
-  url: string;
+  endpoint: string;
+  filename: string;
+  isRealUuid: boolean;
 }
 
-const mockDocs: GeneratedDoc[] = [
+// Documents réels basés sur les UUIDs du jeu de test seed V3
+const demoDocuments: GeneratedDoc[] = [
   {
-    id: 'doc-1',
-    employeeName: 'Amadou Diop',
+    id: 'real-doc-1',
+    employeeName: 'Ousmane Diallo (EMP-004)',
     docType: 'ATTESTATION',
-    date: '2026-03-25',
-    url: '/api/v1/documents/attestation/1',
+    date: '2026-09-30',
+    endpoint: '/documents/attestation/55555555-5555-5555-5555-555555555504',
+    filename: 'attestation-EMP-004.pdf',
+    isRealUuid: true,
   },
   {
-    id: 'doc-2',
-    employeeName: 'Amadou Diop',
+    id: 'real-doc-2',
+    employeeName: 'Ousmane Diallo (EMP-004)',
     docType: 'BULLETIN_PAIE',
-    date: '2026-03-25',
-    url: '/api/v1/documents/payslip/1',
+    date: '2026-09-30',
+    endpoint: '/documents/payslip/99999999-9999-9999-9999-999999999901',
+    filename: 'bulletin-paie-2026-09-EMP-004.pdf',
+    isRealUuid: true,
   },
   {
-    id: 'doc-3',
-    employeeName: 'Fatou Ndiaye',
-    docType: 'ATTESTATION',
-    date: '2026-03-20',
-    url: '/api/v1/documents/attestation/2',
-  },
-  {
-    id: 'doc-4',
-    employeeName: 'Aïssatou Sow',
+    id: 'real-doc-3',
+    employeeName: 'Ousmane Diallo (EMP-004)',
     docType: 'CONTRAT',
-    date: '2025-09-01',
-    url: '/api/v1/documents/attestation/4',
+    date: '2022-06-01',
+    endpoint: '/documents/contract/55555555-5555-5555-5555-555555555504',
+    filename: 'contrat-EMP-004.pdf',
+    isRealUuid: true,
+  },
+  {
+    id: 'real-doc-4',
+    employeeName: 'Mamadou Sow (EMP-003)',
+    docType: 'ATTESTATION',
+    date: '2026-09-30',
+    endpoint: '/documents/attestation/55555555-5555-5555-5555-555555555503',
+    filename: 'attestation-EMP-003.pdf',
+    isRealUuid: true,
+  },
+  {
+    id: 'mock-doc-fictif',
+    employeeName: 'Exemple fictif non persisté',
+    docType: 'ATTESTATION',
+    date: '2025-01-01',
+    endpoint: '/documents/attestation/mock-fictif',
+    filename: 'attestation-fictive.pdf',
+    isRealUuid: false,
   },
 ];
 
 export const DocumentListPage: React.FC = () => {
   const [filterType, setFilterType] = useState('ALL');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastFailedDoc, setLastFailedDoc] = useState<GeneratedDoc | null>(null);
 
-  const filtered = mockDocs.filter(
+  const filtered = demoDocuments.filter(
     (d) => filterType === 'ALL' || d.docType === filterType
   );
+
+  const handleDownload = async (doc: GeneratedDoc) => {
+    if (!doc.isRealUuid) return;
+    setDownloadingId(doc.id);
+    setErrorMessage(null);
+    setLastFailedDoc(null);
+
+    try {
+      await downloadFile(doc.endpoint, doc.filename);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Échec du téléchargement';
+      setErrorMessage(msg);
+      setLastFailedDoc(doc);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -63,8 +103,27 @@ export const DocumentListPage: React.FC = () => {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="alert alert-danger flex items-center justify-between p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          {lastFailedDoc && (
+            <button
+              type="button"
+              onClick={() => handleDownload(lastFailedDoc)}
+              className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1 ml-4"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Réessayer
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="card p-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setFilterType('ALL')}
@@ -108,33 +167,57 @@ export const DocumentListPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((doc) => (
-              <tr key={doc.id}>
-                <td className="font-semibold text-xs text-gray-900">{doc.employeeName}</td>
-                <td>
-                  <span className="badge badge-primary font-mono text-[10px]">
-                    {doc.docType}
-                  </span>
-                </td>
-                <td className="text-xs text-gray-500">{doc.date}</td>
-                <td>
-                  <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded font-bold">
-                    PDF iText
-                  </span>
-                </td>
-                <td className="text-right">
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[#1A6B3C]" />
-                    Télécharger
-                  </a>
-                </td>
-              </tr>
-            ))}
+            {filtered.map((doc) => {
+              const isLoading = downloadingId === doc.id;
+              return (
+                <tr key={doc.id}>
+                  <td className="font-semibold text-xs text-gray-900">{doc.employeeName}</td>
+                  <td>
+                    <span className="badge badge-primary font-mono text-[10px]">
+                      {doc.docType}
+                    </span>
+                  </td>
+                  <td className="text-xs text-gray-500">{doc.date}</td>
+                  <td>
+                    <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded font-bold">
+                      PDF iText
+                    </span>
+                  </td>
+                  <td className="text-right">
+                    {doc.isRealUuid ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(doc)}
+                        disabled={isLoading}
+                        className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1A6B3C]" />
+                            Génération...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-3.5 h-3.5 text-[#1A6B3C]" />
+                            Télécharger PDF
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        title="Donnée de démonstration non persistée (non téléchargeable)"
+                        className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5 inline-flex items-center gap-1 opacity-50 cursor-not-allowed"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-gray-400" />
+                        Désactivé (Mock)
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
