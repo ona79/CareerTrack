@@ -10,10 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class DatabaseDocumentStorageService implements DocumentStorageService {
 
     private final EmployeeDocumentContentRepository contentRepository;
+
+    public DatabaseDocumentStorageService(EmployeeDocumentContentRepository contentRepository) {
+        this.contentRepository = contentRepository;
+    }
 
     @Override
     @Transactional

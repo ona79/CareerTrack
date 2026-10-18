@@ -1158,8 +1158,8 @@ paths:
       tags:
       - Documents & PDF
       summary: Supprimer un document téléversé
-      description: Accessible à la DRH ou à l'employé pour les documents qu'il a lui-même
-        téléversés
+      description: Accessible à la DRH ou à l'employé/manager pour les documents qu'il
+        a lui-même téléversés
       operationId: deleteDocument
       parameters:
       - name: id
@@ -1171,10 +1171,6 @@ paths:
       responses:
         "200":
           description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ApiResponseVoid"
       security:
       - BearerAuth: []
 components:

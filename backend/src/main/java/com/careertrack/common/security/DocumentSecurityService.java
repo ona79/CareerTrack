@@ -20,12 +20,19 @@ import java.util.UUID;
 
 @Slf4j
 @Service("documentSecurity")
-@RequiredArgsConstructor
 public class DocumentSecurityService {
 
     private final EmployeeRepository employeeRepository;
     private final PayslipRepository payslipRepository;
     private final EmployeeDocumentRepository employeeDocumentRepository;
+
+    public DocumentSecurityService(EmployeeRepository employeeRepository,
+                                   PayslipRepository payslipRepository,
+                                   EmployeeDocumentRepository employeeDocumentRepository) {
+        this.employeeRepository = employeeRepository;
+        this.payslipRepository = payslipRepository;
+        this.employeeDocumentRepository = employeeDocumentRepository;
+    }
 
     private Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
@@ -142,8 +149,8 @@ public class DocumentSecurityService {
     /**
      * Envoi d'un document collaborateur (CNI, DIPLOME, AUTRE) :
      * - DRH : Oui pour n'importe quel employé et tout type de document
-     * - DIRECTION : Non
-     * - MANAGER : Non (sauf si pour lui-même en tant qu'employé hors contrat)
+     * - DIRECTION : Non (403)
+     * - MANAGER : Pour ses propres documents uniquement (CNI, DIPLOME, AUTRE ; pas de CONTRAT) ; 403 sur subordonnés et tiers
      * - EMPLOYE : Uniquement pour lui-même ET PAS de type CONTRAT (réservé DRH)
      */
     public boolean canUploadDocument(UUID employeeId, DocumentType type) {
@@ -166,8 +173,8 @@ public class DocumentSecurityService {
     /**
      * Liste des documents d'un collaborateur (métadonnées) :
      * - DRH : Oui (tous les collaborateurs)
-     * - DIRECTION : Non (aucun document nominatif)
-     * - MANAGER : Non (aucun accès aux pièces d'identité ni aux diplômes de ses subordonnés)
+     * - DIRECTION : Non (403)
+     * - MANAGER : Pour ses propres documents uniquement ; 403 sur subordonnés et tiers
      * - EMPLOYE : Uniquement ses propres documents
      */
     public boolean canListEmployeeDocuments(UUID employeeId) {
@@ -185,8 +192,8 @@ public class DocumentSecurityService {
     /**
      * Téléchargement d'un document :
      * - DRH : Oui (tout document)
-     * - DIRECTION : Non
-     * - MANAGER : Non (aucun accès aux pièces d'identité / diplômes des subordonnés)
+     * - DIRECTION : Non (403)
+     * - MANAGER : Ses propres documents uniquement ; 403 sur subordonnés et tiers
      * - EMPLOYE : Uniquement ses propres documents
      */
     public boolean canDownloadDocument(UUID documentId) {
@@ -209,9 +216,8 @@ public class DocumentSecurityService {
     /**
      * Suppression d'un document :
      * - DRH : Oui (tout document)
-     * - DIRECTION : Non
-     * - MANAGER : Non
-     * - EMPLOYE : Uniquement ses propres documents qu'il a lui-même déposés (uploaded_by)
+     * - DIRECTION : Non (403)
+     * - MANAGER / EMPLOYE : Uniquement ses propres documents qu'il a lui-même déposés (uploaded_by) ; 403 sur subordonnés et tiers
      */
     public boolean canDeleteDocument(UUID documentId) {
         if (hasRole("DRH")) {

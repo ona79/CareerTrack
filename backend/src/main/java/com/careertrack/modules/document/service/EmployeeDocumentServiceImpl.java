@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
 
     private static final long MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 Mo
@@ -37,6 +36,16 @@ public class EmployeeDocumentServiceImpl implements EmployeeDocumentService {
     private final UserRepository userRepository;
     private final EmployeeDocumentRepository employeeDocumentRepository;
     private final DocumentStorageService documentStorageService;
+
+    public EmployeeDocumentServiceImpl(EmployeeRepository employeeRepository,
+                                       UserRepository userRepository,
+                                       EmployeeDocumentRepository employeeDocumentRepository,
+                                       DocumentStorageService documentStorageService) {
+        this.employeeRepository = employeeRepository;
+        this.userRepository = userRepository;
+        this.employeeDocumentRepository = employeeDocumentRepository;
+        this.documentStorageService = documentStorageService;
+    }
 
     private User getCurrentUserEntity() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

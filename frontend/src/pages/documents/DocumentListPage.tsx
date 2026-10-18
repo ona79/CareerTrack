@@ -21,6 +21,8 @@ export const DocumentListPage: React.FC = () => {
   const { user, hasRole } = useAuth();
   const isDrh = hasRole('ROLE_DRH') || hasRole('DRH');
   const isEmploye = hasRole('ROLE_EMPLOYE') || hasRole('EMPLOYE');
+  const isManager = hasRole('ROLE_MANAGER') || hasRole('MANAGER');
+  const isCollaborator = isEmploye || isManager;
 
   // État des collaborateurs (pour la sélection par la DRH)
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -259,7 +261,7 @@ export const DocumentListPage: React.FC = () => {
   // Vérifier si l'utilisateur a le droit de supprimer le document
   const canDeleteDoc = (doc: DocumentResponseDto) => {
     if (isDrh) return true;
-    if (isEmploye && doc.uploadedBy && doc.uploadedBy === user?.id) return true;
+    if (isCollaborator && doc.uploadedBy && doc.uploadedBy === user?.id) return true;
     return false;
   };
 
@@ -275,8 +277,8 @@ export const DocumentListPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Bouton d'upload disponible pour DRH et EMPLOYE */}
-          {(isDrh || isEmploye) && selectedEmployeeId && (
+          {/* Bouton d'upload disponible pour DRH, EMPLOYE et MANAGER */}
+          {(isDrh || isCollaborator) && selectedEmployeeId && (
             <button
               type="button"
               onClick={() => {

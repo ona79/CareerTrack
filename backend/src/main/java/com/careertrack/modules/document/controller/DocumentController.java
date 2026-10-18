@@ -29,7 +29,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/documents")
-@RequiredArgsConstructor
 @Tag(name = "Documents & PDF", description = "Gestion documentaire (envoi, téléchargement, suppression) et génération de documents PDF officiels")
 @SecurityRequirement(name = "BearerAuth")
 public class DocumentController {
@@ -37,6 +36,14 @@ public class DocumentController {
     private final PdfGeneratorService pdfGeneratorService;
     private final com.careertrack.modules.document.service.DocumentService documentService;
     private final EmployeeDocumentService employeeDocumentService;
+
+    public DocumentController(PdfGeneratorService pdfGeneratorService,
+                              com.careertrack.modules.document.service.DocumentService documentService,
+                              EmployeeDocumentService employeeDocumentService) {
+        this.pdfGeneratorService = pdfGeneratorService;
+        this.documentService = documentService;
+        this.employeeDocumentService = employeeDocumentService;
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("@documentSecurity.canUploadDocument(#employeeId, #type)")
@@ -89,10 +96,10 @@ public class DocumentController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@documentSecurity.canDeleteDocument(#id)")
-    @Operation(summary = "Supprimer un document téléversé", description = "Accessible à la DRH ou à l'employé pour les documents qu'il a lui-même téléversés")
-    public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable UUID id) {
+    @Operation(summary = "Supprimer un document téléversé", description = "Accessible à la DRH ou à l'employé/manager pour les documents qu'il a lui-même téléversés")
+    public ResponseEntity<Void> deleteDocument(@PathVariable UUID id) {
         employeeDocumentService.deleteDocument(id);
-        return ResponseEntity.ok(ApiResponse.success("Document supprimé avec succès", null));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/attestation/{employeeId}")

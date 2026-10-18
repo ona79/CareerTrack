@@ -725,7 +725,7 @@ class DocumentControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Employé peut supprimer un document qu'il a lui-même téléversé (200 OK)")
+    @DisplayName("Employé peut supprimer un document qu'il a lui-même téléversé (204 No Content)")
     void employeeShouldDeleteHisOwnUploadedDocument() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "mon_attestation.pdf", "application/pdf", VALID_PDF_BYTES);
@@ -743,7 +743,7 @@ class DocumentControllerIntegrationTest {
 
         mockMvc.perform(delete("/api/v1/documents/" + docId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         // Le téléchargement doit désormais renvoyer 404
         mockMvc.perform(get("/api/v1/documents/" + docId + "/download")
@@ -787,6 +787,218 @@ class DocumentControllerIntegrationTest {
                         .param("title", "CNI employé inconnu")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Vérification stricte : la liste des documents ne contient AUCUN champ binaire ou data dans DocumentResponseDto")
+    void testEmployeeDocumentsList_ContainsNoBinaryOrDataFieldInDocumentDto() throws Exception {
+        // 1. Vérification par réflexion sur la classe DocumentResponseDto
+        java.lang.reflect.Field[] fields = com.careertrack.modules.document.dto.DocumentResponseDto.class.getDeclaredFields();
+        for (java.lang.reflect.Field field : fields) {
+            assertThat(field.getName())
+                    .as("Le DTO ne doit déclarer aucun champ nommé 'data', 'bytes', ou 'content'")
+                    .isNotIn("data", "bytes", "content", "fileData", "rawBytes");
+            assertThat(field.getType())
+                    .as("Le DTO ne doit contenir aucun type tableau d'octets")
+                    .isNotEqualTo(byte[].class);
+        }
+
+        // 2. Téléverser un document pour l'employé 1
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni_sans_binaire.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Pièce d'identité sans binaire")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isCreated());
+
+        // 3. Appel de l'endpoint GET /documents/employee/{id}
+        MvcResult listResult = mockMvc.perform(get("/api/v1/documents/employee/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andReturn();
+
+        String responseBody = listResult.getResponse().getContentAsString();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(responseBody);
+        com.fasterxml.jackson.databind.JsonNode dataArray = root.get("data");
+
+        assertThat(dataArray.isArray()).isTrue();
+        assertThat(dataArray.size()).isGreaterThanOrEqualTo(1);
+
+        for (com.fasterxml.jackson.databind.JsonNode docNode : dataArray) {
+            // Champs attendus
+            assertThat(docNode.has("id")).isTrue();
+            assertThat(docNode.has("employeeId")).isTrue();
+            assertThat(docNode.has("documentType")).isTrue();
+            assertThat(docNode.has("title")).isTrue();
+            assertThat(docNode.has("fileName")).isTrue();
+            assertThat(docNode.has("fileSize")).isTrue();
+            assertThat(docNode.has("mimeType")).isTrue();
+            assertThat(docNode.has("uploadedAt")).isTrue();
+            assertThat(docNode.has("downloadUrl")).isTrue();
+
+            // Absence totale de données binaires ou champ data interne
+            assertThat(docNode.has("data")).as("L'objet document dans la liste ne doit pas avoir de champ data").isFalse();
+            assertThat(docNode.has("bytes")).as("L'objet document ne doit pas avoir de champ bytes").isFalse();
+            assertThat(docNode.has("content")).as("L'objet document ne doit pas avoir de champ content").isFalse();
+            assertThat(docNode.has("fileData")).as("L'objet document ne doit pas avoir de champ fileData").isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("Manager : peut lister ses propres documents (200 OK) mais 403 sur subordonnés")
+    void manager_canListOwnDocuments_andForbiddenOnSubordinate() throws Exception {
+        // 1. Manager liste ses propres documents -> 200 OK
+        mockMvc.perform(get("/api/v1/documents/employee/" + managerEmployee.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        // 2. Manager tente de lister les documents de son subordonné (employee1) -> 403 Forbidden
+        mockMvc.perform(get("/api/v1/documents/employee/" + employee1.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager : peut téléverser CNI/DIPLOME/AUTRE pour lui-même (201 Created)")
+    void manager_canUploadOwnDocument() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "diplome_manager.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", managerEmployee.getId().toString())
+                        .param("type", "DIPLOME")
+                        .param("title", "Diplôme d'ingénieur Manager")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.employeeId").value(managerEmployee.getId().toString()))
+                .andExpect(jsonPath("$.data.documentType").value("DIPLOME"));
+    }
+
+    @Test
+    @DisplayName("Manager : NE PEUT PAS téléverser pour son subordonné (403 Forbidden)")
+    void manager_cannotUploadSubordinateDocument() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "cni_subordonne.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Tentative d'envoi pour subordonné")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager : NE PEUT PAS téléverser de contrat pour lui-même (403 Forbidden)")
+    void manager_cannotUploadContractForSelf() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "contrat_manager.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        mockMvc.perform(multipart("/api/v1/documents")
+                        .file(file)
+                        .param("employeeId", managerEmployee.getId().toString())
+                        .param("type", "CONTRAT")
+                        .param("title", "Tentative dépôt contrat par manager")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager : peut télécharger son propre document (200 OK) mais 403 sur subordonné")
+    void manager_canDownloadOwnDocument_andForbiddenOnSubordinate() throws Exception {
+        // 1. Manager dépose un document
+        MockMultipartFile fileMgr = new MockMultipartFile(
+                "file", "cni_manager.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(fileMgr)
+                        .param("employeeId", managerEmployee.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "CNI Manager Sow")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String mgrDocId = com.jayway.jsonpath.JsonPath.read(uploadRes.getResponse().getContentAsString(), "$.data.id");
+
+        // 2. Manager télécharge son propre document -> 200 OK
+        mockMvc.perform(get("/api/v1/documents/" + mgrDocId + "/download")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isOk());
+
+        // 3. DRH dépose un document pour le subordonné (employee1)
+        MockMultipartFile fileSub = new MockMultipartFile(
+                "file", "diplome_subordonne.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadSubRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(fileSub)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "DIPLOME")
+                        .param("title", "Diplôme sous-fifre")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String subDocId = com.jayway.jsonpath.JsonPath.read(uploadSubRes.getResponse().getContentAsString(), "$.data.id");
+
+        // 4. Manager essaie de télécharger le document de son subordonné -> 403 Forbidden
+        mockMvc.perform(get("/api/v1/documents/" + subDocId + "/download")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Manager : peut supprimer son propre document déposé (204 No Content) mais 403 sur subordonné")
+    void manager_canDeleteOwnDocument_andForbiddenOnSubordinate() throws Exception {
+        // 1. Manager dépose un document
+        MockMultipartFile fileMgr = new MockMultipartFile(
+                "file", "cni_manager_del.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(fileMgr)
+                        .param("employeeId", managerEmployee.getId().toString())
+                        .param("type", "AUTRE")
+                        .param("title", "Document temporaire manager")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String mgrDocId = com.jayway.jsonpath.JsonPath.read(uploadRes.getResponse().getContentAsString(), "$.data.id");
+
+        // 2. DRH dépose un document pour subordonné
+        MockMultipartFile fileSub = new MockMultipartFile(
+                "file", "cni_sub.pdf", "application/pdf", VALID_PDF_BYTES);
+
+        MvcResult uploadSubRes = mockMvc.perform(multipart("/api/v1/documents")
+                        .file(fileSub)
+                        .param("employeeId", employee1.getId().toString())
+                        .param("type", "CNI")
+                        .param("title", "Pièce subordonné")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String subDocId = com.jayway.jsonpath.JsonPath.read(uploadSubRes.getResponse().getContentAsString(), "$.data.id");
+
+        // 3. Manager essaie de supprimer le document du subordonné -> 403 Forbidden
+        mockMvc.perform(delete("/api/v1/documents/" + subDocId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+
+        // 4. Manager supprime son propre document déposé -> 204 No Content
+        mockMvc.perform(delete("/api/v1/documents/" + mgrDocId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isNoContent());
     }
 }
 
