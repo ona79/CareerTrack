@@ -309,7 +309,14 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Fiche d'évaluation introuvable : " + evaluationId));
 
         Employee employee = eval.getEmployee();
+        if (employee != null) {
+            employee = employeeRepository.findById(employee.getId()).orElse(employee);
+        }
+
         Employee evaluator = eval.getEvaluator() != null ? eval.getEvaluator() : (employee != null ? employee.getManager() : null);
+        if (evaluator != null) {
+            evaluator = employeeRepository.findById(evaluator.getId()).orElse(evaluator);
+        }
 
         List<AnnualEvaluationPdfData.ObjectiveItem> objectiveItems = eval.getObjectives().stream()
                 .map(o -> new AnnualEvaluationPdfData.ObjectiveItem(
@@ -321,15 +328,22 @@ public class EvaluationServiceImpl implements EvaluationService {
                 ))
                 .toList();
 
+        BigDecimal displayScore = eval.getFinalScore();
+        if (displayScore == null && eval.getManagerScore() != null) {
+            displayScore = eval.getManagerScore();
+        } else if (displayScore == null && eval.getSelfScore() != null) {
+            displayScore = eval.getSelfScore();
+        }
+
         AnnualEvaluationPdfData pdfData = new AnnualEvaluationPdfData(
                 eval.getCampaign() != null ? eval.getCampaign().getTitle() : "Campagne Annuelle",
                 employee != null ? employee.getFullName() : "N/A",
                 employee != null ? employee.getEmployeeNumber() : "N/A",
                 employee != null && employee.getPosition() != null ? employee.getPosition().getTitle() : "N/A",
                 employee != null && employee.getDepartment() != null ? employee.getDepartment().getName() : "N/A",
-                evaluator != null ? evaluator.getFullName() : "N/A",
+                evaluator != null ? evaluator.getFullName() : (employee != null && employee.getManager() != null ? employee.getManager().getFullName() : "Direction N+1"),
                 eval.getInterviewDate() != null ? eval.getInterviewDate() : LocalDate.now(),
-                eval.getFinalScore(),
+                displayScore,
                 eval.getFeedback(),
                 objectiveItems
         );

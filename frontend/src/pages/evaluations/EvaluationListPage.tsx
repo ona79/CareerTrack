@@ -207,12 +207,13 @@ export const EvaluationListPage: React.FC = () => {
   });
 
   // Téléchargement PDF
-  const handleDownloadPdf = async (evalId: string) => {
+  const handleDownloadPdf = async (evalId: string, empName?: string) => {
     try {
       setDownloadingPdf(true);
+      const name = empName || selectedEval?.employeeFullName || 'evaluation';
       await downloadFile(
         `/evaluations/${evalId}/pdf`,
-        `entretien_annuel_${selectedEval?.employeeFullName || 'evaluation'}.pdf`
+        `entretien_annuel_${name.replace(/\s+/g, '_')}.pdf`
       );
     } catch (err) {
       console.error('Erreur téléchargement PDF :', err);
@@ -403,7 +404,20 @@ export const EvaluationListPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       {getStatusBadge(evalItem.status)}
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadPdf(evalItem.id, evalItem.employeeFullName);
+                          }}
+                          className="p-1 text-gray-400 hover:text-[#1A6B3C] rounded hover:bg-gray-100 transition-colors"
+                          title={`Télécharger le compte-rendu PDF de ${evalItem.employeeFullName}`}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </div>
                     </div>
                   </div>
                 );
@@ -582,13 +596,15 @@ export const EvaluationListPage: React.FC = () => {
                     )}
 
                     {/* Bouton pour ouvrir la modale si éligible */}
-                    <button
-                      type="button"
-                      onClick={() => setShowSelfEvalModal(true)}
-                      className="btn btn-secondary text-xs min-h-[40px]"
-                    >
-                      Modifier mon auto-évaluation
-                    </button>
+                    {((user?.employeeId && selectedEval.employeeId === user.employeeId) || isDRH) && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSelfEvalModal(true)}
+                        className="btn btn-secondary text-xs min-h-[40px]"
+                      >
+                        {selectedEval.selfScore ? 'Modifier mon auto-évaluation' : 'Soumettre mon auto-évaluation'}
+                      </button>
+                    )}
                   </div>
                 )}
 

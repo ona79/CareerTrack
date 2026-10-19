@@ -22,7 +22,11 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login({ username, password });
-      navigate(from, { replace: true });
+      const stored = localStorage.getItem('user');
+      const u = stored ? JSON.parse(stored) : null;
+      const isMgmt = u?.roles?.some((r: string) => r.includes('DRH') || r.includes('MANAGER') || r.includes('DIRECTION') || r.includes('ADMIN'));
+      const target = (from && from !== '/dashboard') ? from : (isMgmt ? '/dashboard' : '/leaves');
+      navigate(target, { replace: true });
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       console.error('Erreur lors de la tentative de connexion:', { status, error: err });
