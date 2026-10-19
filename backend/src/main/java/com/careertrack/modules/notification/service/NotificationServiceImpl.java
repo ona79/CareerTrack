@@ -44,6 +44,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .title(n.getTitle())
                 .message(n.getMessage())
                 .recipientId(n.getRecipient() != null ? n.getRecipient().getId() : null)
+                .recipientEmail(n.getRecipientEmail())
                 .read(n.isRead())
                 .sentAt(n.getSentAt())
                 .build();

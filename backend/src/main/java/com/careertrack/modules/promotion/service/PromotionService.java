@@ -11,4 +11,8 @@ public interface PromotionService {
     List<PromotionProposalDto> getProposalsByEmployee(UUID employeeId);
     PromotionProposalDto createProposal(PromotionProposalDto dto);
     PromotionProposalDto updateStatus(UUID proposalId, PromotionStatus status, String comment);
+
+    com.careertrack.modules.promotion.dto.SalarySimulationResultDto simulateSalaryImpact(com.careertrack.modules.promotion.dto.SalarySimulationRequestDto requestDto);
+    List<com.careertrack.modules.promotion.dto.SalarySimulationResultDto> getSalarySimulations();
+    com.careertrack.modules.promotion.dto.SalarySimulationResultDto getSalarySimulationById(UUID simulationId);
 }

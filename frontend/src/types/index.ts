@@ -105,6 +105,8 @@ export interface Position {
   maxSalary?: number;
 }
 
+export type PositionDto = Position;
+
 export interface Contract {
   id: string;
   employeeId: string;
@@ -472,21 +474,98 @@ export interface PromotionProposalDto {
   currentPositionTitle?: string;
   proposedPositionId?: string;
   proposedPositionTitle?: string;
-  currentSalary: number;
-  proposedSalary: number;
+  currentSalary?: number;
+  proposedSalary?: number;
   percentageIncrease?: number;
   status: PromotionStatus;
   justification?: string;
   proposedAt?: string;
 }
 
-export interface SalarySimulationDto {
+export interface SalarySimulationRequestDto {
+  title: string;
+  departmentId?: string;
+  averageIncreasePercentage: number;
+}
+
+export interface SalarySimulationResultDto {
   id?: string;
+  title: string;
   departmentId?: string;
   departmentName?: string;
-  budgetIncreasePercentage: number;
-  totalCostImpact: number;
+  averageIncreasePercentage: number;
+  currentMonthlyPayroll: number;
+  projectedMonthlyPayroll: number;
+  monthlyDifference: number;
+  projectedAnnualPayrollImpact: number;
+  affectedEmployeesCount: number;
   simulatedAt?: string;
+  createdByName?: string;
+}
+
+// ─── RECRUTEMENT & KANBAN ──────────────────────────────────────────────────────
+export type KanbanStatus =
+  | 'RECU'
+  | 'PRESELECTIONNE'
+  | 'ENTRETIEN'
+  | 'OFFRE'
+  | 'EMBAUCHE'
+  | 'REFUSE';
+
+export interface JobOfferDto {
+  id: string;
+  code: string;
+  title: string;
+  departmentId?: string;
+  departmentName?: string;
+  positionId?: string;
+  positionTitle?: string;
+  contractType: string;
+  description: string;
+  requirements?: string;
+  status: 'DRAFT' | 'OPEN' | 'CLOSED' | 'ARCHIVED';
+  openPositions: number;
+  closingDate?: string;
+  applicationsCount: number;
+}
+
+export interface JobOfferCreateDto {
+  code?: string;
+  title: string;
+  departmentId?: string;
+  positionId?: string;
+  contractType: string;
+  description: string;
+  requirements?: string;
+  openPositions?: number;
+  closingDate?: string;
+}
+
+export interface JobApplicationDto {
+  id: string;
+  jobOfferId?: string;
+  jobOfferTitle?: string;
+  candidateId?: string;
+  candidateFullName?: string;
+  candidateEmail?: string;
+  candidatePhone?: string;
+  status: KanbanStatus;
+  currentStep?: string;
+  rating?: number;
+  notes?: string;
+  cvUrl?: string;
+  appliedAt?: string;
+}
+
+export interface JobApplicationCreateDto {
+  jobOfferId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  cvUrl?: string;
+  linkedinUrl?: string;
+  notes?: string;
 }
 
 // ─── DOCUMENTS RH ─────────────────────────────────────────────────────────────

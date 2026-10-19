@@ -30,9 +30,9 @@ import type {
 type ActiveTab = 'CATALOGUE' | 'SESSIONS' | 'MY_ENROLLMENTS';
 
 export const TrainingListPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
-  const isDRH = user?.roles?.includes('DRH') || user?.roles?.includes('ADMIN');
+  const isDRH = hasRole('DRH') || hasRole('ADMIN') || hasRole('ROLE_DRH') || hasRole('ROLE_ADMIN');
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('CATALOGUE');
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null);
@@ -191,7 +191,7 @@ export const TrainingListPage: React.FC = () => {
                 className="btn btn-primary text-xs min-h-[40px] flex-1 sm:flex-none justify-center"
               >
                 <Plus className="w-4 h-4 mr-1.5" />
-                Nouveau Module
+                Ajouter une formation
               </button>
               <button
                 type="button"
