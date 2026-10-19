@@ -19,7 +19,8 @@ import {
   Check,
   Star,
   Users,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
@@ -39,9 +40,10 @@ export const EvaluationListPage: React.FC = () => {
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  const isDRH = hasRole('DRH') || hasRole('ADMIN') || hasRole('ROLE_DRH') || hasRole('ROLE_ADMIN');
+  const isDRH = hasRole('DRH') || hasRole('ADMIN') || hasRole('DIRECTION') || hasRole('ROLE_DRH') || hasRole('ROLE_ADMIN') || hasRole('ROLE_DIRECTION');
   const isManager = hasRole('MANAGER') || hasRole('ROLE_MANAGER');
 
+  const [notificationMsg, setNotificationMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [selectedEvalId, setSelectedEvalId] = useState<string>('');
   const [activeStep, setActiveStep] = useState<StepType>('OBJECTIVES');
@@ -122,25 +124,37 @@ export const EvaluationListPage: React.FC = () => {
   // Mutations
   const createCampaignMutation = useMutation({
     mutationFn: async () => {
-      const start = newCampaignStartDate || `${newCampaignYear}-01-01`;
-      const end = newCampaignEndDate || `${newCampaignYear}-12-31`;
-      const res = await api.post('/evaluations/campaigns', {
-        title: newCampaignTitle.trim(),
-        campaignYear: Number(newCampaignYear) || currentYear,
+      const year = Number(newCampaignYear) || currentYear;
+      const start = newCampaignStartDate || `${year}-01-01`;
+      const end = newCampaignEndDate || `${year}-12-31`;
+      const res = await api.post<ApiResponse<EvaluationCampaign>>('/evaluations/campaigns', {
+        title: (newCampaignTitle || `Campagne Annuelle d'Évaluation ${year}`).trim(),
+        campaignYear: year,
         startDate: start,
         endDate: end,
         status: 'IN_PROGRESS'
       });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       setShowNewCampaignModal(false);
       setCampaignError(null);
-      refetchCampaigns();
+      queryClient.invalidateQueries({ queryKey: ['evaluation-campaigns'] });
+      const newCamp = res?.data;
+      if (newCamp?.id) {
+        setSelectedCampaignId(newCamp.id);
+        queryClient.invalidateQueries({ queryKey: ['evaluations-list'] });
+      }
+      setNotificationMsg({
+        text: 'Campagne annuelle lancée avec succès ! Les fiches d’évaluation SMART ont été générées pour vos collaborateurs.',
+        type: 'success',
+      });
+      setTimeout(() => setNotificationMsg(null), 6000);
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.message || 'Erreur lors du lancement de la campagne';
+      const msg = err.response?.data?.message || err.message || 'Erreur lors du lancement de la campagne';
       setCampaignError(msg);
+      setNotificationMsg({ text: msg, type: 'error' });
     }
   });
 
@@ -254,6 +268,33 @@ export const EvaluationListPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Alerte Notification */}
+      {notificationMsg && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs animate-fadeIn ${
+            notificationMsg.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-[#1A6B3C]'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {notificationMsg.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            )}
+            <span className="font-medium">{notificationMsg.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotificationMsg(null)}
+            className="text-gray-400 hover:text-gray-600 p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Grille des Campagnes Actives */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -722,13 +763,13 @@ export const EvaluationListPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => createCampaignMutation.mutate()}
-                disabled={!newCampaignTitle || createCampaignMutation.isPending}
-                className="btn btn-primary text-xs"
+                disabled={createCampaignMutation.isPending}
+                className="btn btn-primary text-xs flex items-center gap-1.5"
               >
                 {createCampaignMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 )}
-                Créer la campagne
+                Lancer la campagne
               </button>
             </div>
           </div>
