@@ -275,4 +275,52 @@ class EmployeeControllerIntegrationTest {
         Employee reloaded = employeeRepository.findById(employee2.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(EmployeeStatus.TERMINATED);
     }
+
+    @Test
+    @DisplayName("Un employé ne peut pas être son propre manager (400)")
+    void update_rejects_self_as_manager() throws Exception {
+        com.careertrack.modules.employee.dto.EmployeeCreateDto body =
+                com.careertrack.modules.employee.dto.EmployeeCreateDto.builder()
+                        .employeeNumber(employee2.getEmployeeNumber())
+                        .firstName("Fatou")
+                        .lastName("Diop")
+                        .nationalId(employee2.getNationalId())
+                        .email("emp2@careertrack.sn")
+                        .birthDate(LocalDate.of(1995, 8, 20))
+                        .hireDate(LocalDate.of(2024, 2, 1))
+                        .managerId(employee2.getId())
+                        .status(EmployeeStatus.ACTIVE)
+                        .build();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/employees/" + employee2.getId())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Une boucle dans la hiérarchie est refusée (400)")
+    void update_rejects_manager_cycle() throws Exception {
+        com.careertrack.modules.employee.dto.EmployeeCreateDto body =
+                com.careertrack.modules.employee.dto.EmployeeCreateDto.builder()
+                        .employeeNumber(managerEmployee.getEmployeeNumber())
+                        .firstName("Amadou")
+                        .lastName("Diallo")
+                        .nationalId(managerEmployee.getNationalId())
+                        .email("mgr@careertrack.sn")
+                        .birthDate(LocalDate.of(1985, 3, 12))
+                        .hireDate(LocalDate.of(2020, 6, 1))
+                        .managerId(employee1.getId())
+                        .status(EmployeeStatus.ACTIVE)
+                        .build();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/employees/" + managerEmployee.getId())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest());
+    }
 }

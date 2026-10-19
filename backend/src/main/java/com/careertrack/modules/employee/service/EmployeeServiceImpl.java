@@ -159,8 +159,21 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         if (updateDto.getManagerId() != null) {
+            if (updateDto.getManagerId().equals(id)) {
+                throw new BadRequestException("Un employé ne peut pas être son propre manager");
+            }
             Employee manager = employeeRepository.findById(updateDto.getManagerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Manager", "id", updateDto.getManagerId()));
+
+            Employee cursor = manager;
+            int depth = 0;
+            while (cursor != null && depth < 1000) {
+                if (cursor.getId().equals(id)) {
+                    throw new BadRequestException("Ce choix de manager créerait une boucle dans la hiérarchie");
+                }
+                cursor = cursor.getManager();
+                depth++;
+            }
             employee.setManager(manager);
         }
 
