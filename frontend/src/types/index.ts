@@ -155,29 +155,112 @@ export interface LeaveRequest {
   createdAt: string;
 }
 
-// ─── ÉVALUATION ───────────────────────────────────────────────────────────────
-export type EvaluationStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'VALIDATED';
-export type CampaignStatus   = 'PLANNING' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED';
+// ─── ÉVALUATION & PERFORMANCE ─────────────────────────────────────────────────
+export type EvaluationStatus = 'DRAFT' | 'SELF_SUBMITTED' | 'MANAGER_EVALUATED' | 'COMPLETED' | 'VALIDATED';
+export type CampaignStatus   = 'PLANNED' | 'PLANNING' | 'IN_PROGRESS' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED';
+export type ObjectiveCategory = 'OPERATIONAL' | 'MANAGERIAL' | 'TECHNICAL' | 'BEHAVIORAL' | 'STRATEGIC';
+
+export interface SmartObjectiveDto {
+  id?: string;
+  title: string;
+  description?: string;
+  category: ObjectiveCategory;
+  weight: number;
+  targetDate?: string;
+  achievementRate: number;
+  status?: string;
+  kpi?: string;
+}
 
 export interface EvaluationCampaign {
   id: string;
   title: string;
-  year: number;
+  campaignYear?: number;
+  year?: number;
   startDate: string;
   endDate: string;
   status: CampaignStatus;
   description?: string;
 }
 
+export type EvaluationCampaignDto = EvaluationCampaign;
+
+export interface EvaluationDto {
+  id: string;
+  campaignId?: string;
+  campaignTitle?: string;
+  employeeId?: string;
+  employeeFullName: string;
+  evaluatorId?: string;
+  evaluatorFullName?: string;
+  status: EvaluationStatus;
+  selfScore?: number;
+  managerScore?: number;
+  finalScore?: number;
+  feedback?: string;
+  summaryPdfUrl?: string;
+  interviewDate?: string;
+  objectives: SmartObjectiveDto[];
+}
+
 export interface Evaluation {
   id: string;
-  campaign: EvaluationCampaign;
-  employee: Pick<Employee, 'id' | 'fullName'>;
-  evaluator: Pick<Employee, 'id' | 'fullName'>;
+  campaign?: EvaluationCampaign;
+  campaignTitle?: string;
+  employee?: Pick<Employee, 'id' | 'fullName'>;
+  employeeFullName?: string;
+  evaluator?: Pick<Employee, 'id' | 'fullName'>;
+  evaluatorFullName?: string;
   overallScore?: number;
+  finalScore?: number;
   status: EvaluationStatus;
   comments?: string;
-  createdAt: string;
+  feedback?: string;
+  summaryPdfUrl?: string;
+  interviewDate?: string;
+  objectives?: SmartObjectiveDto[];
+  createdAt?: string;
+}
+
+export interface EvaluationCreateDto {
+  campaignId: string;
+  employeeId: string;
+  evaluatorId?: string;
+  interviewDate?: string;
+  objectives?: {
+    title: string;
+    description?: string;
+    category: ObjectiveCategory;
+    weight: number;
+    targetDate?: string;
+    achievementRate?: number;
+  }[];
+}
+
+export interface EvaluationSelfSubmitDto {
+  selfScore: number;
+  selfFeedback: string;
+  objectiveRates?: {
+    objectiveId: string;
+    selfRate: number;
+    selfComment?: string;
+  }[];
+}
+
+export interface EvaluationManagerSubmitDto {
+  managerScore: number;
+  managerFeedback: string;
+  interviewDate?: string;
+  objectiveRates?: {
+    objectiveId: string;
+    achievementRate: number;
+    status?: string;
+  }[];
+}
+
+export interface EvaluationCompleteDto {
+  finalFeedback?: string;
+  finalScore?: number;
 }
 
 // ─── RECRUTEMENT ──────────────────────────────────────────────────────────────
@@ -219,9 +302,9 @@ export interface JobApplication {
   applicationDate: string;
 }
 
-// ─── FORMATION ────────────────────────────────────────────────────────────────
+// ─── FORMATION & COMPÉTENCES ──────────────────────────────────────────────────
 export type TrainingSessionStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-export type EnrollmentStatus      = 'ENROLLED' | 'IN_PROGRESS' | 'COMPLETED' | 'ABSENT' | 'CANCELLED';
+export type EnrollmentStatus      = 'REQUESTED' | 'CONFIRMED' | 'ATTENDED' | 'COMPLETED' | 'DROPPED' | 'ENROLLED' | 'IN_PROGRESS' | 'ABSENT' | 'CANCELLED';
 
 export interface Training {
   id: string;
@@ -231,6 +314,62 @@ export interface Training {
   durationHours?: number;
   provider?: string;
   category?: string;
+}
+
+export type TrainingDto = Training;
+
+export interface TrainingSessionDto {
+  id: string;
+  trainingId?: string;
+  trainingTitle?: string;
+  trainingCode?: string;
+  sessionCode: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  maxParticipants: number;
+  enrolledParticipantsCount: number;
+  status: TrainingSessionStatus;
+}
+
+export interface TrainingEnrollmentDto {
+  id: string;
+  sessionId?: string;
+  sessionCode?: string;
+  trainingId?: string;
+  trainingTitle?: string;
+  durationHours?: number;
+  provider?: string;
+  sessionStartDate?: string;
+  sessionEndDate?: string;
+  employeeId?: string;
+  employeeFullName?: string;
+  employeeNumber?: string;
+  enrollmentDate: string;
+  status: EnrollmentStatus;
+  score?: number;
+  certificateUrl?: string;
+  feedback?: string;
+}
+
+export interface TrainingSessionCreateDto {
+  trainingId: string;
+  sessionCode: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  maxParticipants?: number;
+}
+
+export interface EnrollmentRequestDto {
+  sessionId: string;
+  employeeId?: string;
+}
+
+export interface EnrollmentStatusUpdateDto {
+  status: EnrollmentStatus;
+  score?: number;
+  feedback?: string;
 }
 
 // ─── PAIE ─────────────────────────────────────────────────────────────────────
