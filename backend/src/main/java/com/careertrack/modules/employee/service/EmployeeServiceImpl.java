@@ -111,6 +111,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .id(e.getId())
                 .employeeNumber(e.getEmployeeNumber())
                 .fullName(e.getFullName())
+                .departmentId(e.getDepartment() != null ? e.getDepartment().getId() : null)
                 .departmentName(e.getDepartment() != null ? e.getDepartment().getName() : null)
                 .positionTitle(e.getPosition() != null ? e.getPosition().getTitle() : null)
                 .status(e.getStatus())

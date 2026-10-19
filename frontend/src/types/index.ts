@@ -102,6 +102,17 @@ export interface Employee {
   updatedAt?: string;
 }
 
+export interface EmployeeSummary {
+  id: string;
+  employeeNumber: string;
+  fullName: string;
+  departmentId?: string;
+  departmentName?: string;
+  positionTitle?: string;
+  status: EmployeeStatus;
+  hireDate: string;
+}
+
 export interface Department {
   id: string;
   code: string;

@@ -19,4 +19,5 @@ public class EmployeeSummaryDto {
     private String positionTitle;
     private EmployeeStatus status;
     private LocalDate hireDate;
+    private UUID departmentId;
 }
