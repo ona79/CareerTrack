@@ -45,4 +45,27 @@ public class PromotionController {
             @RequestParam(required = false) String comment) {
         return ResponseEntity.ok(ApiResponse.success("Statut mis à jour", promotionService.updateStatus(id, status, comment)));
     }
+
+    @PostMapping("/simulations")
+    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
+    @Operation(summary = "Simuler l'impact d'une revalorisation sur la masse salariale en FCFA", description = "Réservé à la DRH et à la DIRECTION")
+    public ResponseEntity<ApiResponse<com.careertrack.modules.promotion.dto.SalarySimulationResultDto>> simulateSalaryImpact(
+            @jakarta.validation.Valid @RequestBody com.careertrack.modules.promotion.dto.SalarySimulationRequestDto dto) {
+        return ResponseEntity.ok(ApiResponse.success("Simulation calculée avec succès", promotionService.simulateSalaryImpact(dto)));
+    }
+
+    @GetMapping("/simulations")
+    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
+    @Operation(summary = "Lister l'historique des simulations de masse salariale", description = "Réservé à la DRH et à la DIRECTION")
+    public ResponseEntity<ApiResponse<List<com.careertrack.modules.promotion.dto.SalarySimulationResultDto>>> getSalarySimulations() {
+        return ResponseEntity.ok(ApiResponse.success(promotionService.getSalarySimulations()));
+    }
+
+    @GetMapping("/simulations/{id}")
+    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
+    @Operation(summary = "Détails d'une simulation de masse salariale", description = "Réservé à la DRH et à la DIRECTION")
+    public ResponseEntity<ApiResponse<com.careertrack.modules.promotion.dto.SalarySimulationResultDto>> getSalarySimulation(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(promotionService.getSalarySimulationById(id)));
+    }
 }

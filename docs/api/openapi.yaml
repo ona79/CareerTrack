@@ -267,6 +267,72 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseTrainingEnrollmentDto"
+  /api/v1/recruitment/offers:
+    get:
+      tags:
+      - Recrutement
+      summary: Lister les offres d'emploi publiées
+      description: Accessible aux utilisateurs authentifiés
+      operationId: getOffers
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListJobOfferDto"
+    post:
+      tags:
+      - Recrutement
+      summary: Publier une nouvelle offre d'emploi
+      description: Accessible à la DRH et aux Managers
+      operationId: createOffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobOfferCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseJobOfferDto"
+  /api/v1/recruitment/applications:
+    get:
+      tags:
+      - Recrutement
+      summary: Lister toutes les candidatures pour le tableau Kanban
+      description: Accessible à la DRH et aux Managers
+      operationId: getAllApplications
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListJobApplicationDto"
+    post:
+      tags:
+      - Recrutement
+      summary: Enregistrer une nouvelle candidature pour une offre
+      description: Accessible à la DRH et aux Managers
+      operationId: createApplication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobApplicationCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseJobApplicationDto"
   /api/v1/promotions:
     get:
       tags:
@@ -300,6 +366,39 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePromotionProposalDto"
+  /api/v1/promotions/simulations:
+    get:
+      tags:
+      - Promotions & Carrières
+      summary: Lister l'historique des simulations de masse salariale
+      description: Réservé à la DRH et à la DIRECTION
+      operationId: getSalarySimulations
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListSalarySimulationResultDto"
+    post:
+      tags:
+      - Promotions & Carrières
+      summary: Simuler l'impact d'une revalorisation sur la masse salariale en FCFA
+      description: Réservé à la DRH et à la DIRECTION
+      operationId: simulateSalaryImpact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalarySimulationRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseSalarySimulationResultDto"
   /api/v1/payroll/generate:
     post:
       tags:
@@ -1124,34 +1223,48 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListCompanySettingDto"
-  /api/v1/recruitment/offers:
+  /api/v1/recruitment/offers/{id}:
     get:
       tags:
       - Recrutement
-      summary: Lister les offres d'emploi publiées
+      summary: Détail d'une offre d'emploi
       description: Accessible aux utilisateurs authentifiés
-      operationId: getOffers
+      operationId: getOfferById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: OK
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseListJobOffer"
-  /api/v1/recruitment/applications:
+                $ref: "#/components/schemas/ApiResponseJobOfferDto"
+  /api/v1/promotions/simulations/{id}:
     get:
       tags:
-      - Recrutement
-      summary: Lister toutes les candidatures pour le tableau Kanban
-      description: Accessible à la DRH et aux Managers
-      operationId: getAllApplications
+      - Promotions & Carrières
+      summary: Détails d'une simulation de masse salariale
+      description: Réservé à la DRH et à la DIRECTION
+      operationId: getSalarySimulation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: OK
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseListJobApplicationDto"
+                $ref: "#/components/schemas/ApiResponseSalarySimulationResultDto"
   /api/v1/positions:
     get:
       tags:
@@ -2530,6 +2643,176 @@ components:
           type: string
         feedback:
           type: string
+    JobOfferCreateDto:
+      required:
+      - contractType
+      - description
+      - title
+      type: object
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        positionId:
+          type: string
+          format: uuid
+        contractType:
+          type: string
+          enum:
+          - CDI
+          - CDD
+          - STAGE
+          - PRESTATION
+        description:
+          type: string
+        requirements:
+          type: string
+        openPositions:
+          type: integer
+          format: int32
+        closingDate:
+          type: string
+          format: date
+    ApiResponseJobOfferDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/JobOfferDto"
+        timestamp:
+          type: string
+          format: date-time
+    JobOfferDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        positionId:
+          type: string
+          format: uuid
+        positionTitle:
+          type: string
+        contractType:
+          type: string
+          enum:
+          - CDI
+          - CDD
+          - STAGE
+          - PRESTATION
+        description:
+          type: string
+        requirements:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - OPEN
+          - CLOSED
+          - ARCHIVED
+        openPositions:
+          type: integer
+          format: int32
+        closingDate:
+          type: string
+          format: date
+        applicationsCount:
+          type: integer
+          format: int32
+    JobApplicationCreateDto:
+      required:
+      - email
+      - firstName
+      - jobOfferId
+      - lastName
+      type: object
+      properties:
+        jobOfferId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        cvUrl:
+          type: string
+        linkedinUrl:
+          type: string
+        notes:
+          type: string
+    ApiResponseJobApplicationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/JobApplicationDto"
+        timestamp:
+          type: string
+          format: date-time
+    JobApplicationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        jobOfferId:
+          type: string
+          format: uuid
+        jobOfferTitle:
+          type: string
+        candidateId:
+          type: string
+          format: uuid
+        candidateFullName:
+          type: string
+        candidateEmail:
+          type: string
+        candidatePhone:
+          type: string
+        status:
+          type: string
+          enum:
+          - RECU
+          - PRESELECTIONNE
+          - ENTRETIEN
+          - OFFRE
+          - EMBAUCHE
+          - REFUSE
+        currentStep:
+          type: string
+        rating:
+          type: integer
+          format: int32
+        notes:
+          type: string
+        cvUrl:
+          type: string
+        appliedAt:
+          type: string
     PromotionProposalDto:
       type: object
       properties:
@@ -2576,6 +2859,66 @@ components:
         timestamp:
           type: string
           format: date-time
+    SalarySimulationRequestDto:
+      required:
+      - averageIncreasePercentage
+      - title
+      type: object
+      properties:
+        title:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        averageIncreasePercentage:
+          maximum: 100.0
+          exclusiveMaximum: false
+          minimum: 0.0
+          exclusiveMinimum: false
+          type: number
+    ApiResponseSalarySimulationResultDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/SalarySimulationResultDto"
+        timestamp:
+          type: string
+          format: date-time
+    SalarySimulationResultDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        averageIncreasePercentage:
+          type: number
+        currentMonthlyPayroll:
+          type: number
+        projectedMonthlyPayroll:
+          type: number
+        monthlyDifference:
+          type: number
+        projectedAnnualPayrollImpact:
+          type: number
+        affectedEmployeesCount:
+          type: integer
+          format: int32
+        simulatedAt:
+          type: string
+          format: date-time
+        createdByName:
+          type: string
     ApiResponsePayrollGenerationResultDto:
       type: object
       properties:
@@ -3122,56 +3465,6 @@ components:
           type: number
         feedback:
           type: string
-    ApiResponseJobApplicationDto:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          $ref: "#/components/schemas/JobApplicationDto"
-        timestamp:
-          type: string
-          format: date-time
-    JobApplicationDto:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        jobOfferId:
-          type: string
-          format: uuid
-        jobOfferTitle:
-          type: string
-        candidateId:
-          type: string
-          format: uuid
-        candidateFullName:
-          type: string
-        candidateEmail:
-          type: string
-        candidatePhone:
-          type: string
-        status:
-          type: string
-          enum:
-          - RECU
-          - PRESELECTIONNE
-          - ENTRETIEN
-          - OFFRE
-          - EMBAUCHE
-          - REFUSE
-        currentStep:
-          type: string
-        rating:
-          type: integer
-          format: int32
-        notes:
-          type: string
-        cvUrl:
-          type: string
     ApiResponsePayslipResponseDto:
       type: object
       properties:
@@ -3321,7 +3614,7 @@ components:
         timestamp:
           type: string
           format: date-time
-    ApiResponseListJobOffer:
+    ApiResponseListJobOfferDto:
       type: object
       properties:
         success:
@@ -3331,219 +3624,10 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/JobOffer"
+            $ref: "#/components/schemas/JobOfferDto"
         timestamp:
           type: string
           format: date-time
-    Department:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-        lastModifiedBy:
-          type: string
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        manager:
-          $ref: "#/components/schemas/Employee"
-    Employee:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-        lastModifiedBy:
-          type: string
-        id:
-          type: string
-          format: uuid
-        user:
-          $ref: "#/components/schemas/User"
-        employeeNumber:
-          type: string
-        firstName:
-          type: string
-        lastName:
-          type: string
-        nationalId:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        address:
-          type: string
-        birthDate:
-          type: string
-          format: date
-        hireDate:
-          type: string
-          format: date
-        department:
-          $ref: "#/components/schemas/Department"
-        position:
-          $ref: "#/components/schemas/Position"
-        manager:
-          $ref: "#/components/schemas/Employee"
-        subordinates:
-          type: array
-          items:
-            $ref: "#/components/schemas/Employee"
-        status:
-          type: string
-          enum:
-          - ACTIVE
-          - ON_LEAVE
-          - PROBATION
-          - SUSPENDED
-          - TERMINATED
-        maritalStatus:
-          type: string
-        dependentsCount:
-          type: integer
-          format: int32
-        fullName:
-          type: string
-        cadre:
-          type: boolean
-    JobOffer:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-        lastModifiedBy:
-          type: string
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        title:
-          type: string
-        department:
-          $ref: "#/components/schemas/Department"
-        position:
-          $ref: "#/components/schemas/Position"
-        contractType:
-          type: string
-          enum:
-          - CDI
-          - CDD
-          - STAGE
-          - PRESTATION
-        description:
-          type: string
-        requirements:
-          type: string
-        status:
-          type: string
-          enum:
-          - DRAFT
-          - OPEN
-          - CLOSED
-          - ARCHIVED
-        openPositions:
-          type: integer
-          format: int32
-        closingDate:
-          type: string
-          format: date
-    Position:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-        lastModifiedBy:
-          type: string
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        title:
-          type: string
-        department:
-          $ref: "#/components/schemas/Department"
-        minSalary:
-          type: number
-        maxSalary:
-          type: number
-        description:
-          type: string
-    Role:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          enum:
-          - ROLE_DRH
-          - ROLE_MANAGER
-          - ROLE_EMPLOYE
-          - ROLE_DIRECTION
-        description:
-          type: string
-    User:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-        lastModifiedBy:
-          type: string
-        id:
-          type: string
-          format: uuid
-        username:
-          type: string
-        email:
-          type: string
-        password:
-          type: string
-        enabled:
-          type: boolean
-        roles:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: "#/components/schemas/Role"
     ApiResponseListJobApplicationDto:
       type: object
       properties:
@@ -3569,6 +3653,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PromotionProposalDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListSalarySimulationResultDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalarySimulationResultDto"
         timestamp:
           type: string
           format: date-time
@@ -3813,6 +3911,8 @@ components:
         recipientId:
           type: string
           format: uuid
+        recipientEmail:
+          type: string
         read:
           type: boolean
         sentAt:

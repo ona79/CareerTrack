@@ -15,7 +15,8 @@ import {
   X,
   AlertCircle,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Download
 } from 'lucide-react';
 import type {
   EmployeeSummaryDto,
@@ -145,6 +146,35 @@ export const EmployeeListPage: React.FC = () => {
   const totalPages = employeesPage?.totalPages || 0;
   const employees = employeesPage?.content || [];
 
+  const handleExportRegister = async () => {
+    try {
+      const res = await api.get<ApiResponse<Page<EmployeeSummaryDto>>>('/employees?size=500');
+      const emps = res.data?.data?.content || employees;
+      const headers = ['Matricule', 'Nom Complet', 'Departement', 'Poste', 'Statut'];
+      const rows = emps.map(e => [
+        `"${e.employeeNumber || ''}"`,
+        `"${e.fullName || ''}"`,
+        `"${e.departmentName || ''}"`,
+        `"${e.positionTitle || ''}"`,
+        `"${e.status || ''}"`
+      ]);
+      const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `registre_unique_personnel_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setSuccessMessage('Registre unique du personnel exporté avec succès');
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch {
+      setErrorMessage('Erreur lors de l’export du registre du personnel');
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 py-4">
       {/* Alertes */}
@@ -184,7 +214,18 @@ export const EmployeeListPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Bouton Exporter Registre */}
+          <button
+            type="button"
+            onClick={handleExportRegister}
+            className="btn btn-secondary inline-flex items-center gap-2 text-xs min-h-[44px]"
+            title="Exporter le Registre Unique du Personnel officiel (CSV)"
+          >
+            <Download className="w-4 h-4 text-emerald-700" />
+            Exporter Registre
+          </button>
+
           <button
             onClick={() => refetch()}
             className="btn btn-secondary inline-flex items-center gap-2 text-xs min-h-[44px]"
@@ -214,7 +255,7 @@ export const EmployeeListPage: React.FC = () => {
               className="btn btn-primary inline-flex items-center gap-2 text-xs font-semibold min-h-[44px]"
             >
               <UserPlus className="w-4 h-4" />
-              Nouveau collaborateur
+              Nouveau salarié
             </button>
           )}
         </div>

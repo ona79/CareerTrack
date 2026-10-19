@@ -35,11 +35,11 @@ import type {
 type StepType = 'OBJECTIVES' | 'SELF_EVAL' | 'MANAGER_EVAL' | 'VALIDATION';
 
 export const EvaluationListPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  const isDRH = user?.roles?.includes('DRH') || user?.roles?.includes('ADMIN');
-  const isManager = user?.roles?.includes('MANAGER');
+  const isDRH = hasRole('DRH') || hasRole('ADMIN') || hasRole('ROLE_DRH') || hasRole('ROLE_ADMIN');
+  const isManager = hasRole('MANAGER') || hasRole('ROLE_MANAGER');
 
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [selectedEvalId, setSelectedEvalId] = useState<string>('');
@@ -228,7 +228,7 @@ export const EvaluationListPage: React.FC = () => {
               className="btn btn-primary text-xs w-full sm:w-auto min-h-[40px]"
             >
               <Plus className="w-4 h-4 mr-1.5" />
-              Nouvelle Campagne
+              Lancer une campagne
             </button>
           )}
           <button

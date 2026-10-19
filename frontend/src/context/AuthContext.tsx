@@ -62,7 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const hasRole = useCallback(
-    (role: string) => user?.roles.includes(role) ?? false,
+    (role: string) => {
+      if (!user?.roles || user.roles.length === 0) return false;
+      const cleanRole = role.startsWith('ROLE_') ? role.substring(5) : role;
+      return user.roles.some((r) => r === role || r === cleanRole || r === `ROLE_${cleanRole}`);
+    },
     [user],
   );
 
