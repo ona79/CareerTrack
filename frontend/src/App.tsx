@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import EmployeeDetailPage from '@/pages/employees/EmployeeDetailPage';
+import EmployeeFormPage from '@/pages/employees/EmployeeFormPage'; // <-- NOUVEL IMPORT
 
 // Lazy loading des pages pour optimisation mobile, PWA et code splitting
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
@@ -55,7 +56,27 @@ export const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-                                <Route
+                
+                {/* NOUVELLES ROUTES AJOUTÉES ICI */}
+                <Route
+                  path="/employees/new"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH']}>
+                      <EmployeeFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/employees/:id/edit"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH']}>
+                      <EmployeeFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* FIN DES NOUVELLES ROUTES */}
+
+                <Route
                   path="/employees/:id"
                   element={
                     <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE']}>

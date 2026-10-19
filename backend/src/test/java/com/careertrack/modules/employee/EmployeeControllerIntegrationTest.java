@@ -7,13 +7,13 @@ import com.careertrack.modules.auth.entity.RoleType;
 import com.careertrack.modules.auth.entity.User;
 import com.careertrack.modules.auth.repository.RoleRepository;
 import com.careertrack.modules.auth.repository.UserRepository;
+import com.careertrack.modules.document.repository.EmployeeDocumentRepository;
 import com.careertrack.modules.employee.entity.Department;
 import com.careertrack.modules.employee.entity.Employee;
 import com.careertrack.modules.employee.entity.EmployeeStatus;
 import com.careertrack.modules.employee.entity.Position;
-import com.careertrack.modules.employee.repository.DepartmentRepository;
-import com.careertrack.modules.employee.repository.EmployeeRepository;
-import com.careertrack.modules.employee.repository.PositionRepository;
+import com.careertrack.modules.employee.repository.*;
+import com.careertrack.modules.payroll.repository.PayslipRepository; // <-- NOUVEL IMPORT
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,11 +45,17 @@ class EmployeeControllerIntegrationTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private JwtTokenProvider jwtTokenProvider;
+    
+    // Repositories
     @Autowired private UserRepository userRepository;
     @Autowired private RoleRepository roleRepository;
     @Autowired private DepartmentRepository departmentRepository;
     @Autowired private PositionRepository positionRepository;
     @Autowired private EmployeeRepository employeeRepository;
+    @Autowired private SalaryHistoryRepository salaryHistoryRepository;
+    @Autowired private ContractRepository contractRepository;
+    @Autowired private EmployeeDocumentRepository employeeDocumentRepository;
+    @Autowired private PayslipRepository payslipRepository; // <-- NOUVELLE DÉCLARATION
 
     private String drhToken;
     private String managerToken;
@@ -63,6 +69,14 @@ class EmployeeControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Vider les fiches de paie EN PREMIER
+        payslipRepository.deleteAll();
+        
+        // Puis les autres tables...
+        employeeDocumentRepository.deleteAll();
+        contractRepository.deleteAll();
+        salaryHistoryRepository.deleteAll();
+        
         employeeRepository.deleteAll();
         positionRepository.deleteAll();
         departmentRepository.deleteAll();
@@ -129,9 +143,6 @@ class EmployeeControllerIntegrationTest {
                         .build());
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Règle 1 : EMPLOYE sur le dossier d'un autre → 403
-    // ─────────────────────────────────────────────────────────────
     @Test
     @DisplayName("EMPLOYE ne peut PAS accéder au dossier d'un autre employé (403)")
     void employee_cannot_access_other_employee() throws Exception {
@@ -140,9 +151,6 @@ class EmployeeControllerIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Règle 2 : EMPLOYE sur son propre dossier → 200 avec données complètes
-    // ─────────────────────────────────────────────────────────────
     @Test
     @DisplayName("EMPLOYE accède à son propre dossier (200, données sensibles visibles)")
     void employee_can_access_own_record() throws Exception {
@@ -157,9 +165,6 @@ class EmployeeControllerIntegrationTest {
         assertThat(data.get("phone").asText()).isNotBlank();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Règle 3 : MANAGER sur un subordonné → 200 mais données sensibles masquées
-    // ─────────────────────────────────────────────────────────────
     @Test
     @DisplayName("MANAGER voit son subordonné mais sans CNI/naissance/téléphone/adresse")
     void manager_sees_subordinate_without_sensitive_data() throws Exception {
@@ -176,9 +181,6 @@ class EmployeeControllerIntegrationTest {
         assertThat(data.get("firstName").asText()).isEqualTo("Moussa");
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Bonus : DRH voit tout, données sensibles incluses
-    // ─────────────────────────────────────────────────────────────
     @Test
     @DisplayName("DRH voit n'importe quel dossier avec données sensibles complètes")
     void drh_sees_everything() throws Exception {
@@ -191,9 +193,6 @@ class EmployeeControllerIntegrationTest {
         assertThat(data.get("nationalId").asText()).isNotBlank();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Bonus : DIRECTION ne peut PAS accéder aux dossiers individuels
-    // ─────────────────────────────────────────────────────────────
     @Test
     @DisplayName("DIRECTION n'a pas accès aux dossiers nominatifs (403)")
     void direction_cannot_access_employee_record() throws Exception {
@@ -347,7 +346,6 @@ class EmployeeControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // NOUVEAU TEST AJOUTÉ ICI
     @Test
     @DisplayName("Les listes de départements et de postes sont réservées au DRH")
     void reference_lists_are_reserved_to_drh() throws Exception {
@@ -361,8 +359,6 @@ class EmployeeControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
                 .andExpect(status().isForbidden());
     }
-        @Autowired
-    private com.careertrack.modules.employee.repository.SalaryHistoryRepository salaryHistoryRepository;
 
     @Test
     @DisplayName("L'historique des salaires est réservé au DRH")

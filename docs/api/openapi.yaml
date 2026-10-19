@@ -24,28 +24,32 @@ tags:
   description: "Gestion des dossiers collaborateurs, contrats et fiches de poste"
 - name: Paie & Salaires
   description: "Gestion des bulletins de salaire, cotisations et masse salariale"
-- name: Documents & PDF
-  description: "Gestion documentaire (envoi, téléchargement, suppression) et géné\
-    ration de documents PDF officiels"
+- name: Historique employé
+  description: Historique des avancements et des salaires
 - name: Évaluations & Performance
   description: "Campagnes annuelles, objectifs SMART et entretiens N+1"
 - name: Paramètres de l'Entreprise
   description: "Règles réglementaires, taux de cotisations et plafonds légaux"
+- name: Référentiels RH
+  description: Listes de départements et de postes pour les formulaires
+- name: Organigramme
+  description: Visualisation hiérarchique de l'entreprise et relations managers/subordonnés
+- name: Formations
+  description: Catalogue des compétences et sessions de formation continue
+- name: Recrutement
+  description: Pipeline Kanban des candidatures et offres d'emploi
+- name: Documents & PDF
+  description: "Gestion documentaire (envoi, téléchargement, suppression) et géné\
+    ration de documents PDF officiels"
 - name: Authentification
   description: "Endpoints d'authentification JWT, gestion de session et profil"
 - name: Notifications
   description: Alertes in-app et notifications par courrier électronique
-- name: Organigramme
-  description: Visualisation hiérarchique de l'entreprise et relations managers/subordonnés
 - name: Congés & Absences
   description: "Gestion des demandes de congés, soldes et calendrier d'équipe"
 - name: Promotions & Carrières
   description: "Propositions de promotion interne, revalorisations et simulations\
     \ salariales"
-- name: Formations
-  description: Catalogue des compétences et sessions de formation continue
-- name: Recrutement
-  description: Pipeline Kanban des candidatures et offres d'emploi
 paths:
   /api/v1/settings/{key}:
     put:
@@ -155,8 +159,9 @@ paths:
     delete:
       tags:
       - Employés
-      summary: Supprimer un employé
-      description: Supprime un dossier collaborateur
+      summary: Désactiver un employé
+      description: "Passe le dossier au statut TERMINATED sans le supprimer, pour\
+        \ conserver l'historique"
       operationId: deleteEmployee
       parameters:
       - name: id
@@ -358,13 +363,24 @@ paths:
         schema:
           type: string
           default: lastName
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: departmentId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: OK
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponsePageResponseEmployeeResponseDto"
+                $ref: "#/components/schemas/ApiResponsePageResponseEmployeeSummaryDto"
       security:
       - BearerAuth: []
     post:
@@ -689,6 +705,23 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListJobApplicationDto"
+  /api/v1/positions:
+    get:
+      tags:
+      - Référentiels RH
+      summary: Liste des postes
+      description: "Identifiant, intitulé et département de chaque poste, triés par\
+        \ intitulé"
+      operationId: getPositions
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListReferenceItemDto"
+      security:
+      - BearerAuth: []
   /api/v1/payroll/stats:
     get:
       tags:
@@ -994,15 +1027,16 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListEvaluationDto"
-  /api/v1/employees/department/{departmentId}:
+  /api/v1/employees/{id}/salary-history:
     get:
       tags:
-      - Employés
-      summary: Employés par département
-      description: Retourne les employés affectés à un département donné (DRH et Managers)
-      operationId: getEmployeesByDepartment
+      - Historique employé
+      summary: Historique des salaires
+      description: "Évolutions de salaire d'un employé, de la plus récente à la plus\
+        \ ancienne (DRH uniquement)"
+      operationId: getSalaryHistory
       parameters:
-      - name: departmentId
+      - name: id
         in: path
         required: true
         schema:
@@ -1014,7 +1048,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseListEmployeeResponseDto"
+                $ref: "#/components/schemas/ApiResponseListSalaryHistoryDto"
       security:
       - BearerAuth: []
   /api/v1/documents/{id}/download:
@@ -1172,6 +1206,22 @@ paths:
               schema:
                 type: string
                 format: byte
+      security:
+      - BearerAuth: []
+  /api/v1/departments:
+    get:
+      tags:
+      - Référentiels RH
+      summary: Liste des départements
+      description: "Identifiant et nom de chaque département, triés par nom"
+      operationId: getDepartments
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListReferenceItemDto"
       security:
       - BearerAuth: []
   /api/v1/auth/me:
@@ -2184,6 +2234,31 @@ components:
         timestamp:
           type: string
           format: date-time
+    ApiResponseListReferenceItemDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferenceItemDto"
+        timestamp:
+          type: string
+          format: date-time
+    ReferenceItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        parentId:
+          type: string
+          format: uuid
     ApiResponsePayrollStatsResponseDto:
       type: object
       properties:
@@ -2570,7 +2645,7 @@ components:
         timestamp:
           type: string
           format: date-time
-    ApiResponsePageResponseEmployeeResponseDto:
+    ApiResponsePageResponseEmployeeSummaryDto:
       type: object
       properties:
         success:
@@ -2578,17 +2653,45 @@ components:
         message:
           type: string
         data:
-          $ref: "#/components/schemas/PageResponseEmployeeResponseDto"
+          $ref: "#/components/schemas/PageResponseEmployeeSummaryDto"
         timestamp:
           type: string
           format: date-time
-    PageResponseEmployeeResponseDto:
+    EmployeeSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeNumber:
+          type: string
+        fullName:
+          type: string
+        departmentName:
+          type: string
+        positionTitle:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
+        hireDate:
+          type: string
+          format: date
+        departmentId:
+          type: string
+          format: uuid
+    PageResponseEmployeeSummaryDto:
       type: object
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/EmployeeResponseDto"
+            $ref: "#/components/schemas/EmployeeSummaryDto"
         pageNumber:
           type: integer
           format: int32
@@ -2603,7 +2706,7 @@ components:
           format: int32
         last:
           type: boolean
-    ApiResponseListEmployeeResponseDto:
+    ApiResponseListSalaryHistoryDto:
       type: object
       properties:
         success:
@@ -2613,10 +2716,27 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/EmployeeResponseDto"
+            $ref: "#/components/schemas/SalaryHistoryDto"
         timestamp:
           type: string
           format: date-time
+    SalaryHistoryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        previousSalary:
+          type: number
+        newSalary:
+          type: number
+        changeReason:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        approvedByName:
+          type: string
     ApiResponseListDocumentResponseDto:
       type: object
       properties:

@@ -14,6 +14,7 @@ import {
 import { useEmployees } from '@/hooks/useEmployees';
 import type { EmployeeStatus } from '@/types';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext'; // <-- NOUVEL IMPORT
 
 const PAGE_SIZE = 20;
 
@@ -41,6 +42,9 @@ function formatDate(iso: string): string {
 }
 
 export const EmployeeListPage: React.FC = () => {
+  const { hasRole } = useAuth(); // <-- NOUVEAU
+  const isDrh = hasRole('ROLE_DRH') || hasRole('DRH'); // <-- NOUVEAU
+
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [departmentId, setDepartmentId] = useState('ALL');
@@ -119,14 +123,20 @@ export const EmployeeListPage: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button type="button" className="btn btn-secondary text-xs flex-1 sm:flex-none">
-            <FileDown className="w-4 h-4" />
-            Exporter Registre
-          </button>
-          <button type="button" className="btn btn-primary text-xs flex-1 sm:flex-none">
-            <UserPlus className="w-4 h-4" />
-            Nouveau Salarié
-          </button>
+          {/* CONDITIONNÉ POUR DRH */}
+          {isDrh && (
+            <button type="button" className="btn btn-secondary text-xs flex-1 sm:flex-none">
+              <FileDown className="w-4 h-4" />
+              Exporter Registre
+            </button>
+          )}
+          {/* CONDITIONNÉ POUR DRH */}
+          {isDrh && (
+            <Link to="/employees/new" className="btn btn-primary text-xs flex-1 sm:flex-none flex items-center justify-center gap-2">
+              <UserPlus className="w-4 h-4" />
+              Nouveau Salarié
+            </Link>
+          )}
         </div>
       </div>
 
@@ -198,7 +208,7 @@ export const EmployeeListPage: React.FC = () => {
                     <td>
                       <div className="flex items-center gap-3">
                         <div className="avatar avatar-md avatar-primary font-bold">{initialsOf(emp.fullName)}</div>
-                                                <Link to={`/employees/${emp.id}`} className="font-semibold text-gray-900 hover:text-[#1A6B3C]">
+                        <Link to={`/employees/${emp.id}`} className="font-semibold text-gray-900 hover:text-[#1A6B3C]">
                           {emp.fullName}
                         </Link>
                       </div>
@@ -224,13 +234,16 @@ export const EmployeeListPage: React.FC = () => {
                     </td>
                     <td className="text-xs text-gray-600">{formatDate(emp.hireDate)}</td>
                     <td className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => attestation(emp.id, emp.employeeNumber)}
-                        className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5"
-                      >
-                        Attestation PDF
-                      </button>
+                      {/* CONDITIONNÉ POUR DRH */}
+                      {isDrh && (
+                        <button
+                          type="button"
+                          onClick={() => attestation(emp.id, emp.employeeNumber)}
+                          className="btn btn-secondary btn-sm text-[11px] py-1 px-2.5"
+                        >
+                          Attestation PDF
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -245,7 +258,7 @@ export const EmployeeListPage: React.FC = () => {
                   <div className="flex items-center gap-2.5">
                     <div className="avatar avatar-md avatar-primary font-bold">{initialsOf(emp.fullName)}</div>
                     <div>
-                                            <Link to={`/employees/${emp.id}`} className="font-bold text-sm text-gray-900 hover:text-[#1A6B3C]">
+                      <Link to={`/employees/${emp.id}`} className="font-bold text-sm text-gray-900 hover:text-[#1A6B3C]">
                         {emp.fullName}
                       </Link>
                       <div className="text-xs text-gray-400 font-mono">{emp.employeeNumber}</div>
@@ -263,13 +276,16 @@ export const EmployeeListPage: React.FC = () => {
 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
                   <span className="text-gray-400 text-[11px]">Embauche : {formatDate(emp.hireDate)}</span>
-                  <button
-                    type="button"
-                    onClick={() => attestation(emp.id, emp.employeeNumber)}
-                    className="btn btn-secondary btn-sm text-[11px] py-1 px-2"
-                  >
-                    Attestation PDF
-                  </button>
+                  {/* CONDITIONNÉ POUR DRH */}
+                  {isDrh && (
+                    <button
+                      type="button"
+                      onClick={() => attestation(emp.id, emp.employeeNumber)}
+                      className="btn btn-secondary btn-sm text-[11px] py-1 px-2"
+                    >
+                      Attestation PDF
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

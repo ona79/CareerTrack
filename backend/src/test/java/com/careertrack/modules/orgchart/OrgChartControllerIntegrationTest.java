@@ -7,13 +7,17 @@ import com.careertrack.modules.auth.entity.RoleType;
 import com.careertrack.modules.auth.entity.User;
 import com.careertrack.modules.auth.repository.RoleRepository;
 import com.careertrack.modules.auth.repository.UserRepository;
+import com.careertrack.modules.document.repository.EmployeeDocumentRepository;
 import com.careertrack.modules.employee.entity.Department;
 import com.careertrack.modules.employee.entity.Employee;
 import com.careertrack.modules.employee.entity.EmployeeStatus;
 import com.careertrack.modules.employee.entity.Position;
+import com.careertrack.modules.employee.repository.ContractRepository;
 import com.careertrack.modules.employee.repository.DepartmentRepository;
 import com.careertrack.modules.employee.repository.EmployeeRepository;
 import com.careertrack.modules.employee.repository.PositionRepository;
+import com.careertrack.modules.employee.repository.SalaryHistoryRepository;
+import com.careertrack.modules.payroll.repository.PayslipRepository; // <-- NOUVEL IMPORT
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +55,12 @@ class OrgChartControllerIntegrationTest {
     @Autowired private DepartmentRepository departmentRepository;
     @Autowired private PositionRepository positionRepository;
     @Autowired private EmployeeRepository employeeRepository;
+    
+    // Repositories ajoutés pour le nettoyage des tables enfants
+    @Autowired private ContractRepository contractRepository;
+    @Autowired private SalaryHistoryRepository salaryHistoryRepository;
+    @Autowired private EmployeeDocumentRepository employeeDocumentRepository;
+    @Autowired private PayslipRepository payslipRepository; // <-- NOUVELLE DÉCLARATION
 
     private String drhToken;
     private String employeeToken;
@@ -62,6 +72,12 @@ class OrgChartControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Ordre important : on supprime d'abord les tables "enfants" (dépendantes), puis "parents"
+        payslipRepository.deleteAll(); // <-- EN PREMIER
+        employeeDocumentRepository.deleteAll();
+        contractRepository.deleteAll();
+        salaryHistoryRepository.deleteAll();
+        
         employeeRepository.deleteAll();
         positionRepository.deleteAll();
         departmentRepository.deleteAll();
