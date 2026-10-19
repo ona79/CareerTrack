@@ -373,4 +373,152 @@ export interface DocumentResponseDto {
   downloadUrl: string;
 }
 
+// ─── LOT 2 : DOSSIER EMPLOYÉ & ORGANIGRAMME ──────────────────────────────────
+export interface EmployeeSummaryDto {
+  id: string;
+  employeeNumber: string;
+  fullName: string;
+  positionTitle?: string;
+  departmentName?: string;
+  status: EmployeeStatus;
+}
+
+export interface SalaryHistoryDto {
+  id: string;
+  employeeId: string;
+  previousSalary: number;
+  newSalary: number;
+  changeReason: string;
+  effectiveDate: string;
+  approvedById?: string;
+  approvedByName?: string;
+  createdAt: string;
+}
+
+export interface PositionHistoryDto {
+  id: string;
+  employeeId: string;
+  previousPositionId?: string;
+  previousPositionTitle?: string;
+  newPositionId?: string;
+  newPositionTitle?: string;
+  previousDepartmentId?: string;
+  previousDepartmentName?: string;
+  newDepartmentId?: string;
+  newDepartmentName?: string;
+  effectiveDate: string;
+  changeReason: string;
+  changedById?: string;
+  changedByName?: string;
+  createdAt: string;
+}
+
+export interface EmployeeHistoryDto {
+  salaryHistories?: SalaryHistoryDto[];
+  positionHistories: PositionHistoryDto[];
+}
+
+export interface EmployeeDetailDto {
+  identity: {
+    id: string;
+    employeeNumber: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    email: string;
+    hireDate: string;
+    departmentId?: string;
+    departmentName?: string;
+    positionId?: string;
+    positionTitle?: string;
+    managerId?: string;
+    managerName?: string;
+    status: EmployeeStatus;
+  };
+  personalData?: {
+    nationalId: string;
+    birthDate: string;
+    phone?: string;
+    address?: string;
+    maritalStatus?: string;
+    dependentsCount?: number;
+    isCadre?: boolean;
+  };
+  contract?: {
+    id: string;
+    contractType: ContractType;
+    startDate: string;
+    endDate?: string;
+    active: boolean;
+    grossSalary?: number;
+  };
+  salaryHistory?: SalaryHistoryDto[];
+  positionHistory?: PositionHistoryDto[];
+  documents?: DocumentResponseDto[];
+  permissions: {
+    canEdit: boolean;
+    canDeactivate: boolean;
+    canEditContact: boolean;
+  };
+}
+
+export interface EmployeeCreateDto {
+  employeeNumber: string;
+  firstName: string;
+  lastName: string;
+  nationalId: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  birthDate: string;
+  hireDate: string;
+  departmentId?: string;
+  positionId?: string;
+  managerId?: string;
+  status?: EmployeeStatus;
+}
+
+export interface EmployeeUpdateDto {
+  firstName: string;
+  lastName: string;
+  nationalId: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  birthDate: string;
+  hireDate: string;
+  departmentId?: string;
+  positionId?: string;
+  managerId?: string;
+  status?: EmployeeStatus;
+  isCadre?: boolean;
+  maritalStatus?: string;
+  dependentsCount?: number;
+  grossSalary?: number;
+  changeReason?: string;
+}
+
+export interface EmployeeSelfUpdateDto {
+  phone?: string;
+  address?: string;
+}
+
+export interface EmployeeDeactivateDto {
+  reason: string;
+  departureDate?: string;
+}
+
+export interface OrgNodeDto {
+  id: string;
+  name: string;
+  employeeNumber?: string;
+  title: string;
+  department: string;
+  email?: string;
+  phone?: string;
+  subordinateCount?: number;
+  subordinates: OrgNodeDto[];
+}
+
+
 

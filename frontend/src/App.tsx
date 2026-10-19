@@ -10,6 +10,7 @@ import AppLayout from '@/components/layout/AppLayout';
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const EmployeeListPage = lazy(() => import('@/pages/employees/EmployeeListPage'));
+const EmployeeDetailPage = lazy(() => import('@/pages/employees/EmployeeDetailPage'));
 const LeaveListPage = lazy(() => import('@/pages/leaves/LeaveListPage'));
 const PayrollListPage = lazy(() => import('@/pages/payroll/PayrollListPage'));
 const RecruitmentKanbanPage = lazy(() => import('@/pages/recruitment/RecruitmentKanbanPage'));
@@ -51,6 +52,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER']}>
                       <EmployeeListPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/employees/:id"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE']}>
+                      <EmployeeDetailPage />
                     </ProtectedRoute>
                   }
                 />

@@ -1,9 +1,11 @@
 package com.careertrack.modules.employee.repository;
 
 import com.careertrack.modules.employee.entity.Employee;
+import com.careertrack.modules.employee.entity.EmployeeStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -12,17 +14,25 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
+public interface EmployeeRepository extends JpaRepository<Employee, UUID>, JpaSpecificationExecutor<Employee> {
     Optional<Employee> findByEmployeeNumber(String employeeNumber);
     Optional<Employee> findByEmail(String email);
     Optional<Employee> findByUserId(UUID userId);
 
     List<Employee> findByDepartmentId(UUID departmentId);
     List<Employee> findByManagerId(UUID managerId);
+    long countByManagerIdAndStatusNot(UUID managerId, EmployeeStatus status);
     List<Employee> findByManagerIsNull();
 
     @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.department LEFT JOIN FETCH e.position WHERE e.manager IS NULL")
     List<Employee> findRootEmployeesWithDetails();
+
+    @Query("SELECT e FROM Employee e " +
+           "LEFT JOIN FETCH e.department " +
+           "LEFT JOIN FETCH e.position " +
+           "LEFT JOIN FETCH e.manager " +
+           "WHERE e.status != com.careertrack.modules.employee.entity.EmployeeStatus.TERMINATED")
+    List<Employee> findAllActiveWithDetails();
 
     Page<Employee> findByDepartmentId(UUID departmentId, Pageable pageable);
 }
