@@ -5,10 +5,14 @@ export interface Page<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  number: number;
-  size: number;
-  first: boolean;
+  // Aligné sur PageResponse backend
+  pageNumber: number;
+  pageSize: number;
   last: boolean;
+  // Champs historiques côté front (facultatifs, conservés pour compat)
+  number?: number;
+  size?: number;
+  first?: boolean;
 }
 
 // Réponse API standard
@@ -59,7 +63,7 @@ export type RoleType =
   | 'ROLE_DIRECTION';
 
 // ─── EMPLOYEE ─────────────────────────────────────────────────────────────────
-export type EmployeeStatus = 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'RESIGNED' | 'RETIRED';
+export type EmployeeStatus = 'ACTIVE' | 'ON_LEAVE' | 'PROBATION' | 'SUSPENDED' | 'TERMINATED';
 export type ContractType   = 'CDI' | 'CDD' | 'STAGE' | 'ALTERNANCE';
 export type Gender         = 'M' | 'F';
 
@@ -69,19 +73,44 @@ export interface Employee {
   firstName: string;
   lastName: string;
   fullName: string;
-  gender: Gender;
-  birthDate?: string;
+  email: string;
+  nationalId?: string;
   phone?: string;
-  personalEmail?: string;
-  professionalEmail?: string;
+  address?: string;
+  birthDate?: string;
   hireDate: string;
   status: EmployeeStatus;
+
+  // Champs aplatis renvoyés par EmployeeResponseDto
+  departmentId?: string;
+  departmentName?: string;
+  positionId?: string;
+  positionTitle?: string;
+  managerId?: string;
+  managerName?: string;
+
+  // Champs historiques (facultatifs, conservés pour compatibilité avec
+  // LeaveRequest, Evaluation, Payroll, etc.)
+  gender?: Gender;
+  personalEmail?: string;
+  professionalEmail?: string;
   department?: Department;
   position?: Position;
   manager?: Employee;
   avatarUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EmployeeSummary {
+  id: string;
+  employeeNumber: string;
+  fullName: string;
+  departmentId?: string;
+  departmentName?: string;
+  positionTitle?: string;
+  status: EmployeeStatus;
+  hireDate: string;
 }
 
 export interface Department {
@@ -92,8 +121,6 @@ export interface Department {
   manager?: Employee;
   headCount?: number;
 }
-
-export type DepartmentDto = Department;
 
 export interface Position {
   id: string;
@@ -458,6 +485,7 @@ export interface Notification {
 export interface OrgNode {
   id: string;
   name: string;
+  employeeNumber?: string;
   title: string;
   department: string;
   avatarUrl?: string;
@@ -568,7 +596,7 @@ export interface JobApplicationCreateDto {
   notes?: string;
 }
 
-// ─── DOCUMENTS RH ─────────────────────────────────────────────────────────────
+// ─── DOCUMENTS RH ────────────────────────────────────────────────────────────
 export type DocumentType =
   | 'CNI'
   | 'PASSEPORT'
@@ -592,295 +620,3 @@ export interface DocumentResponseDto {
   uploadedBy?: string;
   downloadUrl: string;
 }
-
-// ─── LOT 2 : DOSSIER EMPLOYÉ & ORGANIGRAMME ──────────────────────────────────
-export interface EmployeeSummaryDto {
-  id: string;
-  employeeNumber: string;
-  fullName: string;
-  positionTitle?: string;
-  departmentName?: string;
-  status: EmployeeStatus;
-}
-
-export interface SalaryHistoryDto {
-  id: string;
-  employeeId: string;
-  previousSalary: number;
-  newSalary: number;
-  changeReason: string;
-  effectiveDate: string;
-  approvedById?: string;
-  approvedByName?: string;
-  createdAt: string;
-}
-
-export interface PositionHistoryDto {
-  id: string;
-  employeeId: string;
-  previousPositionId?: string;
-  previousPositionTitle?: string;
-  newPositionId?: string;
-  newPositionTitle?: string;
-  previousDepartmentId?: string;
-  previousDepartmentName?: string;
-  newDepartmentId?: string;
-  newDepartmentName?: string;
-  effectiveDate: string;
-  changeReason: string;
-  changedById?: string;
-  changedByName?: string;
-  createdAt: string;
-}
-
-export interface EmployeeHistoryDto {
-  salaryHistories?: SalaryHistoryDto[];
-  positionHistories: PositionHistoryDto[];
-}
-
-export interface EmployeeDetailDto {
-  identity: {
-    id: string;
-    employeeNumber: string;
-    firstName: string;
-    lastName: string;
-    fullName: string;
-    email: string;
-    hireDate: string;
-    departmentId?: string;
-    departmentName?: string;
-    positionId?: string;
-    positionTitle?: string;
-    managerId?: string;
-    managerName?: string;
-    status: EmployeeStatus;
-  };
-  personalData?: {
-    nationalId: string;
-    birthDate: string;
-    phone?: string;
-    address?: string;
-    maritalStatus?: string;
-    dependentsCount?: number;
-    isCadre?: boolean;
-  };
-  contract?: {
-    id: string;
-    contractType: ContractType;
-    startDate: string;
-    endDate?: string;
-    active: boolean;
-    grossSalary?: number;
-  };
-  salaryHistory?: SalaryHistoryDto[];
-  positionHistory?: PositionHistoryDto[];
-  documents?: DocumentResponseDto[];
-  permissions: {
-    canEdit: boolean;
-    canDeactivate: boolean;
-    canEditContact: boolean;
-  };
-}
-
-export interface EmployeeCreateDto {
-  employeeNumber: string;
-  firstName: string;
-  lastName: string;
-  nationalId: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  birthDate: string;
-  hireDate: string;
-  departmentId?: string;
-  positionId?: string;
-  managerId?: string;
-  status?: EmployeeStatus;
-}
-
-export interface EmployeeUpdateDto {
-  firstName: string;
-  lastName: string;
-  nationalId: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  birthDate: string;
-  hireDate: string;
-  departmentId?: string;
-  positionId?: string;
-  managerId?: string;
-  status?: EmployeeStatus;
-  isCadre?: boolean;
-  maritalStatus?: string;
-  dependentsCount?: number;
-  grossSalary?: number;
-  changeReason?: string;
-}
-
-export interface EmployeeSelfUpdateDto {
-  phone?: string;
-  address?: string;
-}
-
-export interface EmployeeDeactivateDto {
-  reason: string;
-  departureDate?: string;
-}
-
-export interface OrgNodeDto {
-  id: string;
-  name: string;
-  employeeNumber?: string;
-  title: string;
-  department: string;
-  email?: string;
-  phone?: string;
-  subordinateCount?: number;
-  subordinates: OrgNodeDto[];
-}
-
-// ─── LOT 3 : CONGÉS & DASHBOARD ─────────────────────────────────────────────
-export interface LeaveRequestResponseDto {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  employeeNumber: string;
-  departmentName?: string;
-  leaveTypeId: string;
-  leaveTypeName: string;
-  leaveTypeCode: string;
-  startDate: string;
-  endDate: string;
-  requestedDays: number;
-  reason?: string;
-  status: 'SUBMITTED' | 'APPROVED_N1' | 'APPROVED_DRH' | 'REJECTED' | 'CANCELLED' | 'EN_ATTENTE' | 'VALIDE' | 'REFUSE' | 'ANNULE' | 'PENDING' | 'APPROVED';
-  managerComment?: string;
-  approvedById?: string;
-  approvedByName?: string;
-  approvedAt?: string;
-  createdAt: string;
-}
-
-export interface LeaveBalanceResponseDto {
-  id: string;
-  employeeId: string;
-  leaveTypeId: string;
-  leaveTypeName: string;
-  leaveTypeCode?: string;
-  periodYear: number;
-  allocatedDays: number;
-  usedDays: number;
-  remainingDays: number;
-}
-
-export interface TeamCalendarItemDto {
-  requestId: string;
-  employeeId: string;
-  employeeName: string;
-  employeeNumber: string;
-  departmentId?: string;
-  departmentName?: string;
-  positionTitle?: string;
-  leaveTypeId: string;
-  leaveTypeName: string;
-  leaveTypeCode?: string;
-  startDate: string;
-  endDate: string;
-  requestedDays: number;
-  status: string;
-  conflicting: boolean;
-}
-
-export interface TeamLeaveConflictDto {
-  departmentId: string;
-  startDate: string;
-  endDate: string;
-  hasConflict: boolean;
-  threshold: number;
-  overlappingRequestsCount: number;
-  overlappingRequests: LeaveRequestResponseDto[];
-}
-
-export interface WorkingDaysCalculationDto {
-  startDate: string;
-  endDate: string;
-  workingDays: number;
-}
-
-export interface ContractTypeBreakdownDto {
-  contractType: string;
-  count: number;
-  percentage: number;
-}
-
-export interface DepartmentHeadcountDto {
-  departmentId: string;
-  departmentName: string;
-  employeeCount: number;
-}
-
-export interface HeadcountKpiDto {
-  totalEmployees: number;
-  activeEmployees: number;
-  onLeaveEmployees: number;
-  terminatedEmployees: number;
-  contractBreakdown: ContractTypeBreakdownDto[];
-  departmentBreakdown: DepartmentHeadcountDto[];
-}
-
-export interface AgePyramidBracketDto {
-  bracket: string;
-  count: number;
-  percentage: number;
-}
-
-export interface TurnoverKpiDto {
-  turnoverRate: number;
-  hiresCount: number;
-  departuresCount: number;
-  averageHeadcount: number;
-}
-
-export interface MonthlyPayrollTrendDto {
-  month: number;
-  monthLabel: string;
-  grossSalary: number;
-  netSalary: number;
-  employerContributions: number;
-}
-
-export interface PayrollKpiDto {
-  totalGrossSalary: number;
-  totalNetSalary: number;
-  totalEmployerContributions: number;
-  payslipsCount: number;
-  monthlyTrend: MonthlyPayrollTrendDto[];
-}
-
-export interface TrainingKpiDto {
-  totalTrainings: number;
-  activeSessions: number;
-  completedSessions: number;
-  totalParticipants: number;
-}
-
-export interface LeaveKpiDto {
-  pendingRequests: number;
-  approvedRequests: number;
-  rejectedRequests: number;
-  totalDaysTaken: number;
-}
-
-export interface DashboardStatsDto {
-  periodYear: number;
-  headcount: HeadcountKpiDto;
-  agePyramid: AgePyramidBracketDto[];
-  turnover: TurnoverKpiDto;
-  payroll: PayrollKpiDto;
-  training: TrainingKpiDto;
-  leaves: LeaveKpiDto;
-}
-
-
-

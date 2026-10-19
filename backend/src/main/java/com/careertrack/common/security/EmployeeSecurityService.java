@@ -83,4 +83,15 @@ public class EmployeeSecurityService {
 
         return false;
     }
+
+    /**
+     * Peut voir les données sensibles (CNI, date de naissance, téléphone, adresse).
+     * DRH : oui. EMPLOYE : uniquement lui-même. Autres (MANAGER, DIRECTION) : non.
+     */
+    public boolean canSeeSensitiveData(UUID employeeId) {
+        if (hasRole("DRH")) return true;
+        return getCurrentEmployee()
+                .map(e -> e.getId().equals(employeeId))
+                .orElse(false);
+    }
 }
