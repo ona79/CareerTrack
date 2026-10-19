@@ -18,7 +18,8 @@ import {
   ArrowRight,
   Check,
   Star,
-  Users
+  Users,
+  AlertCircle
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
@@ -47,11 +48,13 @@ export const EvaluationListPage: React.FC = () => {
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
 
   // Modales
+  const currentYear = new Date().getFullYear();
   const [showNewCampaignModal, setShowNewCampaignModal] = useState<boolean>(false);
-  const [newCampaignTitle, setNewCampaignTitle] = useState<string>('');
-  const [newCampaignYear, setNewCampaignYear] = useState<number>(new Date().getFullYear());
-  const [newCampaignStartDate, setNewCampaignStartDate] = useState<string>('');
-  const [newCampaignEndDate, setNewCampaignEndDate] = useState<string>('');
+  const [newCampaignTitle, setNewCampaignTitle] = useState<string>(`Campagne Annuelle d'Évaluation ${currentYear}`);
+  const [newCampaignYear, setNewCampaignYear] = useState<number>(currentYear);
+  const [newCampaignStartDate, setNewCampaignStartDate] = useState<string>(`${currentYear}-01-01`);
+  const [newCampaignEndDate, setNewCampaignEndDate] = useState<string>(`${currentYear}-12-31`);
+  const [campaignError, setCampaignError] = useState<string | null>(null);
 
   // Modale Auto-évaluation
   const [showSelfEvalModal, setShowSelfEvalModal] = useState<boolean>(false);
@@ -119,17 +122,25 @@ export const EvaluationListPage: React.FC = () => {
   // Mutations
   const createCampaignMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/evaluations/campaigns', {
-        title: newCampaignTitle,
-        campaignYear: newCampaignYear,
-        startDate: newCampaignStartDate,
-        endDate: newCampaignEndDate,
+      const start = newCampaignStartDate || `${newCampaignYear}-01-01`;
+      const end = newCampaignEndDate || `${newCampaignYear}-12-31`;
+      const res = await api.post('/evaluations/campaigns', {
+        title: newCampaignTitle.trim(),
+        campaignYear: Number(newCampaignYear) || currentYear,
+        startDate: start,
+        endDate: end,
         status: 'IN_PROGRESS'
       });
+      return res.data;
     },
     onSuccess: () => {
       setShowNewCampaignModal(false);
+      setCampaignError(null);
       refetchCampaigns();
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'Erreur lors du lancement de la campagne';
+      setCampaignError(msg);
     }
   });
 
@@ -692,6 +703,13 @@ export const EvaluationListPage: React.FC = () => {
                   className="w-full border rounded-lg p-2.5"
                 />
               </div>
+
+              {campaignError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{campaignError}</span>
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t">
               <button

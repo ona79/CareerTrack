@@ -34,7 +34,7 @@ public class EvaluationController {
     }
 
     @PostMapping("/campaigns")
-    @PreAuthorize("hasAnyRole('DRH', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DRH', 'ADMIN', 'DIRECTION')")
     @Operation(summary = "Lancer une nouvelle campagne annuelle d'évaluation", description = "Réservé à la DRH ou ADMIN")
     public ResponseEntity<ApiResponse<EvaluationCampaignDto>> createCampaign(@Valid @RequestBody EvaluationCampaignDto dto) {
         return ResponseEntity.ok(ApiResponse.success("Campagne créée avec succès", evaluationService.createCampaign(dto)));

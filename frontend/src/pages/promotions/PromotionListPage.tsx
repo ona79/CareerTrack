@@ -36,10 +36,11 @@ export const PromotionListPage: React.FC = () => {
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  const isDrh = hasRole('DRH') || hasRole('ROLE_DRH');
-  const isDirection = hasRole('DIRECTION') || hasRole('ROLE_DIRECTION');
+  const isAdmin = hasRole('ADMIN') || hasRole('ROLE_ADMIN');
+  const isDrh = hasRole('DRH') || hasRole('ROLE_DRH') || isAdmin;
+  const isDirection = hasRole('DIRECTION') || hasRole('ROLE_DIRECTION') || isAdmin;
   const canViewSalaries = isDrh || isDirection;
-  const isManagerOrDrh = hasRole('MANAGER') || hasRole('ROLE_MANAGER') || isDrh;
+  const isManagerOrDrh = hasRole('MANAGER') || hasRole('ROLE_MANAGER') || isDrh || isDirection;
 
   const [notificationMsg, setNotificationMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -138,9 +139,9 @@ export const PromotionListPage: React.FC = () => {
     mutationFn: async (payload: typeof proposalForm) => {
       const res = await api.post<ApiResponse<PromotionProposalDto>>('/promotions', {
         employeeId: payload.employeeId,
-        proposedPositionId: payload.proposedPositionId,
+        proposedPositionId: payload.proposedPositionId ? payload.proposedPositionId : null,
         proposedSalary: Number(payload.proposedSalary),
-        justification: payload.justification,
+        justification: payload.justification || '',
       });
       return res.data?.data;
     },
@@ -193,8 +194,9 @@ export const PromotionListPage: React.FC = () => {
   const runSimulationMutation = useMutation({
     mutationFn: async (payload: SalarySimulationRequestDto) => {
       const cleanPayload = {
-        ...payload,
-        departmentId: payload.departmentId ? payload.departmentId : undefined,
+        title: (payload.title || 'Simulation budgétaire').trim(),
+        departmentId: payload.departmentId ? payload.departmentId : null,
+        averageIncreasePercentage: Number(payload.averageIncreasePercentage) || 0,
       };
       const res = await api.post<ApiResponse<SalarySimulationResultDto>>('/promotions/simulations', cleanPayload);
       return res.data?.data;
@@ -202,6 +204,7 @@ export const PromotionListPage: React.FC = () => {
     onSuccess: (data) => {
       setLatestSimulationResult(data);
       queryClient.invalidateQueries({ queryKey: ['salary-simulations'] });
+      setNotificationMsg({ text: 'Simulation salariale calculée avec succès en FCFA !', type: 'success' });
     },
     onError: (err: any) => {
       const msg = err.response?.data?.message || 'Erreur lors du calcul de la simulation';

@@ -29,20 +29,20 @@ import type {
   ApiResponse
 } from '@/types';
 
-const LEAVE_TYPES = [
+const DEFAULT_LEAVE_TYPES = [
   { id: '77777777-7777-7777-7777-777777777701', code: 'CONGE_PAYE', name: 'Congé Payé Annuel (2j/mois)' },
-  { id: '77777777-7777-7777-7777-777777777702', code: 'PERMISSION_EXCEPTIONNELLE', name: 'Permission Exceptionnelle (Événements familiaux)' },
+  { id: '77777777-7777-7777-7777-777777777704', code: 'EVENEMENT_FAMILIAL', name: 'Permission Exceptionnelle (Événements familiaux)' },
   { id: '77777777-7777-7777-7777-777777777703', code: 'CONGE_MALADIE', name: 'Congé Maladie' },
-  { id: '77777777-7777-7777-7777-777777777704', code: 'CONGE_MATERNITE', name: 'Congé Maternité' },
+  { id: '77777777-7777-7777-7777-777777777702', code: 'CONGE_MATERNITE', name: 'Congé Maternité' },
   { id: '77777777-7777-7777-7777-777777777705', code: 'CONGE_SANS_SOLDE', name: 'Congé Sans Solde' },
 ];
 
 export const LeaveListPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  const isManagerOrDrh = user?.roles?.some(r => r === 'ROLE_MANAGER' || r === 'ROLE_DRH' || r === 'ROLE_DIRECTION');
-  const isDrh = user?.roles?.includes('ROLE_DRH');
+  const isManagerOrDrh = hasRole('MANAGER') || hasRole('DRH') || hasRole('DIRECTION') || hasRole('ADMIN');
+  const isDrh = hasRole('DRH') || hasRole('DIRECTION') || hasRole('ADMIN');
 
   // Onglets actifs : 'MY_LEAVES' | 'PENDING_APPROVALS' | 'TEAM_CALENDAR'
   const [activeTab, setActiveTab] = useState<'MY_LEAVES' | 'PENDING_APPROVALS' | 'TEAM_CALENDAR'>('MY_LEAVES');
@@ -51,9 +51,21 @@ export const LeaveListPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [approvalModalData, setApprovalModalData] = useState<{ request: LeaveRequestResponseDto; action: 'APPROVE' | 'REJECT' } | null>(null);
   const [managerComment, setManagerComment] = useState('');
+  const [selectedTargetEmployeeId, setSelectedTargetEmployeeId] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // 0. Types de congés dynamiques
+  const { data: serverLeaveTypes } = useQuery({
+    queryKey: ['leave-types'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<Array<{ id: string; code: string; name: string }>>>('/leaves/types');
+      return res.data?.data || [];
+    },
+  });
+  const availableLeaveTypes = (serverLeaveTypes && serverLeaveTypes.length > 0) ? serverLeaveTypes : DEFAULT_LEAVE_TYPES;
 
   // Formulaire de demande
-  const [leaveTypeId, setLeaveTypeId] = useState(LEAVE_TYPES[0].id);
+  const [leaveTypeId, setLeaveTypeId] = useState(DEFAULT_LEAVE_TYPES[0].id);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
@@ -71,37 +83,49 @@ export const LeaveListPage: React.FC = () => {
     },
   });
 
+  // Liste des employés si l'utilisateur est DRH ou n'a pas d'employeeId lié
+  const { data: employeeList = [] } = useQuery({
+    queryKey: ['employees-leave-list'],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<any>>('/employees?size=100');
+      return res.data?.data?.content || [];
+    },
+    enabled: isDrh || !user?.employeeId,
+  });
+
+  const effectiveEmployeeId = user?.employeeId || selectedTargetEmployeeId || (employeeList.length > 0 ? employeeList[0].id : '');
+
   // 2. Charger les soldes de congés de l'utilisateur connecté
   const { data: balances = [], isLoading: isLoadingBalances } = useQuery({
-    queryKey: ['leave-balances', user?.employeeId],
+    queryKey: ['leave-balances', effectiveEmployeeId],
     queryFn: async () => {
-      if (!user?.employeeId) return [];
-      const res = await api.get<ApiResponse<LeaveBalanceResponseDto[]>>(`/leaves/balances/${user.employeeId}?year=2026`);
+      if (!effectiveEmployeeId) return [];
+      const res = await api.get<ApiResponse<LeaveBalanceResponseDto[]>>(`/leaves/balances/${effectiveEmployeeId}?year=2026`);
       return res.data?.data || [];
     },
-    enabled: !!user?.employeeId,
+    enabled: !!effectiveEmployeeId,
   });
 
   // 3. Charger les demandes personnelles
   const { data: myRequests = [], isLoading: isLoadingMyRequests } = useQuery({
-    queryKey: ['my-leave-requests', user?.employeeId],
+    queryKey: ['my-leave-requests', effectiveEmployeeId],
     queryFn: async () => {
-      if (!user?.employeeId) return [];
-      const res = await api.get<ApiResponse<LeaveRequestResponseDto[]>>(`/leaves/employee/${user.employeeId}`);
+      if (!effectiveEmployeeId) return [];
+      const res = await api.get<ApiResponse<LeaveRequestResponseDto[]>>(`/leaves/employee/${effectiveEmployeeId}`);
       return res.data?.data || [];
     },
-    enabled: !!user?.employeeId,
+    enabled: !!effectiveEmployeeId,
   });
 
-  // 4. Charger les demandes en attente pour le manager
+  // 4. Charger les demandes en attente pour le manager ou le DRH
   const { data: pendingRequests = [], isLoading: isLoadingPending } = useQuery({
-    queryKey: ['pending-leave-requests', user?.employeeId],
+    queryKey: ['pending-leave-requests', effectiveEmployeeId],
     queryFn: async () => {
-      if (!user?.employeeId || !isManagerOrDrh) return [];
-      const res = await api.get<ApiResponse<LeaveRequestResponseDto[]>>(`/leaves/manager/${user.employeeId}/pending`);
+      if (!isManagerOrDrh) return [];
+      const res = await api.get<ApiResponse<LeaveRequestResponseDto[]>>('/leaves/pending');
       return res.data?.data || [];
     },
-    enabled: !!user?.employeeId && isManagerOrDrh,
+    enabled: isManagerOrDrh,
   });
 
   // 5. Calcul automatique des jours ouvrables lors du choix des dates
@@ -145,9 +169,10 @@ export const LeaveListPage: React.FC = () => {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.employeeId) throw new Error('Employé non identifié');
+      const targetEmpId = effectiveEmployeeId;
+      if (!targetEmpId) throw new Error('Aucun collaborateur identifié pour poser cette demande');
       const res = await api.post<ApiResponse<LeaveRequestResponseDto>>('/leaves', {
-        employeeId: user.employeeId,
+        employeeId: targetEmpId,
         leaveTypeId,
         startDate,
         endDate,
@@ -160,10 +185,16 @@ export const LeaveListPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['my-leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
       queryClient.invalidateQueries({ queryKey: ['team-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-leave-requests'] });
       setShowCreateModal(false);
       setStartDate('');
       setEndDate('');
       setReason('');
+      setErrorMessage(null);
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || err.message || 'Erreur lors de la soumission de la demande';
+      setErrorMessage(msg);
     },
   });
 
@@ -339,7 +370,7 @@ export const LeaveListPage: React.FC = () => {
                         <td className="py-3.5 px-4 text-xs text-gray-500 max-w-xs truncate">{req.reason || '—'}</td>
                         <td className="py-3.5 px-4">{getStatusBadge(req.status)}</td>
                         <td className="py-3.5 px-4 text-right">
-                          {req.status !== 'CANCELLED' && req.status !== 'REJECTED' && (
+                          {(req.status === 'SUBMITTED' || req.status === 'EN_ATTENTE' || req.status === 'PENDING') && (
                             <button
                               onClick={() => cancelMutation.mutate(req.id)}
                               className="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors"
@@ -367,7 +398,7 @@ export const LeaveListPage: React.FC = () => {
                       <span className="ml-2 font-bold text-gray-900">({req.requestedDays} j)</span>
                     </div>
                     {req.reason && <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded">{req.reason}</p>}
-                    {req.status !== 'CANCELLED' && req.status !== 'REJECTED' && (
+                    {(req.status === 'SUBMITTED' || req.status === 'EN_ATTENTE' || req.status === 'PENDING') && (
                       <button
                         onClick={() => cancelMutation.mutate(req.id)}
                         className="w-full text-xs text-red-600 font-semibold py-2 rounded border border-red-200 hover:bg-red-50 text-center min-h-[44px]"
@@ -529,6 +560,25 @@ export const LeaveListPage: React.FC = () => {
             </div>
 
             <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
+              {(isDrh || !user?.employeeId) && employeeList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Collaborateur concerné <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={effectiveEmployeeId}
+                    onChange={(e) => setSelectedTargetEmployeeId(e.target.value)}
+                    className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    {employeeList.map((emp: any) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.fullName} ({emp.employeeNumber}) — {emp.departmentName || 'Département non assigné'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Type de congé</label>
                 <select
@@ -536,7 +586,7 @@ export const LeaveListPage: React.FC = () => {
                   onChange={(e) => setLeaveTypeId(e.target.value)}
                   className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500"
                 >
-                  {LEAVE_TYPES.map((lt) => (
+                  {availableLeaveTypes.map((lt: any) => (
                     <option key={lt.id} value={lt.id}>{lt.name}</option>
                   ))}
                 </select>
@@ -599,9 +649,10 @@ export const LeaveListPage: React.FC = () => {
                 />
               </div>
 
-              {createMutation.isError && (
-                <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg">
-                  {(createMutation.error as any)?.response?.data?.message || 'Erreur lors de la soumission de la demande'}
+              {(errorMessage || createMutation.isError) && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{errorMessage || (createMutation.error as any)?.response?.data?.message || 'Erreur lors de la soumission de la demande'}</span>
                 </div>
               )}
 

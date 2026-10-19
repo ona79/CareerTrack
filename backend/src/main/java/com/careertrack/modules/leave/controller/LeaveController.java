@@ -45,8 +45,23 @@ public class LeaveController {
         return new ResponseEntity<>(ApiResponse.success("Demande de congé enregistrée", response), HttpStatus.CREATED);
     }
 
+    @GetMapping("/types")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Lister les types de congés", description = "Retourne la liste des types de congés configurés")
+    public ResponseEntity<ApiResponse<List<LeaveTypeDto>>> getLeaveTypes() {
+        return ResponseEntity.ok(ApiResponse.success(leaveService.getAllLeaveTypes()));
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION', 'ADMIN')")
+    @Operation(summary = "Lister les demandes en attente", description = "Retourne toutes les demandes en attente pour la DRH ou celles des subordonnés pour un manager")
+    public ResponseEntity<ApiResponse<List<LeaveRequestResponseDto>>> getPendingLeaves(Authentication authentication) {
+        List<LeaveRequestResponseDto> response = leaveService.getPendingRequests(authentication);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PutMapping("/{id}/validate")
-    @PreAuthorize("hasAnyRole('MANAGER', 'DRH')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Valider ou refuser un congé", description = "Validation N+1 ou DRH avec décompte automatique du solde")
     public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> validateLeave(
             @PathVariable UUID id,
@@ -66,7 +81,7 @@ public class LeaveController {
     }
 
     @GetMapping("/manager/{managerId}/pending")
-    @PreAuthorize("hasAnyRole('MANAGER', 'DRH')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Demandes en attente pour un manager", description = "Retourne les demandes de congés en attente d'approbation N+1")
     public ResponseEntity<ApiResponse<List<LeaveRequestResponseDto>>> getPendingLeavesForManager(@PathVariable UUID managerId) {
         List<LeaveRequestResponseDto> response = leaveService.getPendingRequestsForManager(managerId);

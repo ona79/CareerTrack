@@ -27,14 +27,14 @@ public class RecruitmentController {
     private final RecruitmentService recruitmentService;
 
     @GetMapping("/applications")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Lister toutes les candidatures pour le tableau Kanban", description = "Accessible à la DRH et aux Managers")
     public ResponseEntity<ApiResponse<List<JobApplicationDto>>> getAllApplications() {
         return ResponseEntity.ok(ApiResponse.success(recruitmentService.getAllApplications()));
     }
 
     @PostMapping("/applications")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Enregistrer une nouvelle candidature pour une offre", description = "Accessible à la DRH et aux Managers")
     public ResponseEntity<ApiResponse<JobApplicationDto>> createApplication(
             @jakarta.validation.Valid @RequestBody JobApplicationCreateDto dto) {
@@ -42,7 +42,7 @@ public class RecruitmentController {
     }
 
     @PatchMapping("/applications/{id}/status")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Déplacer une candidature (Kanban glisser-déposer)", description = "Met à jour l'étape du pipeline et déclenche une notification e-mail")
     public ResponseEntity<ApiResponse<JobApplicationDto>> updateStatus(
             @PathVariable UUID id,
@@ -61,7 +61,7 @@ public class RecruitmentController {
     }
 
     @PostMapping("/offers")
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Publier une nouvelle offre d'emploi", description = "Accessible à la DRH et aux Managers")
     public ResponseEntity<ApiResponse<JobOfferDto>> createOffer(
             @jakarta.validation.Valid @RequestBody JobOfferCreateDto dto) {
