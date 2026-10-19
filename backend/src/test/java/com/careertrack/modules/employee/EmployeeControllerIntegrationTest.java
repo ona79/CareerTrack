@@ -361,4 +361,33 @@ class EmployeeControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
                 .andExpect(status().isForbidden());
     }
+        @Autowired
+    private com.careertrack.modules.employee.repository.SalaryHistoryRepository salaryHistoryRepository;
+
+    @Test
+    @DisplayName("L'historique des salaires est réservé au DRH")
+    void salary_history_is_reserved_to_drh() throws Exception {
+        salaryHistoryRepository.save(com.careertrack.modules.employee.entity.SalaryHistory.builder()
+                .employee(employee1)
+                .previousSalary(new java.math.BigDecimal("500000"))
+                .newSalary(new java.math.BigDecimal("600000"))
+                .changeReason("Promotion")
+                .effectiveDate(LocalDate.of(2025, 1, 1))
+                .build());
+        try {
+            MvcResult result = mockMvc.perform(get("/api/v1/employees/" + employee1.getId() + "/salary-history")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                    .andExpect(status().isOk())
+                    .andReturn();
+            JsonNode data = objectMapper.readTree(result.getResponse().getContentAsString()).get("data");
+            assertThat(data.size()).isEqualTo(1);
+            assertThat(data.get(0).get("changeReason").asText()).isEqualTo("Promotion");
+
+            mockMvc.perform(get("/api/v1/employees/" + employee1.getId() + "/salary-history")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                    .andExpect(status().isForbidden());
+        } finally {
+            salaryHistoryRepository.deleteAll();
+        }
+    }
 }
