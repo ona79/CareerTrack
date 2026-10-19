@@ -26,14 +26,12 @@ tags:
   description: "Gestion des bulletins de salaire, cotisations et masse salariale"
 - name: Postes
   description: Référentiel des postes et fiches de fonction
-- name: Évaluations & Performance
-  description: "Campagnes annuelles, objectifs SMART et entretiens N+1"
+- name: Formations & Compétences
+  description: "Catalogue, sessions, inscriptions et attestations de formation PDF"
 - name: Paramètres de l'Entreprise
   description: "Règles réglementaires, taux de cotisations et plafonds légaux"
 - name: Organigramme
   description: Visualisation hiérarchique de l'entreprise et relations managers/subordonnés
-- name: Formations
-  description: Catalogue des compétences et sessions de formation continue
 - name: Recrutement
   description: Pipeline Kanban des candidatures et offres d'emploi
 - name: Départements
@@ -52,6 +50,8 @@ tags:
 - name: Promotions & Carrières
   description: "Propositions de promotion interne, revalorisations et simulations\
     \ salariales"
+- name: Évaluations & Performance
+  description: "Campagnes annuelles, objectifs SMART, entretiens N+1 et bilan PDF"
 paths:
   /api/v1/settings/{key}:
     put:
@@ -184,7 +184,7 @@ paths:
   /api/v1/trainings:
     get:
       tags:
-      - Formations
+      - Formations & Compétences
       summary: Consulter le catalogue de formation
       description: Accessible à l'ensemble des collaborateurs
       operationId: getAllTrainings
@@ -197,9 +197,9 @@ paths:
                 $ref: "#/components/schemas/ApiResponseListTrainingDto"
     post:
       tags:
-      - Formations
+      - Formations & Compétences
       summary: Ajouter un nouveau module de formation au catalogue
-      description: Réservé à la DRH
+      description: Réservé à la DRH ou ADMIN
       operationId: createTraining
       requestBody:
         content:
@@ -214,6 +214,59 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseTrainingDto"
+  /api/v1/trainings/sessions:
+    get:
+      tags:
+      - Formations & Compétences
+      summary: Lister l'ensemble des sessions de formation
+      description: Accessible à tous les collaborateurs
+      operationId: getAllSessions
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTrainingSessionDto"
+    post:
+      tags:
+      - Formations & Compétences
+      summary: Planifier une nouvelle session de formation
+      description: Réservé à la DRH ou ADMIN
+      operationId: createSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingSessionCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingSessionDto"
+  /api/v1/trainings/sessions/enroll:
+    post:
+      tags:
+      - Formations & Compétences
+      summary: S'inscrire ou inscrire un collaborateur à une session
+      description: Vérification automatique de la capacité maximale
+      operationId: enrollEmployee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingEnrollmentDto"
   /api/v1/promotions:
     get:
       tags:
@@ -316,6 +369,26 @@ paths:
                 $ref: "#/components/schemas/ApiResponseLeaveRequestResponseDto"
       security:
       - BearerAuth: []
+  /api/v1/evaluations:
+    post:
+      tags:
+      - Évaluations & Performance
+      summary: Initialiser une fiche d'évaluation annuelle pour un employé
+      description: Accessible aux managers et à la DRH
+      operationId: createEvaluation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationDto"
   /api/v1/evaluations/campaigns:
     get:
       tags:
@@ -334,7 +407,7 @@ paths:
       tags:
       - Évaluations & Performance
       summary: Lancer une nouvelle campagne annuelle d'évaluation
-      description: Réservé à la DRH
+      description: Réservé à la DRH ou ADMIN
       operationId: createCampaign
       requestBody:
         content:
@@ -552,6 +625,64 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseJwtResponse"
+  /api/v1/trainings/sessions/{sessionId}/status:
+    patch:
+      tags:
+      - Formations & Compétences
+      summary: Modifier le statut d'une session de formation
+      description: Réservé à la DRH
+      operationId: updateSessionStatus
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - SCHEDULED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingSessionDto"
+  /api/v1/trainings/enrollments/{enrollmentId}/status:
+    patch:
+      tags:
+      - Formations & Compétences
+      summary: Valider la participation ou la complétion d'une formation
+      description: Réservé à la DRH
+      operationId: updateEnrollmentStatus
+      parameters:
+      - name: enrollmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentStatusUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingEnrollmentDto"
   /api/v1/recruitment/applications/{id}/status:
     patch:
       tags:
@@ -698,6 +829,107 @@ paths:
                 $ref: "#/components/schemas/ApiResponseLeaveRequestResponseDto"
       security:
       - BearerAuth: []
+  /api/v1/evaluations/{id}/self-eval:
+    patch:
+      tags:
+      - Évaluations & Performance
+      summary: Soumettre l'auto-évaluation du collaborateur
+      description: Réservé au salarié évalué
+      operationId: submitSelfEvaluation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationSelfSubmitDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationDto"
+  /api/v1/evaluations/{id}/manager-eval:
+    patch:
+      tags:
+      - Évaluations & Performance
+      summary: Soumettre l'évaluation managériale N+1 avec calcul du score pondéré
+      description: Réservé au manager évaluateur ou à la DRH
+      operationId: submitManagerEvaluation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationManagerSubmitDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationDto"
+  /api/v1/evaluations/{id}/complete:
+    patch:
+      tags:
+      - Évaluations & Performance
+      summary: Valider définitivement et clore l'évaluation annuelle
+      description: Clôture de l'entretien et génération de la synthèse
+      operationId: completeEvaluation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationCompleteDto"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationDto"
+  /api/v1/evaluations/campaigns/{campaignId}/close:
+    patch:
+      tags:
+      - Évaluations & Performance
+      summary: Clore une campagne d'évaluation
+      description: Réservé à la DRH
+      operationId: closeCampaign
+      parameters:
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEvaluationCampaignDto"
   /api/v1/employees/{id}/deactivate:
     patch:
       tags:
@@ -758,10 +990,31 @@ paths:
                 $ref: "#/components/schemas/ApiResponseEmployeeDetailDto"
       security:
       - BearerAuth: []
+  /api/v1/trainings/{trainingId}/sessions:
+    get:
+      tags:
+      - Formations & Compétences
+      summary: Lister les sessions associées à un module de formation
+      description: Accessible à tous les collaborateurs
+      operationId: getSessionsByTraining
+      parameters:
+      - name: trainingId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTrainingSessionDto"
   /api/v1/trainings/{id}:
     get:
       tags:
-      - Formations
+      - Formations & Compétences
       summary: Obtenir le détail d'un module de formation
       description: Accessible à l'ensemble des collaborateurs
       operationId: getTrainingById
@@ -779,6 +1032,84 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseTrainingDto"
+  /api/v1/trainings/sessions/{sessionId}:
+    get:
+      tags:
+      - Formations & Compétences
+      summary: Consulter le détail d'une session de formation
+      description: Accessible à tous les collaborateurs
+      operationId: getSessionById
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTrainingSessionDto"
+  /api/v1/trainings/sessions/{sessionId}/enrollments:
+    get:
+      tags:
+      - Formations & Compétences
+      summary: Lister les inscrits à une session
+      description: Réservé aux managers et à la DRH
+      operationId: getEnrollmentsBySession
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTrainingEnrollmentDto"
+  /api/v1/trainings/my-enrollments:
+    get:
+      tags:
+      - Formations & Compétences
+      summary: Consulter mes inscriptions aux formations
+      description: L'employé consulte son parcours personnel de formation
+      operationId: getMyEnrollments
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTrainingEnrollmentDto"
+  /api/v1/trainings/enrollments/{enrollmentId}/certificate:
+    get:
+      tags:
+      - Formations & Compétences
+      summary: Télécharger l'attestation officielle de formation en PDF
+      description: Générée automatiquement avec iText pour les formations suivies
+      operationId: downloadCertificatePdf
+      parameters:
+      - name: enrollmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
   /api/v1/settings:
     get:
       tags:
@@ -1243,6 +1574,57 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseEvaluationDto"
+  /api/v1/evaluations/{id}/pdf:
+    get:
+      tags:
+      - Évaluations & Performance
+      summary: Télécharger le bilan d'entretien annuel signable en PDF
+      description: "Généré via iText avec synthèse, objectifs SMART et encadrés de\
+        \ signature"
+      operationId: downloadEvaluationPdf
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/v1/evaluations/team:
+    get:
+      tags:
+      - Évaluations & Performance
+      summary: Consulter les fiches d'évaluation de mon équipe
+      description: Le manager voit les fiches de ses collaborateurs directs
+      operationId: getTeamEvaluations
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEvaluationDto"
+  /api/v1/evaluations/my:
+    get:
+      tags:
+      - Évaluations & Performance
+      summary: Consulter mes fiches d'évaluation annuelles
+      description: L'employé ne voit que ses propres évaluations
+      operationId: getMyEvaluations
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEvaluationDto"
   /api/v1/evaluations/campaigns/{campaignId}/evaluations:
     get:
       tags:
@@ -2002,6 +2384,152 @@ components:
         timestamp:
           type: string
           format: date-time
+    TrainingSessionCreateDto:
+      required:
+      - endDate
+      - sessionCode
+      - startDate
+      - trainingId
+      type: object
+      properties:
+        trainingId:
+          type: string
+          format: uuid
+        sessionCode:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        maxParticipants:
+          type: integer
+          format: int32
+    ApiResponseTrainingSessionDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TrainingSessionDto"
+        timestamp:
+          type: string
+          format: date-time
+    TrainingSessionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trainingId:
+          type: string
+          format: uuid
+        trainingTitle:
+          type: string
+        trainingCode:
+          type: string
+        sessionCode:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        maxParticipants:
+          type: integer
+          format: int32
+        enrolledParticipantsCount:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - SCHEDULED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+    EnrollmentRequestDto:
+      required:
+      - sessionId
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+    ApiResponseTrainingEnrollmentDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TrainingEnrollmentDto"
+        timestamp:
+          type: string
+          format: date-time
+    TrainingEnrollmentDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        sessionCode:
+          type: string
+        trainingId:
+          type: string
+          format: uuid
+        trainingTitle:
+          type: string
+        durationHours:
+          type: integer
+          format: int32
+        provider:
+          type: string
+        sessionStartDate:
+          type: string
+          format: date-time
+        sessionEndDate:
+          type: string
+          format: date-time
+        employeeId:
+          type: string
+          format: uuid
+        employeeFullName:
+          type: string
+        employeeNumber:
+          type: string
+        enrollmentDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+          - REQUESTED
+          - CONFIRMED
+          - ATTENDED
+          - COMPLETED
+          - DROPPED
+        score:
+          type: number
+        certificateUrl:
+          type: string
+        feedback:
+          type: string
     PromotionProposalDto:
       type: object
       properties:
@@ -2204,6 +2732,134 @@ components:
         requestedDays:
           type: number
         reason:
+          type: string
+    EvaluationCreateDto:
+      required:
+      - campaignId
+      - employeeId
+      type: object
+      properties:
+        campaignId:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        evaluatorId:
+          type: string
+          format: uuid
+        interviewDate:
+          type: string
+          format: date
+        objectives:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObjectiveInputDto"
+    ObjectiveInputDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+          - OPERATIONAL
+          - STRATEGIC
+          - MANAGERIAL
+          - BEHAVIORAL
+          - LEARNING
+        weight:
+          type: number
+        targetDate:
+          type: string
+          format: date
+        achievementRate:
+          type: number
+    ApiResponseEvaluationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EvaluationDto"
+        timestamp:
+          type: string
+          format: date-time
+    EvaluationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        campaignId:
+          type: string
+          format: uuid
+        campaignTitle:
+          type: string
+        employeeId:
+          type: string
+          format: uuid
+        employeeFullName:
+          type: string
+        evaluatorId:
+          type: string
+          format: uuid
+        evaluatorFullName:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - SELF_SUBMITTED
+          - MANAGER_EVALUATED
+          - COMPLETED
+        selfScore:
+          type: number
+        managerScore:
+          type: number
+        finalScore:
+          type: number
+        feedback:
+          type: string
+        summaryPdfUrl:
+          type: string
+        interviewDate:
+          type: string
+          format: date
+        objectives:
+          type: array
+          items:
+            $ref: "#/components/schemas/SmartObjectiveDto"
+    SmartObjectiveDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+          - OPERATIONAL
+          - STRATEGIC
+          - MANAGERIAL
+          - BEHAVIORAL
+          - LEARNING
+        weight:
+          type: number
+        targetDate:
+          type: string
+          format: date
+        achievementRate:
+          type: number
+        status:
           type: string
     EvaluationCampaignDto:
       type: object
@@ -2449,6 +3105,23 @@ components:
           description: Mot de passe de l'utilisateur
           example: password123
       description: Demande de connexion avec nom d'utilisateur et mot de passe
+    EnrollmentStatusUpdateDto:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - REQUESTED
+          - CONFIRMED
+          - ATTENDED
+          - COMPLETED
+          - DROPPED
+        score:
+          type: number
+        feedback:
+          type: string
     ApiResponseJobApplicationDto:
       type: object
       properties:
@@ -2511,6 +3184,66 @@ components:
         timestamp:
           type: string
           format: date-time
+    EvaluationSelfSubmitDto:
+      type: object
+      properties:
+        selfScore:
+          maximum: 5.0
+          exclusiveMaximum: false
+          minimum: 0.0
+          exclusiveMinimum: false
+          type: number
+        selfFeedback:
+          type: string
+        objectiveRates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObjectiveRateDto"
+    ObjectiveRateDto:
+      type: object
+      properties:
+        objectiveId:
+          type: string
+          format: uuid
+        selfRate:
+          type: number
+        selfComment:
+          type: string
+    EvaluationManagerSubmitDto:
+      type: object
+      properties:
+        managerScore:
+          maximum: 5.0
+          exclusiveMaximum: false
+          minimum: 0.0
+          exclusiveMinimum: false
+          type: number
+        managerFeedback:
+          type: string
+        interviewDate:
+          type: string
+          format: date
+        objectiveRates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManagerObjectiveRateDto"
+    ManagerObjectiveRateDto:
+      type: object
+      properties:
+        objectiveId:
+          type: string
+          format: uuid
+        achievementRate:
+          type: number
+        status:
+          type: string
+    EvaluationCompleteDto:
+      type: object
+      properties:
+        finalFeedback:
+          type: string
+        finalScore:
+          type: number
     EmployeeDeactivateDto:
       required:
       - reason
@@ -2543,6 +3276,34 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TrainingDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListTrainingSessionDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingSessionDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListTrainingEnrollmentDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingEnrollmentDto"
         timestamp:
           type: string
           format: date-time
@@ -3232,104 +3993,6 @@ components:
           type: number
         remainingDays:
           type: number
-    ApiResponseEvaluationDto:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          $ref: "#/components/schemas/EvaluationDto"
-        timestamp:
-          type: string
-          format: date-time
-    EvaluationDto:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        campaignId:
-          type: string
-          format: uuid
-        campaignTitle:
-          type: string
-        employeeId:
-          type: string
-          format: uuid
-        employeeFullName:
-          type: string
-        evaluatorId:
-          type: string
-          format: uuid
-        evaluatorFullName:
-          type: string
-        status:
-          type: string
-          enum:
-          - DRAFT
-          - SELF_SUBMITTED
-          - MANAGER_EVALUATED
-          - COMPLETED
-        selfScore:
-          type: number
-        managerScore:
-          type: number
-        finalScore:
-          type: number
-        feedback:
-          type: string
-        summaryPdfUrl:
-          type: string
-        interviewDate:
-          type: string
-          format: date
-        objectives:
-          type: array
-          items:
-            $ref: "#/components/schemas/SmartObjectiveDto"
-    SmartObjectiveDto:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-          enum:
-          - OPERATIONAL
-          - STRATEGIC
-          - MANAGERIAL
-          - BEHAVIORAL
-          - LEARNING
-        weight:
-          type: number
-        targetDate:
-          type: string
-          format: date
-        achievementRate:
-          type: number
-        status:
-          type: string
-    ApiResponseListEvaluationCampaignDto:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/EvaluationCampaignDto"
-        timestamp:
-          type: string
-          format: date-time
     ApiResponseListEvaluationDto:
       type: object
       properties:
@@ -3341,6 +4004,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EvaluationDto"
+        timestamp:
+          type: string
+          format: date-time
+    ApiResponseListEvaluationCampaignDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvaluationCampaignDto"
         timestamp:
           type: string
           format: date-time
