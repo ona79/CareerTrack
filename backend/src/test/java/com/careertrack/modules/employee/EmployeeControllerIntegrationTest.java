@@ -346,4 +346,19 @@ class EmployeeControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
                 .andExpect(status().isBadRequest());
     }
+
+    // NOUVEAU TEST AJOUTÉ ICI
+    @Test
+    @DisplayName("Les listes de départements et de postes sont réservées au DRH")
+    void reference_lists_are_reserved_to_drh() throws Exception {
+        mockMvc.perform(get("/api/v1/departments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/positions")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/departments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employee1Token))
+                .andExpect(status().isForbidden());
+    }
 }
