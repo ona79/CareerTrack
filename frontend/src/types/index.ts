@@ -294,6 +294,7 @@ export interface Notification {
 export interface OrgNode {
   id: string;
   name: string;
+  employeeNumber?: string;
   title: string;
   department: string;
   avatarUrl?: string;

@@ -17,6 +17,7 @@ function toOrgNode(dto: OrgNodeDto): OrgNode {
   return {
     id: dto.id,
     name: dto.name,
+    employeeNumber: dto.employeeNumber,
     title: dto.title,
     department: dto.department,
     children: (dto.subordinates ?? []).map(toOrgNode),
