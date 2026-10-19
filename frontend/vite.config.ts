@@ -17,8 +17,9 @@ export default defineConfig({
         // Cache les appels API GET avec strategy NetworkFirst (tentative réseau, fallback cache)
         runtimeCaching: [
           {
-            // Cache uniquement les données non sensibles utiles hors ligne (congés, employés, organigramme)
-            urlPattern: /^https?:\/\/.*\/api\/v1\/(employees|leaves|orgchart)/,
+            // Cache uniquement les données non sensibles utiles hors ligne (liste employés réduite, organigramme, départements, postes)
+            // Les détails collaborateur (/employees/{id}) et historiques sont EXCLUS du cache (données sensibles).
+            urlPattern: /^https?:\/\/.*\/api\/v1\/(employees(\?.*)?$|orgchart\/tree|leaves(\?.*)?$|departments|positions)/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'careertrack-api-cache',

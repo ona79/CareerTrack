@@ -16,6 +16,7 @@ public class TeamLeaveConflictDto {
     private LocalDate startDate;
     private LocalDate endDate;
     private boolean hasConflict;
+    private int threshold;
     private int overlappingRequestsCount;
     private List<LeaveRequestResponseDto> overlappingRequests;
 }

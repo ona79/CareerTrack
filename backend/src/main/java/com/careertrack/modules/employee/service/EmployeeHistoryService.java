@@ -2,6 +2,7 @@ package com.careertrack.modules.employee.service;
 
 import com.careertrack.common.exception.ResourceNotFoundException;
 import com.careertrack.modules.employee.dto.SalaryHistoryDto;
+import com.careertrack.modules.employee.entity.SalaryHistory;
 import com.careertrack.modules.employee.repository.EmployeeRepository;
 import com.careertrack.modules.employee.repository.SalaryHistoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +25,18 @@ public class EmployeeHistoryService {
             throw new ResourceNotFoundException("Employé", "id", employeeId);
         }
         return salaryHistoryRepository.findByEmployeeIdOrderByEffectiveDateDesc(employeeId).stream()
-                .map(h -> new SalaryHistoryDto(
-                        h.getId(),
-                        h.getPreviousSalary(),
-                        h.getNewSalary(),
-                        h.getChangeReason(),
-                        h.getEffectiveDate(),
-                        h.getApprovedBy() != null ? h.getApprovedBy().getFullName() : null))
+                // On ajoute le type (SalaryHistory h) pour aider Java
+                .map((SalaryHistory h) -> SalaryHistoryDto.builder()
+                        .id(h.getId())
+                        .employeeId(h.getEmployee().getId())
+                        .previousSalary(h.getPreviousSalary())
+                        .newSalary(h.getNewSalary())
+                        .changeReason(h.getChangeReason())
+                        .effectiveDate(h.getEffectiveDate())
+                        .approvedById(h.getApprovedBy() != null ? h.getApprovedBy().getId() : null)
+                        .approvedByName(h.getApprovedBy() != null ? h.getApprovedBy().getFullName() : null)
+                        .createdAt(h.getCreatedAt())
+                        .build())
                 .toList();
     }
 }

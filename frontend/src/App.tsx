@@ -5,13 +5,13 @@ import { queryClient } from '@/lib/queryClient';
 import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
-import EmployeeDetailPage from '@/pages/employees/EmployeeDetailPage';
 import EmployeeFormPage from '@/pages/employees/EmployeeFormPage'; // <-- NOUVEL IMPORT
 
 // Lazy loading des pages pour optimisation mobile, PWA et code splitting
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const EmployeeListPage = lazy(() => import('@/pages/employees/EmployeeListPage'));
+const EmployeeDetailPage = lazy(() => import('@/pages/employees/EmployeeDetailPage'));
 const LeaveListPage = lazy(() => import('@/pages/leaves/LeaveListPage'));
 const PayrollListPage = lazy(() => import('@/pages/payroll/PayrollListPage'));
 const RecruitmentKanbanPage = lazy(() => import('@/pages/recruitment/RecruitmentKanbanPage'));

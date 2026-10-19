@@ -17,6 +17,7 @@ import com.careertrack.modules.employee.repository.DepartmentRepository;
 import com.careertrack.modules.employee.repository.EmployeeRepository;
 import com.careertrack.modules.employee.repository.PositionRepository;
 import com.careertrack.modules.employee.repository.SalaryHistoryRepository;
+import com.careertrack.modules.leave.repository.LeaveBalanceRepository;
 import com.careertrack.modules.payroll.repository.PayslipRepository; // <-- NOUVEL IMPORT
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,12 +56,13 @@ class OrgChartControllerIntegrationTest {
     @Autowired private DepartmentRepository departmentRepository;
     @Autowired private PositionRepository positionRepository;
     @Autowired private EmployeeRepository employeeRepository;
-    
+
     // Repositories ajoutés pour le nettoyage des tables enfants
     @Autowired private ContractRepository contractRepository;
     @Autowired private SalaryHistoryRepository salaryHistoryRepository;
     @Autowired private EmployeeDocumentRepository employeeDocumentRepository;
     @Autowired private PayslipRepository payslipRepository; // <-- NOUVELLE DÉCLARATION
+    @Autowired private LeaveBalanceRepository leaveBalanceRepository;
 
     private String drhToken;
     private String employeeToken;
@@ -73,11 +75,12 @@ class OrgChartControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         // Ordre important : on supprime d'abord les tables "enfants" (dépendantes), puis "parents"
+        leaveBalanceRepository.deleteAll();
         payslipRepository.deleteAll(); // <-- EN PREMIER
         employeeDocumentRepository.deleteAll();
         contractRepository.deleteAll();
         salaryHistoryRepository.deleteAll();
-        
+
         employeeRepository.deleteAll();
         positionRepository.deleteAll();
         departmentRepository.deleteAll();

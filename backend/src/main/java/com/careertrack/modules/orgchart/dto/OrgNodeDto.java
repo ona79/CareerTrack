@@ -22,6 +22,7 @@ public class OrgNodeDto {
     private String department;
     private String email;
     private String phone;
+    private Integer subordinateCount;
 
     @Builder.Default
     private List<OrgNodeDto> subordinates = new ArrayList<>();

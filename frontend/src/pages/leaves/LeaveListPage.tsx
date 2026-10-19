@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
@@ -6,567 +6,683 @@ import {
   Calendar,
   Plus,
   Clock,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
   Loader2,
-  FileText,
   AlertTriangle,
-  RefreshCw,
   CalendarDays,
-  ListFilter,
-  Users
+  Users,
+  Check,
+  X,
+  Building2,
+  RefreshCw,
+  Search,
+  Filter
 } from 'lucide-react';
-import type { LeaveRequest, LeaveBalance, ApiResponse } from '@/types';
+import type {
+  LeaveRequestResponseDto,
+  LeaveBalanceResponseDto,
+  TeamCalendarItemDto,
+  TeamLeaveConflictDto,
+  WorkingDaysCalculationDto,
+  DepartmentDto,
+  ApiResponse
+} from '@/types';
 
-const defaultBalances: LeaveBalance[] = [
-  {
-    id: 'b1',
-    employeeId: 'e1',
-    leaveTypeId: 'lt1',
-    leaveTypeName: 'Congé Payé Annuel (2j/mois)',
-    year: 2026,
-    totalDays: 24,
-    usedDays: 6,
-    remainingDays: 18,
-  },
-  {
-    id: 'b2',
-    employeeId: 'e1',
-    leaveTypeId: 'lt2',
-    leaveTypeName: 'Permissions Exceptionnelles',
-    year: 2026,
-    totalDays: 10,
-    usedDays: 2,
-    remainingDays: 8,
-  },
-  {
-    id: 'b3',
-    employeeId: 'e1',
-    leaveTypeId: 'lt3',
-    leaveTypeName: 'Congé Maladie',
-    year: 2026,
-    totalDays: 30,
-    usedDays: 0,
-    remainingDays: 30,
-  },
-];
-
-const defaultRequests: LeaveRequest[] = [
-  {
-    id: 'lr-1',
-    employee: { id: 'e1', fullName: 'Amadou Diop', employeeNumber: 'EMP-001' },
-    leaveType: {
-      id: 'lt1',
-      code: 'CONGE_PAYE',
-      name: 'Congé Payé Annuel',
-      maxDaysPerYear: 24,
-      isPaid: true,
-      requiresJustification: false,
-    },
-    startDate: '2026-04-10',
-    endDate: '2026-04-17',
-    totalDays: 5,
-    status: 'PENDING',
-    reason: 'Congés annuels de Pâques en famille à Thiès',
-    createdAt: '2026-03-20',
-  },
-  {
-    id: 'lr-2',
-    employee: { id: 'e2', fullName: 'Fatou Ndiaye', employeeNumber: 'EMP-002' },
-    leaveType: {
-      id: 'lt4',
-      code: 'EVENEMENT_FAMILIAL',
-      name: 'Permissions Exceptionnelles',
-      maxDaysPerYear: 10,
-      isPaid: true,
-      requiresJustification: true,
-    },
-    startDate: '2026-04-12',
-    endDate: '2026-04-15',
-    totalDays: 3,
-    status: 'APPROVED',
-    reason: 'Mariage familial à Saint-Louis',
-    approvedBy: { id: 'm1', fullName: 'Directeur Général' },
-    approvedAt: '2026-02-10',
-    createdAt: '2026-02-08',
-  },
-  {
-    id: 'lr-3',
-    employee: { id: 'e4', fullName: 'Aïssatou Sow', employeeNumber: 'EMP-004' },
-    leaveType: {
-      id: 'lt1',
-      code: 'CONGE_PAYE',
-      name: 'Congé Payé Annuel',
-      maxDaysPerYear: 24,
-      isPaid: true,
-      requiresJustification: false,
-    },
-    startDate: '2026-05-02',
-    endDate: '2026-05-08',
-    totalDays: 5,
-    status: 'APPROVED',
-    reason: 'Repos annuel',
-    createdAt: '2026-04-01',
-  },
+const LEAVE_TYPES = [
+  { id: '77777777-7777-7777-7777-777777777701', code: 'CONGE_PAYE', name: 'Congé Payé Annuel (2j/mois)' },
+  { id: '77777777-7777-7777-7777-777777777702', code: 'PERMISSION_EXCEPTIONNELLE', name: 'Permission Exceptionnelle (Événements familiaux)' },
+  { id: '77777777-7777-7777-7777-777777777703', code: 'CONGE_MALADIE', name: 'Congé Maladie' },
+  { id: '77777777-7777-7777-7777-777777777704', code: 'CONGE_MATERNITE', name: 'Congé Maternité' },
+  { id: '77777777-7777-7777-7777-777777777705', code: 'CONGE_SANS_SOLDE', name: 'Congé Sans Solde' },
 ];
 
 export const LeaveListPage: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'LIST' | 'CALENDAR'>('LIST');
 
-  // Formulaire d'ajout
+  const isManagerOrDrh = user?.roles?.some(r => r === 'ROLE_MANAGER' || r === 'ROLE_DRH' || r === 'ROLE_DIRECTION');
+  const isDrh = user?.roles?.includes('ROLE_DRH');
+
+  // Onglets actifs : 'MY_LEAVES' | 'PENDING_APPROVALS' | 'TEAM_CALENDAR'
+  const [activeTab, setActiveTab] = useState<'MY_LEAVES' | 'PENDING_APPROVALS' | 'TEAM_CALENDAR'>('MY_LEAVES');
+
+  // Modales
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [approvalModalData, setApprovalModalData] = useState<{ request: LeaveRequestResponseDto; action: 'APPROVE' | 'REJECT' } | null>(null);
+  const [managerComment, setManagerComment] = useState('');
+
+  // Formulaire de demande
+  const [leaveTypeId, setLeaveTypeId] = useState(LEAVE_TYPES[0].id);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
 
-  // 1. Récupération des demandes depuis l'API backend
-  const { data: requestsData, isLoading: isLoadingRequests, isError: isErrorRequests, refetch } = useQuery({
-    queryKey: ['leaves'],
+  // Filtres calendrier
+  const [selectedDeptId, setSelectedDeptId] = useState<string>('');
+  const [calendarMonth, setCalendarMonth] = useState<string>('2026-06');
+
+  // 1. Charger les départements pour le filtre calendrier
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
     queryFn: async () => {
-      const res = await api.get<{ data?: LeaveRequest[] }>('/leaves');
-      return Array.isArray(res.data?.data) ? res.data.data : [];
+      const res = await api.get<ApiResponse<DepartmentDto[]>>('/departments');
+      return res.data?.data || [];
     },
-    placeholderData: import.meta.env.DEV ? defaultRequests : undefined,
   });
 
-  const requests: LeaveRequest[] = requestsData || (import.meta.env.DEV ? defaultRequests : []);
+  // 2. Charger les soldes de congés de l'utilisateur connecté
+  const { data: balances = [], isLoading: isLoadingBalances } = useQuery({
+    queryKey: ['leave-balances', user?.employeeId],
+    queryFn: async () => {
+      if (!user?.employeeId) return [];
+      const res = await api.get<ApiResponse<LeaveBalanceResponseDto[]>>(`/leaves/balances/${user.employeeId}?year=2026`);
+      return res.data?.data || [];
+    },
+    enabled: !!user?.employeeId,
+  });
 
-  // Détection des conflits de congés (chevauchements de dates)
-  const conflicts: { reqA: LeaveRequest; reqB: LeaveRequest }[] = [];
-  for (let i = 0; i < requests.length; i++) {
-    for (let j = i + 1; j < requests.length; j++) {
-      const a = requests[i];
-      const b = requests[j];
-      if (a.status !== 'REJECTED' && b.status !== 'REJECTED') {
-        // Conflit si startA <= endB et endA >= startB
-        if (a.startDate <= b.endDate && a.endDate >= b.startDate) {
-          conflicts.push({ reqA: a, reqB: b });
-        }
-      }
-    }
-  }
+  // 3. Charger les demandes personnelles
+  const { data: myRequests = [], isLoading: isLoadingMyRequests } = useQuery({
+    queryKey: ['my-leave-requests', user?.employeeId],
+    queryFn: async () => {
+      if (!user?.employeeId) return [];
+      const res = await api.get<ApiResponse<LeaveRequestResponseDto[]>>(`/leaves/employee/${user.employeeId}`);
+      return res.data?.data || [];
+    },
+    enabled: !!user?.employeeId,
+  });
 
-  // Vérification de conflit potentiel pour le formulaire courant
-  const potentialFormConflict = startDate && endDate
-    ? requests.find((r) => r.status !== 'REJECTED' && startDate <= r.endDate && endDate >= r.startDate)
-    : null;
+  // 4. Charger les demandes en attente pour le manager
+  const { data: pendingRequests = [], isLoading: isLoadingPending } = useQuery({
+    queryKey: ['pending-leave-requests', user?.employeeId],
+    queryFn: async () => {
+      if (!user?.employeeId || !isManagerOrDrh) return [];
+      const res = await api.get<ApiResponse<LeaveRequestResponseDto[]>>(`/leaves/manager/${user.employeeId}/pending`);
+      return res.data?.data || [];
+    },
+    enabled: !!user?.employeeId && isManagerOrDrh,
+  });
 
-  // 2. Mutation pour soumettre une nouvelle demande
+  // 5. Calcul automatique des jours ouvrables lors du choix des dates
+  const { data: workingDaysCalc } = useQuery({
+    queryKey: ['working-days', startDate, endDate],
+    queryFn: async () => {
+      if (!startDate || !endDate || endDate < startDate) return null;
+      const res = await api.get<ApiResponse<WorkingDaysCalculationDto>>(`/leaves/calculate-days?startDate=${startDate}&endDate=${endDate}`);
+      return res.data?.data || null;
+    },
+    enabled: !!startDate && !!endDate && endDate >= startDate,
+  });
+
+  // 6. Vérification des conflits dans le formulaire
+  const { data: formConflict } = useQuery({
+    queryKey: ['form-conflict', selectedDeptId, startDate, endDate],
+    queryFn: async () => {
+      if (!startDate || !endDate || endDate < startDate) return null;
+      const dept = selectedDeptId || (departments.length > 0 ? departments[0].id : '');
+      if (!dept) return null;
+      const res = await api.get<ApiResponse<TeamLeaveConflictDto>>(`/leaves/conflicts?departmentId=${dept}&startDate=${startDate}&endDate=${endDate}`);
+      return res.data?.data || null;
+    },
+    enabled: !!startDate && !!endDate && endDate >= startDate,
+  });
+
+  // 7. Calendrier d'équipe
+  const calendarStartDate = `${calendarMonth}-01`;
+  const calendarEndDate = `${calendarMonth}-28`; // approximation fin de mois
+  const { data: calendarItems = [], isLoading: isLoadingCalendar } = useQuery({
+    queryKey: ['team-calendar', selectedDeptId, calendarMonth],
+    queryFn: async () => {
+      const url = selectedDeptId
+        ? `/leaves/calendar?departmentId=${selectedDeptId}&startDate=${calendarStartDate}&endDate=${calendarEndDate}`
+        : `/leaves/calendar?startDate=${calendarStartDate}&endDate=${calendarEndDate}`;
+      const res = await api.get<ApiResponse<TeamCalendarItemDto[]>>(url);
+      return res.data?.data || [];
+    },
+  });
+
+  // Mutations
   const createMutation = useMutation({
-    mutationFn: async (newReqPayload: { startDate: string; endDate: string; reason: string }) => {
-      const res = await api.post<ApiResponse<LeaveRequest>>('/leaves', {
-        employeeId: user?.employeeId || '11111111-1111-1111-1111-111111111103',
-        leaveTypeId: '77777777-7777-7777-7777-777777777701',
-        startDate: newReqPayload.startDate,
-        endDate: newReqPayload.endDate,
-        reason: newReqPayload.reason,
+    mutationFn: async () => {
+      if (!user?.employeeId) throw new Error('Employé non identifié');
+      const res = await api.post<ApiResponse<LeaveRequestResponseDto>>('/leaves', {
+        employeeId: user.employeeId,
+        leaveTypeId,
+        startDate,
+        endDate,
+        requestedDays: workingDaysCalc?.workingDays || 1,
+        reason,
       });
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaves'] });
-      setShowModal(false);
-      setReason('');
+      queryClient.invalidateQueries({ queryKey: ['my-leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['team-calendar'] });
+      setShowCreateModal(false);
       setStartDate('');
       setEndDate('');
+      setReason('');
     },
   });
 
-  const handleCreateRequest = (e: React.FormEvent) => {
-    e.preventDefault();
-    createMutation.mutate({ startDate, endDate, reason });
-  };
+  const approvalMutation = useMutation({
+    mutationFn: async ({ requestId, status, comment }: { requestId: string; status: 'APPROVED_N1' | 'REJECTED'; comment: string }) => {
+      const res = await api.put<ApiResponse<LeaveRequestResponseDto>>(`/leaves/${requestId}/validate`, {
+        status,
+        managerComment: comment,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['team-calendar'] });
+      setApprovalModalData(null);
+      setManagerComment('');
+    },
+  });
 
-  // Écran d'erreur en production si API injoignable
-  if (isErrorRequests && !import.meta.env.DEV) {
-    return (
-      <div className="card p-12 text-center flex flex-col items-center justify-center gap-4 my-8">
-        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
-          <AlertTriangle className="w-6 h-6" />
-        </div>
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-gray-900">Échec du chargement des congés</h2>
-          <p className="text-xs text-gray-500 max-w-md">
-            Impossible de récupérer l'état des soldes et demandes auprès du serveur API.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="btn btn-primary text-xs flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Réessayer
-        </button>
-      </div>
-    );
-  }
+  const cancelMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const res = await api.patch<ApiResponse<LeaveRequestResponseDto>>(`/leaves/${requestId}/cancel`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['team-calendar'] });
+    },
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'SUBMITTED':
+      case 'EN_ATTENTE':
+      case 'PENDING':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800"><Clock className="w-3 h-3" /> En attente</span>;
+      case 'APPROVED_N1':
+      case 'APPROVED_DRH':
+      case 'VALIDE':
+      case 'APPROVED':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle2 className="w-3 h-3" /> Validé</span>;
+      case 'REJECTED':
+      case 'REFUSE':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><XCircle className="w-3 h-3" /> Refusé</span>;
+      case 'CANCELLED':
+      case 'ANNULE':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Annulé</span>;
+      default:
+        return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{status}</span>;
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="page-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="page-header-info">
-          <h1>Gestion des Congés & Absences</h1>
-          <p className="flex items-center gap-2">
-            <span>Règle sénégalaise : 2 jours ouvrables acquis par mois (Code du Travail)</span>
-            {!isLoadingRequests && !isErrorRequests && (
-              <span className="badge badge-success text-[10px]">API Connectée</span>
-            )}
-            {isErrorRequests && (
-              <span className="badge badge-warning text-[10px]">Mode Démo / Repli</span>
-            )}
+      {/* En-tête */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Congés & Absences</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Gérez vos demandes de congés, suivez vos soldes et consultez le calendrier d'équipe
           </p>
         </div>
         <button
-          type="button"
-          onClick={() => setShowModal(true)}
-          className="btn btn-primary text-xs w-full sm:w-auto"
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
-          Nouvelle Demande de Congé
+          Poser un congé
         </button>
       </div>
 
-      {/* Soldes personnels de congés */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {defaultBalances.map((bal) => (
-          <div key={bal.id} className="card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-700">{bal.leaveTypeName}</span>
-              <span className="badge badge-primary">{bal.year}</span>
-            </div>
-            <div className="flex items-baseline justify-between mt-3">
-              <div>
-                <span className="text-2xl font-bold text-[#1A6B3C]">{bal.remainingDays}</span>
-                <span className="text-xs text-gray-500 ml-1">jours restants</span>
-              </div>
-              <span className="text-xs text-gray-400">
-                {bal.usedDays} pris sur {bal.totalDays}j
+      {/* Cartes de soldes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {balances.map((bal) => (
+          <div key={bal.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                {bal.leaveTypeName}
+              </span>
+              <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                Année {bal.periodYear}
               </span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
-              <div
-                className="bg-[#1A6B3C] h-1.5 rounded-full"
-                style={{ width: `${(bal.remainingDays / bal.totalDays) * 100}%` }}
-              />
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-3xl font-extrabold text-gray-900">{bal.remainingDays}</span>
+              <span className="text-sm font-medium text-gray-500">jours restants</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 text-xs text-gray-500">
+              <div>Acquis : <span className="font-semibold text-gray-800">{bal.allocatedDays} j</span></div>
+              <div>Consommés : <span className="font-semibold text-gray-800">{bal.usedDays} j</span></div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Bannière d'alerte Conflits de congés dans l'équipe */}
-      {conflicts.length > 0 && (
-        <div className="card border-l-4 border-l-amber-500 bg-amber-50/60 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
-                Alerte RH : {conflicts.length} chevauchement(s) de congés détecté(s)
-              </h4>
-              {conflicts.map((c, idx) => (
-                <p key={idx} className="text-xs text-amber-900">
-                  <span className="font-semibold">{c.reqA.employee.fullName}</span> et{' '}
-                  <span className="font-semibold">{c.reqB.employee.fullName}</span> sont absents simultanément
-                  (période commune : du <span className="font-mono font-medium">{c.reqB.startDate}</span> au{' '}
-                  <span className="font-mono font-medium">{c.reqB.endDate}</span>). Risque de sous-effectif opérationnel.
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Navigation par onglets */}
+      <div className="border-b border-gray-200 flex gap-4 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('MY_LEAVES')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
+            activeTab === 'MY_LEAVES' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          Mes Demandes ({myRequests.length})
+        </button>
 
-      {/* Switcher d'affichage : Liste vs Calendrier d'équipe */}
-      <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-        <div className="flex items-center gap-2">
+        {isManagerOrDrh && (
           <button
-            type="button"
-            onClick={() => setViewMode('LIST')}
-            className={`btn btn-sm ${viewMode === 'LIST' ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => setActiveTab('PENDING_APPROVALS')}
+            className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
+              activeTab === 'PENDING_APPROVALS' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
           >
-            <ListFilter className="w-4 h-4" />
-            Liste des Demandes ({requests.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('CALENDAR')}
-            className={`btn btn-sm ${viewMode === 'CALENDAR' ? 'btn-primary' : 'btn-ghost'}`}
-          >
-            <CalendarDays className="w-4 h-4" />
-            Calendrier d'équipe & Conflits
-            {conflicts.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 bg-amber-500 text-gray-900 font-bold rounded-full text-[10px]">
-                {conflicts.length}
+            <Clock className="w-4 h-4" />
+            À Valider
+            {pendingRequests.length > 0 && (
+              <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">
+                {pendingRequests.length}
               </span>
             )}
           </button>
-        </div>
-        <span className="text-xs text-gray-500 hidden sm:inline">Période active : Avril - Mai 2026</span>
+        )}
+
+        <button
+          onClick={() => setActiveTab('TEAM_CALENDAR')}
+          className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 min-h-[44px] ${
+            activeTab === 'TEAM_CALENDAR' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <CalendarDays className="w-4 h-4" />
+          Calendrier d'Équipe
+        </button>
       </div>
 
-      {/* Vue Calendrier d'équipe */}
-      {viewMode === 'CALENDAR' && (
-        <div className="card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Planning & Continuité de Service</h3>
-              <p className="text-xs text-gray-500">Visualisation chronologique des départs et alertes de présence simultanée</p>
+      {/* Contenu Onglet 1 : Mes Demandes */}
+      {activeTab === 'MY_LEAVES' && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          {isLoadingMyRequests ? (
+            <div className="p-8 text-center text-gray-500 flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" /> Chargement de vos demandes...
             </div>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-600 inline-block" /> Validé</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500 inline-block" /> En attente</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-rose-500 inline-block" /> Conflit</span>
+          ) : myRequests.length === 0 ? (
+            <div className="p-12 text-center text-gray-400">
+              <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium text-gray-600">Aucune demande de congé enregistrée</p>
+              <p className="text-xs text-gray-400 mt-1">Cliquez sur « Poser un congé » pour formuler votre première demande</p>
+            </div>
+          ) : (
+            <>
+              {/* Tableau desktop */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-left text-sm text-gray-700">
+                  <thead className="bg-gray-50 text-xs uppercase text-gray-400 border-b border-gray-100">
+                    <tr>
+                      <th className="py-3.5 px-4 font-semibold">Type de congé</th>
+                      <th className="py-3.5 px-4 font-semibold">Dates</th>
+                      <th className="py-3.5 px-4 font-semibold">Jours ouvrés</th>
+                      <th className="py-3.5 px-4 font-semibold">Motif</th>
+                      <th className="py-3.5 px-4 font-semibold">Statut</th>
+                      <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {myRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="py-3.5 px-4 font-medium text-gray-900">{req.leaveTypeName}</td>
+                        <td className="py-3.5 px-4 text-xs text-gray-600">
+                          Du <span className="font-semibold">{req.startDate}</span> au <span className="font-semibold">{req.endDate}</span>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-gray-900">{req.requestedDays} j</td>
+                        <td className="py-3.5 px-4 text-xs text-gray-500 max-w-xs truncate">{req.reason || '—'}</td>
+                        <td className="py-3.5 px-4">{getStatusBadge(req.status)}</td>
+                        <td className="py-3.5 px-4 text-right">
+                          {req.status !== 'CANCELLED' && req.status !== 'REJECTED' && (
+                            <button
+                              onClick={() => cancelMutation.mutate(req.id)}
+                              className="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                            >
+                              Annuler
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Cartes mobile (<640px) */}
+              <div className="sm:hidden divide-y divide-gray-100">
+                {myRequests.map((req) => (
+                  <div key={req.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-gray-900 text-sm">{req.leaveTypeName}</span>
+                      {getStatusBadge(req.status)}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Du <span className="font-medium text-gray-900">{req.startDate}</span> au <span className="font-medium text-gray-900">{req.endDate}</span>
+                      <span className="ml-2 font-bold text-gray-900">({req.requestedDays} j)</span>
+                    </div>
+                    {req.reason && <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded">{req.reason}</p>}
+                    {req.status !== 'CANCELLED' && req.status !== 'REJECTED' && (
+                      <button
+                        onClick={() => cancelMutation.mutate(req.id)}
+                        className="w-full text-xs text-red-600 font-semibold py-2 rounded border border-red-200 hover:bg-red-50 text-center min-h-[44px]"
+                      >
+                        Annuler la demande
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Contenu Onglet 2 : Validation N+1 */}
+      {activeTab === 'PENDING_APPROVALS' && isManagerOrDrh && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          {isLoadingPending ? (
+            <div className="p-8 text-center text-gray-500 flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" /> Chargement des demandes en attente...
+            </div>
+          ) : pendingRequests.length === 0 ? (
+            <div className="p-12 text-center text-gray-400">
+              <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-400" />
+              <p className="font-medium text-gray-600">Toutes les demandes de votre équipe ont été traitées !</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {pendingRequests.map((req) => (
+                <div key={req.id} className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900 text-sm">{req.employeeName}</span>
+                      <span className="text-xs text-gray-400">({req.employeeNumber})</span>
+                      {req.departmentName && (
+                        <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">
+                          {req.departmentName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Demande de <span className="font-semibold text-gray-900">{req.leaveTypeName}</span> : du{' '}
+                      <span className="font-semibold text-gray-900">{req.startDate}</span> au{' '}
+                      <span className="font-semibold text-gray-900">{req.endDate}</span> ({req.requestedDays} jours ouvrables)
+                    </div>
+                    {req.reason && (
+                      <p className="text-xs text-gray-500 italic bg-gray-50 p-2 rounded mt-1">« {req.reason} »</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <button
+                      onClick={() => setApprovalModalData({ request: req, action: 'APPROVE' })}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 min-h-[44px]"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Valider
+                    </button>
+                    <button
+                      onClick={() => setApprovalModalData({ request: req, action: 'REJECT' })}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 min-h-[44px]"
+                    >
+                      <X className="w-3.5 h-3.5" /> Refuser
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Contenu Onglet 3 : Calendrier d'Équipe & Conflits */}
+      {activeTab === 'TEAM_CALENDAR' && (
+        <div className="space-y-4">
+          {/* Barre de filtre calendrier */}
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Building2 className="w-4 h-4 text-gray-400" />
+              <select
+                value={selectedDeptId}
+                onChange={(e) => setSelectedDeptId(e.target.value)}
+                className="text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-64"
+              >
+                <option value="">Tous les départements</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <input
+                type="month"
+                value={calendarMonth}
+                onChange={(e) => setCalendarMonth(e.target.value)}
+                className="text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+              />
             </div>
           </div>
 
-          <div className="space-y-3 pt-2">
-            {requests.map((req) => {
-              const hasConflict = conflicts.some(c => c.reqA.id === req.id || c.reqB.id === req.id);
-              return (
-                <div key={req.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="avatar avatar-sm avatar-primary font-bold">
-                      {req.employee.fullName.substring(0, 2).toUpperCase()}
-                    </div>
+          {/* Liste des absences de l'équipe */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            {isLoadingCalendar ? (
+              <div className="p-8 text-center text-gray-500 flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" /> Chargement du planning d'équipe...
+              </div>
+            ) : calendarItems.length === 0 ? (
+              <div className="p-12 text-center text-gray-400">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="font-medium text-gray-600">Aucune absence enregistrée sur cette période</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {calendarItems.map((item) => (
+                  <div
+                    key={item.requestId}
+                    className={`p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
+                      item.conflicting ? 'bg-red-50/50 border-l-4 border-l-red-500' : ''
+                    }`}
+                  >
                     <div>
-                      <div className="font-semibold text-xs text-gray-900 flex items-center gap-2">
-                        {req.employee.fullName}
-                        {hasConflict && (
-                          <span className="badge badge-warning text-[10px] flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3 text-amber-700" />
-                            Chevauchement
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900 text-sm">{item.employeeName}</span>
+                        {item.departmentName && (
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                            {item.departmentName}
+                          </span>
+                        )}
+                        {item.conflicting && (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                            <AlertTriangle className="w-3 h-3" /> Conflit d'équipe (&ge; 2 absents)
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-gray-500">
-                        {req.leaveType?.name} • {req.totalDays} jours ouvrables
+                      <div className="text-xs text-gray-600 mt-1">
+                        {item.leaveTypeName} • Du <span className="font-medium text-gray-800">{item.startDate}</span> au{' '}
+                        <span className="font-medium text-gray-800">{item.endDate}</span> ({item.requestedDays} j)
                       </div>
                     </div>
+                    <div>{getStatusBadge(item.status)}</div>
                   </div>
-
-                  {/* Barre visuelle du congé */}
-                  <div className="flex-1 max-w-md bg-white border border-gray-200 rounded-md p-2 flex items-center justify-between text-xs">
-                    <div className="font-mono text-gray-600">Du {req.startDate}</div>
-                    <div className={`h-2 flex-1 mx-3 rounded-full ${hasConflict ? 'bg-amber-400' : (req.status === 'APPROVED' ? 'bg-emerald-500' : 'bg-blue-400')}`} />
-                    <div className="font-mono text-gray-600">Au {req.endDate}</div>
-                  </div>
-
-                  <span className={`badge ${req.status === 'APPROVED' ? 'badge-success' : 'badge-warning'} text-[11px]`}>
-                    {req.status === 'APPROVED' ? 'Validé N+1' : 'En attente'}
-                  </span>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Liste des demandes (mode LIST) */}
-      {viewMode === 'LIST' && (
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Historique des Demandes de Congés</span>
-          {isLoadingRequests && <Loader2 className="w-4 h-4 animate-spin text-[#1A6B3C]" />}
-        </div>
-        <div className="hidden md:block table-container border-0">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Collaborateur</th>
-                <th>Type de Congé</th>
-                <th>Période</th>
-                <th>Durée</th>
-                <th>Motif</th>
-                <th>Statut</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((req) => (
-                <tr key={req.id}>
-                  <td>
-                    <div className="font-semibold text-xs text-gray-900">
-                      {req.employee.fullName}
-                    </div>
-                    <div className="text-[11px] text-gray-400 font-mono">
-                      {req.employee.employeeNumber}
-                    </div>
-                  </td>
-                  <td>
-                    <span className="text-xs font-medium text-gray-800">
-                      {req.leaveType?.name || 'Congé Payé Annuel'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="text-xs text-gray-700">
-                      Du {req.startDate} au {req.endDate}
-                    </div>
-                  </td>
-                  <td>
-                    <span className="text-xs font-bold text-gray-900">
-                      {req.totalDays} jours ouvrables
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-xs text-gray-500 max-w-xs truncate block" title={req.reason}>
-                      {req.reason || '—'}
-                    </span>
-                  </td>
-                  <td>
-                    {req.status === 'PENDING' && (
-                      <span className="badge badge-warning flex items-center gap-1 w-fit">
-                        <Clock className="w-3 h-3" />
-                        En attente N+1
-                      </span>
-                    )}
-                    {req.status === 'APPROVED' && (
-                      <span className="badge badge-success flex items-center gap-1 w-fit">
-                        <CheckCircle className="w-3 h-3" />
-                        Validé
-                      </span>
-                    )}
-                    {req.status === 'REJECTED' && (
-                      <span className="badge badge-danger flex items-center gap-1 w-fit">
-                        <XCircle className="w-3 h-3" />
-                        Refusé
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-right">
-                    {req.status === 'PENDING' && (
-                      <div className="flex items-center justify-end gap-1">
-                        <button type="button" className="btn btn-sm btn-primary text-[11px] py-1 px-2">
-                          Valider
-                        </button>
-                        <button type="button" className="btn btn-sm btn-danger text-[11px] py-1 px-2">
-                          Refuser
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Vue mobile cartes (responsive 360px) */}
-        <div className="md:hidden divide-y divide-gray-100">
-          {requests.map((req) => (
-            <div key={req.id} className="p-4 space-y-2">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-bold text-xs text-gray-900">{req.employee.fullName}</div>
-                  <div className="text-[11px] text-gray-500">{req.leaveType?.name}</div>
-                </div>
-                <span className="badge badge-warning text-[10px]">{req.status}</span>
-              </div>
-              <div className="text-xs text-gray-700">
-                Du <span className="font-semibold">{req.startDate}</span> au <span className="font-semibold">{req.endDate}</span> ({req.totalDays}j)
-              </div>
-              {req.reason && <p className="text-[11px] text-gray-500 italic">"{req.reason}"</p>}
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
-
-      {/* Modal Nouvelle Demande */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <span className="modal-title">Demande de Congé</span>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg font-bold"
-              >
-                ×
+      {/* MODALE : Poser un congé */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-bold text-gray-900">Demande de Congé</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleCreateRequest}>
-              <div className="modal-body space-y-4">
-                <div className="form-group">
-                  <label className="form-label">Type de congé légal</label>
-                  <select className="form-control text-xs">
-                    <option>Congé Payé Annuel (Acquisition : 2j/mois)</option>
-                    <option>Permissions Exceptionnelles (Événement familial)</option>
-                    <option>Congé Maternité (14 semaines légales)</option>
-                    <option>Congé Maladie</option>
-                  </select>
+
+            <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Type de congé</label>
+                <select
+                  value={leaveTypeId}
+                  onChange={(e) => setLeaveTypeId(e.target.value)}
+                  className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                  {LEAVE_TYPES.map((lt) => (
+                    <option key={lt.id} value={lt.id}>{lt.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Date de début</label>
+                  <input
+                    type="date"
+                    required
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="form-group">
-                    <label className="form-label">Date de début</label>
-                    <input
-                      type="date"
-                      required
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="form-control text-xs"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Date de fin</label>
-                    <input
-                      type="date"
-                      required
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="form-control text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* Détection en direct d'un conflit de congés dans l'équipe */}
-                {potentialFormConflict && (
-                  <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900 flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Alerte chevauchement :</strong> Cette période coïncide avec le congé de{' '}
-                      <strong>{potentialFormConflict.employee.fullName}</strong> (du{' '}
-                      {potentialFormConflict.startDate} au {potentialFormConflict.endDate}). Assurez-vous de la continuité de service.
-                    </span>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label className="form-label">Motif de la demande</label>
-                  <textarea
-                    rows={3}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Préciser le motif de l'absence..."
-                    className="form-control text-xs"
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Date de fin</label>
+                  <input
+                    type="date"
+                    required
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
               </div>
 
-              <div className="modal-footer">
+              {/* Indicateur de calcul automatique des jours ouvrés */}
+              {workingDaysCalc && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                  <div className="font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    {workingDaysCalc.workingDays} jour(s) ouvrable(s) décompté(s)
+                  </div>
+                  <div className="text-[11px] text-emerald-600 mt-0.5">
+                    Lundi au vendredi inclus, hors samedis et dimanches
+                  </div>
+                </div>
+              )}
+
+              {/* Alerte de conflit d'équipe en direct */}
+              {formConflict?.hasConflict && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold">Alerte de chevauchement d'équipe :</span> {formConflict.overlappingRequestsCount} collègue(s) de votre département ont déjà posé un congé sur ces dates.
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Motif (facultatif)</label>
+                <textarea
+                  rows={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Ex : Repos familial, convenances personnelles..."
+                  className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              </div>
+
+              {createMutation.isError && (
+                <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg">
+                  {(createMutation.error as any)?.response?.data?.message || 'Erreur lors de la soumission de la demande'}
+                </div>
+              )}
+
+              <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="btn btn-secondary text-xs"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg min-h-[44px]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  disabled={createMutation.isPending}
-                  className="btn btn-primary text-xs"
+                  disabled={createMutation.isPending || !startDate || !endDate}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg flex items-center gap-1.5 min-h-[44px]"
                 >
-                  {createMutation.isPending ? 'Envoi en cours...' : 'Soumettre la demande'}
+                  {createMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Soumettre la demande
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* MODALE : Validation / Refus Manager */}
+      {approvalModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="font-bold text-gray-900">
+              {approvalModalData.action === 'APPROVE' ? 'Valider la demande de congé' : 'Refuser la demande de congé'}
+            </h3>
+            <p className="text-xs text-gray-600">
+              Demande de <span className="font-semibold">{approvalModalData.request.employeeName}</span> du{' '}
+              <span className="font-semibold">{approvalModalData.request.startDate}</span> au{' '}
+              <span className="font-semibold">{approvalModalData.request.endDate}</span> ({approvalModalData.request.requestedDays} j).
+            </p>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Commentaire du manager {approvalModalData.action === 'REJECT' && <span className="text-red-500">*</span>}
+              </label>
+              <textarea
+                rows={3}
+                value={managerComment}
+                onChange={(e) => setManagerComment(e.target.value)}
+                placeholder="Ex : Accordé / Période de forte activité nécessitant un report..."
+                className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setApprovalModalData(null)}
+                className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg min-h-[44px]"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={approvalMutation.isPending}
+                onClick={() => approvalMutation.mutate({
+                  requestId: approvalModalData.request.id,
+                  status: approvalModalData.action === 'APPROVE' ? 'APPROVED_N1' : 'REJECTED',
+                  comment: managerComment,
+                })}
+                className={`px-4 py-2 text-xs font-semibold text-white rounded-lg flex items-center gap-1.5 min-h-[44px] ${
+                  approvalModalData.action === 'APPROVE' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {approvalMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Confirmer la décision
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default LeaveListPage;
+

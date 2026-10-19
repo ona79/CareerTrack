@@ -85,7 +85,7 @@ public class LeaveController {
     }
 
     @GetMapping("/conflicts")
-    @PreAuthorize("hasAnyRole('MANAGER', 'DRH')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION')")
     @Operation(summary = "Détection des conflits de congés d'équipe", description = "Vérifie les chevauchements d'absences dans une même équipe sur une période")
     public ResponseEntity<ApiResponse<TeamLeaveConflictDto>> detectConflicts(
             @RequestParam UUID departmentId,
@@ -93,6 +93,41 @@ public class LeaveController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         TeamLeaveConflictDto response = leaveService.detectTeamConflicts(departmentId, startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("@leaveSecurity.canCancelLeave(#id)")
+    @Operation(summary = "Annuler une demande de congé", description = "Annulation de la demande avec réincrémentation du solde si elle était déjà validée")
+    public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> cancelLeave(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        LeaveRequestResponseDto response = leaveService.cancelLeaveRequest(id, authentication);
+        return ResponseEntity.ok(ApiResponse.success("Demande de congé annulée", response));
+    }
+
+    @GetMapping("/calendar")
+    @PreAuthorize("hasAnyRole('EMPLOYE', 'MANAGER', 'DRH', 'DIRECTION')")
+    @Operation(summary = "Calendrier d'équipe des congés", description = "Retourne les congés sur une période avec détection des conflits au sein de l'équipe")
+    public ResponseEntity<ApiResponse<List<TeamCalendarItemDto>>> getTeamCalendar(
+            @RequestParam(required = false) UUID departmentId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Authentication authentication
+    ) {
+        List<TeamCalendarItemDto> response = leaveService.getTeamCalendar(departmentId, startDate, endDate, authentication);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/calculate-days")
+    @PreAuthorize("hasAnyRole('EMPLOYE', 'MANAGER', 'DRH', 'DIRECTION')")
+    @Operation(summary = "Calculer les jours ouvrables", description = "Calcule le nombre exact de jours ouvrables (lundi au vendredi) entre deux dates")
+    public ResponseEntity<ApiResponse<WorkingDaysCalculationDto>> calculateWorkingDays(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        WorkingDaysCalculationDto response = leaveService.calculateWorkingDays(startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

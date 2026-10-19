@@ -263,13 +263,18 @@ public class PayrollServiceImpl implements PayrollService {
         if (totalEmployees < 3) {
             return PayrollStatsResponseDto.builder()
                     .period(period)
+                    .periodYear(ym.getYear())
+                    .periodMonth(ym.getMonthValue())
                     .totalEmployeesPaid(totalEmployees)
                     .totalGrossSalary(totalGross)
                     .totalNetSalary(totalNet)
                     .totalDeductions(totalDeductions)
                     .totalEmployerContributions(totalEmployerContributions)
                     .totalEmployerCost(totalEmployerCost)
+                    .totalPayrollCost(totalEmployerCost)
+                    .anonymized(true)
                     .departmentBreakdown(Collections.emptyList())
+                    .departmentBreakdowns(Collections.emptyList())
                     .build();
         }
 
@@ -303,8 +308,11 @@ public class PayrollServiceImpl implements PayrollService {
                         .departmentName(deptName)
                         .employeeCount(count)
                         .grossSalary(deptGross)
+                        .totalGrossSalary(deptGross)
                         .netSalary(deptNet)
+                        .totalNetSalary(deptNet)
                         .employerCost(deptCost)
+                        .totalEmployerContributions(deptEmployerContrib)
                         .build());
             } else {
                 // Regroupement dans "Autres" pour préserver la confidentialité salariale
@@ -317,26 +325,37 @@ public class PayrollServiceImpl implements PayrollService {
 
         // Si "Autres" compte lui-même >= 3 salariés, on l'affiche ; sinon, masqué pour anonymat
         if (othersCount >= 3) {
+            BigDecimal othersContrib = othersEmployerCost.subtract(othersGross).max(BigDecimal.ZERO);
             breakdown.add(DepartmentPayrollStatsDto.builder()
                     .departmentName("Autres")
                     .employeeCount(othersCount)
                     .grossSalary(othersGross)
+                    .totalGrossSalary(othersGross)
                     .netSalary(othersNet)
+                    .totalNetSalary(othersNet)
                     .employerCost(othersEmployerCost)
+                    .totalEmployerContributions(othersContrib)
                     .build());
         }
 
         breakdown.sort(Comparator.comparing(DepartmentPayrollStatsDto::getDepartmentName));
 
+        boolean isAnonymized = totalEmployees < 3 || (othersCount > 0 && othersCount < 3);
+
         return PayrollStatsResponseDto.builder()
                 .period(period)
+                .periodYear(ym.getYear())
+                .periodMonth(ym.getMonthValue())
                 .totalEmployeesPaid(totalEmployees)
                 .totalGrossSalary(totalGross)
                 .totalNetSalary(totalNet)
                 .totalDeductions(totalDeductions)
                 .totalEmployerContributions(totalEmployerContributions)
                 .totalEmployerCost(totalEmployerCost)
+                .totalPayrollCost(totalEmployerCost)
+                .anonymized(isAnonymized)
                 .departmentBreakdown(breakdown)
+                .departmentBreakdowns(breakdown)
                 .build();
     }
 
