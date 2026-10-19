@@ -136,6 +136,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employé", "id", id));
 
+        employeeRepository.findByEmail(updateDto.getEmail())
+                .filter(other -> !other.getId().equals(id))
+                .ifPresent(other -> {
+                    throw new BadRequestException("Un employé avec l'email " + updateDto.getEmail() + " existe déjà");
+                });
+
         employee.setFirstName(updateDto.getFirstName());
         employee.setLastName(updateDto.getLastName());
         employee.setNationalId(updateDto.getNationalId());

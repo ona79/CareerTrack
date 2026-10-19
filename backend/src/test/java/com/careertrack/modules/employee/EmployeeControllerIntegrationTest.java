@@ -323,4 +323,27 @@ class EmployeeControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("Un e-mail déjà utilisé par un autre employé est refusé (400)")
+    void update_rejects_duplicate_email() throws Exception {
+        com.careertrack.modules.employee.dto.EmployeeCreateDto body =
+                com.careertrack.modules.employee.dto.EmployeeCreateDto.builder()
+                        .employeeNumber(employee2.getEmployeeNumber())
+                        .firstName("Fatou")
+                        .lastName("Diop")
+                        .nationalId(employee2.getNationalId())
+                        .email("emp1@careertrack.sn")
+                        .birthDate(LocalDate.of(1995, 8, 20))
+                        .hireDate(LocalDate.of(2024, 2, 1))
+                        .status(EmployeeStatus.ACTIVE)
+                        .build();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/employees/" + employee2.getId())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isBadRequest());
+    }
 }
