@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { AuthProvider } from '@/context/AuthContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import EmployeeFormPage from '@/pages/employees/EmployeeFormPage'; // <-- NOUVEL IMPORT
@@ -28,6 +28,13 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
+const RootRedirect: React.FC = () => {
+  const { hasRole } = useAuth();
+  const canDashboard = hasRole('DRH') || hasRole('MANAGER') || hasRole('DIRECTION') || hasRole('ADMIN')
+    || hasRole('ROLE_DRH') || hasRole('ROLE_MANAGER') || hasRole('ROLE_DIRECTION') || hasRole('ROLE_ADMIN');
+  return <Navigate to={canDashboard ? '/dashboard' : '/leaves'} replace />;
+};
+
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -46,8 +53,15 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/" element={<RootRedirect />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION', 'ROLE_ADMIN']}>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/employees"
                   element={

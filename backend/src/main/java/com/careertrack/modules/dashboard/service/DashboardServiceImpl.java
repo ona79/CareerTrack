@@ -283,17 +283,23 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private LeaveKpiDto computeLeaveKpis(int year, Set<UUID> employeeIds) {
-        List<LeaveRequest> allRequests = leaveRequestRepository.findAll().stream()
+        List<LeaveRequest> employeeRequests = leaveRequestRepository.findAll().stream()
                 .filter(lr -> lr.getEmployee() != null && employeeIds.contains(lr.getEmployee().getId()))
-                .filter(lr -> lr.getStartDate() != null && lr.getStartDate().getYear() == year)
                 .toList();
 
-        long pending = allRequests.stream().filter(lr -> lr.getStatus().isPending()).count();
-        long approved = allRequests.stream().filter(lr -> lr.getStatus().isApproved()).count();
-        long rejected = allRequests.stream().filter(lr -> lr.getStatus().isRejected()).count();
+        long pending = employeeRequests.stream()
+                .filter(lr -> lr.getStatus() != null && lr.getStatus().isPending())
+                .count();
 
-        BigDecimal totalDaysTaken = allRequests.stream()
-                .filter(lr -> lr.getStatus().isApproved() && lr.getRequestedDays() != null)
+        List<LeaveRequest> yearlyRequests = employeeRequests.stream()
+                .filter(lr -> lr.getStartDate() == null || lr.getStartDate().getYear() == year)
+                .toList();
+
+        long approved = yearlyRequests.stream().filter(lr -> lr.getStatus() != null && lr.getStatus().isApproved()).count();
+        long rejected = yearlyRequests.stream().filter(lr -> lr.getStatus() != null && lr.getStatus().isRejected()).count();
+
+        BigDecimal totalDaysTaken = yearlyRequests.stream()
+                .filter(lr -> lr.getStatus() != null && lr.getStatus().isApproved() && lr.getRequestedDays() != null)
                 .map(LeaveRequest::getRequestedDays)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

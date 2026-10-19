@@ -383,14 +383,16 @@ export const PromotionListPage: React.FC = () => {
               {/* Boutons d'action */}
               <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
                 {/* Bouton Détails Simulation */}
-                <button
-                  type="button"
-                  onClick={() => setShowSimulationsListModal(true)}
-                  className="btn btn-secondary btn-sm text-[11px] py-1 inline-flex items-center gap-1 text-gray-600"
-                >
-                  <Calculator className="w-3.5 h-3.5 text-gray-400" />
-                  Détails de simulation
-                </button>
+                {canViewSalaries ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowSimulationsListModal(true)}
+                    className="btn btn-secondary btn-sm text-[11px] py-1 inline-flex items-center gap-1 text-gray-600"
+                  >
+                    <Calculator className="w-3.5 h-3.5 text-gray-400" />
+                    Détails de simulation
+                  </button>
+                ) : <span />}
 
                 {/* Bouton Valider la promotion (DRH) */}
                 {p.status === 'SUBMITTED' && isDrh && (
@@ -746,6 +748,20 @@ export const PromotionListPage: React.FC = () => {
                 className="btn btn-secondary px-3"
               >
                 Annuler
+              </button>
+              <button
+                type="button"
+                disabled={validatePromotionMutation.isPending}
+                onClick={() =>
+                  validatePromotionMutation.mutate({
+                    id: approvalModalProposal.id!,
+                    status: 'REJECTED',
+                    comment: approvalComment,
+                  })
+                }
+                className="btn btn-secondary px-3 text-red-600 hover:bg-red-50 inline-flex items-center gap-1.5"
+              >
+                Refuser
               </button>
               <button
                 type="button"

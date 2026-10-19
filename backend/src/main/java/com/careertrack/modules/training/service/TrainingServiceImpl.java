@@ -221,6 +221,9 @@ public class TrainingServiceImpl implements TrainingService {
         TrainingSession session = enrollment.getSession();
         Training training = session != null ? session.getTraining() : null;
         Employee employee = enrollment.getEmployee();
+        if (employee != null) {
+            employee = employeeRepository.findById(employee.getId()).orElse(employee);
+        }
 
         LocalDate completionDate = session != null && session.getEndDate() != null
                 ? session.getEndDate().atZone(ZoneId.systemDefault()).toLocalDate()
