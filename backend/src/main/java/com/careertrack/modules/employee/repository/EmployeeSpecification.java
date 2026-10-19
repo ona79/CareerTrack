@@ -59,4 +59,26 @@ public class EmployeeSpecification {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
+
+    public static Specification<Employee> withDashboardFilters(
+            UUID departmentId,
+            UUID positionId,
+            UUID managerEmployeeId
+    ) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (departmentId != null) {
+                predicates.add(cb.equal(root.get("department").get("id"), departmentId));
+            }
+            if (positionId != null) {
+                predicates.add(cb.equal(root.get("position").get("id"), positionId));
+            }
+            if (managerEmployeeId != null) {
+                Predicate isSubordinate = cb.equal(root.get("manager").get("id"), managerEmployeeId);
+                Predicate isSelf = cb.equal(root.get("id"), managerEmployeeId);
+                predicates.add(cb.or(isSubordinate, isSelf));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
 }

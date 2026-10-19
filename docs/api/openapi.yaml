@@ -45,6 +45,8 @@ tags:
   description: "Endpoints d'authentification JWT, gestion de session et profil"
 - name: Notifications
   description: Alertes in-app et notifications par courrier électronique
+- name: Tableau de Bord RH
+  description: "KPIs, statistiques effectifs, pyramide des âges, paie et turnover"
 - name: Congés & Absences
   description: "Gestion des demandes de congés, soldes et calendrier d'équipe"
 - name: Promotions & Carrières
@@ -672,6 +674,30 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
+  /api/v1/leaves/{id}/cancel:
+    patch:
+      tags:
+      - Congés & Absences
+      summary: Annuler une demande de congé
+      description: Annulation de la demande avec réincrémentation du solde si elle
+        était déjà validée
+      operationId: cancelLeave
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseLeaveRequestResponseDto"
+      security:
+      - BearerAuth: []
   /api/v1/employees/{id}/deactivate:
     patch:
       tags:
@@ -1100,6 +1126,72 @@ paths:
                 $ref: "#/components/schemas/ApiResponseTeamLeaveConflictDto"
       security:
       - BearerAuth: []
+  /api/v1/leaves/calendar:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Calendrier d'équipe des congés
+      description: Retourne les congés sur une période avec détection des conflits
+        au sein de l'équipe
+      operationId: getTeamCalendar
+      parameters:
+      - name: departmentId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: startDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: endDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTeamCalendarItemDto"
+      security:
+      - BearerAuth: []
+  /api/v1/leaves/calculate-days:
+    get:
+      tags:
+      - Congés & Absences
+      summary: Calculer les jours ouvrables
+      description: Calcule le nombre exact de jours ouvrables (lundi au vendredi)
+        entre deux dates
+      operationId: calculateWorkingDays
+      parameters:
+      - name: startDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: endDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseWorkingDaysCalculationDto"
+      security:
+      - BearerAuth: []
   /api/v1/leaves/balances/{employeeId}:
     get:
       tags:
@@ -1392,6 +1484,42 @@ paths:
                 $ref: "#/components/schemas/ApiResponseListDepartmentDto"
       security:
       - BearerAuth: []
+  /api/v1/dashboard/stats:
+    get:
+      tags:
+      - Tableau de Bord RH
+      summary: Obtenir les statistiques RH et KPIs
+      description: "Retourne l'effectif, la pyramide des âges, le turnover, la masse\
+        \ salariale et la formation avec filtres"
+      operationId: getStats
+      parameters:
+      - name: departmentId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: positionId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: periodYear
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseDashboardStatsDto"
+      security:
+      - BearerAuth: []
   /api/v1/auth/me:
     get:
       tags:
@@ -1467,6 +1595,10 @@ components:
           - APPROVED_DRH
           - REJECTED
           - CANCELLED
+          - EN_ATTENTE
+          - VALIDE
+          - REFUSE
+          - ANNULE
         managerComment:
           type: string
     ApiResponseLeaveRequestResponseDto:
@@ -1521,6 +1653,10 @@ components:
           - APPROVED_DRH
           - REJECTED
           - CANCELLED
+          - EN_ATTENTE
+          - VALIDE
+          - REFUSE
+          - ANNULE
         managerComment:
           type: string
         approvedById:
@@ -2961,6 +3097,9 @@ components:
           format: date
         hasConflict:
           type: boolean
+        threshold:
+          type: integer
+          format: int32
         overlappingRequestsCount:
           type: integer
           format: int32
@@ -2968,6 +3107,92 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LeaveRequestResponseDto"
+    ApiResponseListTeamCalendarItemDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamCalendarItemDto"
+        timestamp:
+          type: string
+          format: date-time
+    TeamCalendarItemDto:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        employeeName:
+          type: string
+        employeeNumber:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        positionTitle:
+          type: string
+        leaveTypeId:
+          type: string
+          format: uuid
+        leaveTypeName:
+          type: string
+        leaveTypeCode:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        requestedDays:
+          type: number
+        status:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED_N1
+          - APPROVED_DRH
+          - REJECTED
+          - CANCELLED
+          - EN_ATTENTE
+          - VALIDE
+          - REFUSE
+          - ANNULE
+        conflicting:
+          type: boolean
+    ApiResponseWorkingDaysCalculationDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/WorkingDaysCalculationDto"
+        timestamp:
+          type: string
+          format: date-time
+    WorkingDaysCalculationDto:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        workingDays:
+          type: number
     ApiResponseListLeaveBalanceDto:
       type: object
       properties:
@@ -3256,6 +3481,168 @@ components:
           format: uuid
         managerName:
           type: string
+    AgePyramidBracketDto:
+      type: object
+      properties:
+        bracket:
+          type: string
+        count:
+          type: integer
+          format: int64
+        percentage:
+          type: number
+          format: double
+    ApiResponseDashboardStatsDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/DashboardStatsDto"
+        timestamp:
+          type: string
+          format: date-time
+    ContractTypeBreakdownDto:
+      type: object
+      properties:
+        contractType:
+          type: string
+        count:
+          type: integer
+          format: int64
+        percentage:
+          type: number
+          format: double
+    DashboardStatsDto:
+      type: object
+      properties:
+        periodYear:
+          type: integer
+          format: int32
+        headcount:
+          $ref: "#/components/schemas/HeadcountKpiDto"
+        agePyramid:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgePyramidBracketDto"
+        turnover:
+          $ref: "#/components/schemas/TurnoverKpiDto"
+        payroll:
+          $ref: "#/components/schemas/PayrollKpiDto"
+        training:
+          $ref: "#/components/schemas/TrainingKpiDto"
+        leaves:
+          $ref: "#/components/schemas/LeaveKpiDto"
+    DepartmentHeadcountDto:
+      type: object
+      properties:
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        employeeCount:
+          type: integer
+          format: int64
+    HeadcountKpiDto:
+      type: object
+      properties:
+        totalEmployees:
+          type: integer
+          format: int64
+        activeEmployees:
+          type: integer
+          format: int64
+        onLeaveEmployees:
+          type: integer
+          format: int64
+        terminatedEmployees:
+          type: integer
+          format: int64
+        contractBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractTypeBreakdownDto"
+        departmentBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentHeadcountDto"
+    LeaveKpiDto:
+      type: object
+      properties:
+        pendingRequests:
+          type: integer
+          format: int64
+        approvedRequests:
+          type: integer
+          format: int64
+        rejectedRequests:
+          type: integer
+          format: int64
+        totalDaysTaken:
+          type: number
+    MonthlyPayrollTrendDto:
+      type: object
+      properties:
+        month:
+          type: integer
+          format: int32
+        monthLabel:
+          type: string
+        grossSalary:
+          type: number
+        netSalary:
+          type: number
+        employerContributions:
+          type: number
+    PayrollKpiDto:
+      type: object
+      properties:
+        totalGrossSalary:
+          type: number
+        totalNetSalary:
+          type: number
+        totalEmployerContributions:
+          type: number
+        payslipsCount:
+          type: integer
+          format: int64
+        monthlyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyPayrollTrendDto"
+    TrainingKpiDto:
+      type: object
+      properties:
+        totalTrainings:
+          type: integer
+          format: int64
+        activeSessions:
+          type: integer
+          format: int64
+        completedSessions:
+          type: integer
+          format: int64
+        totalParticipants:
+          type: integer
+          format: int64
+    TurnoverKpiDto:
+      type: object
+      properties:
+        turnoverRate:
+          type: number
+          format: double
+        hiresCount:
+          type: integer
+          format: int64
+        departuresCount:
+          type: integer
+          format: int64
+        averageHeadcount:
+          type: integer
+          format: int64
     ApiResponseUserDto:
       type: object
       properties:
