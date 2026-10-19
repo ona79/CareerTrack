@@ -93,6 +93,8 @@ export interface Department {
   headCount?: number;
 }
 
+export type DepartmentDto = Department;
+
 export interface Position {
   id: string;
   code: string;
@@ -518,6 +520,148 @@ export interface OrgNodeDto {
   phone?: string;
   subordinateCount?: number;
   subordinates: OrgNodeDto[];
+}
+
+// ─── LOT 3 : CONGÉS & DASHBOARD ─────────────────────────────────────────────
+export interface LeaveRequestResponseDto {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  employeeNumber: string;
+  departmentName?: string;
+  leaveTypeId: string;
+  leaveTypeName: string;
+  leaveTypeCode: string;
+  startDate: string;
+  endDate: string;
+  requestedDays: number;
+  reason?: string;
+  status: 'SUBMITTED' | 'APPROVED_N1' | 'APPROVED_DRH' | 'REJECTED' | 'CANCELLED' | 'EN_ATTENTE' | 'VALIDE' | 'REFUSE' | 'ANNULE' | 'PENDING' | 'APPROVED';
+  managerComment?: string;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  createdAt: string;
+}
+
+export interface LeaveBalanceResponseDto {
+  id: string;
+  employeeId: string;
+  leaveTypeId: string;
+  leaveTypeName: string;
+  leaveTypeCode?: string;
+  periodYear: number;
+  allocatedDays: number;
+  usedDays: number;
+  remainingDays: number;
+}
+
+export interface TeamCalendarItemDto {
+  requestId: string;
+  employeeId: string;
+  employeeName: string;
+  employeeNumber: string;
+  departmentId?: string;
+  departmentName?: string;
+  positionTitle?: string;
+  leaveTypeId: string;
+  leaveTypeName: string;
+  leaveTypeCode?: string;
+  startDate: string;
+  endDate: string;
+  requestedDays: number;
+  status: string;
+  conflicting: boolean;
+}
+
+export interface TeamLeaveConflictDto {
+  departmentId: string;
+  startDate: string;
+  endDate: string;
+  hasConflict: boolean;
+  threshold: number;
+  overlappingRequestsCount: number;
+  overlappingRequests: LeaveRequestResponseDto[];
+}
+
+export interface WorkingDaysCalculationDto {
+  startDate: string;
+  endDate: string;
+  workingDays: number;
+}
+
+export interface ContractTypeBreakdownDto {
+  contractType: string;
+  count: number;
+  percentage: number;
+}
+
+export interface DepartmentHeadcountDto {
+  departmentId: string;
+  departmentName: string;
+  employeeCount: number;
+}
+
+export interface HeadcountKpiDto {
+  totalEmployees: number;
+  activeEmployees: number;
+  onLeaveEmployees: number;
+  terminatedEmployees: number;
+  contractBreakdown: ContractTypeBreakdownDto[];
+  departmentBreakdown: DepartmentHeadcountDto[];
+}
+
+export interface AgePyramidBracketDto {
+  bracket: string;
+  count: number;
+  percentage: number;
+}
+
+export interface TurnoverKpiDto {
+  turnoverRate: number;
+  hiresCount: number;
+  departuresCount: number;
+  averageHeadcount: number;
+}
+
+export interface MonthlyPayrollTrendDto {
+  month: number;
+  monthLabel: string;
+  grossSalary: number;
+  netSalary: number;
+  employerContributions: number;
+}
+
+export interface PayrollKpiDto {
+  totalGrossSalary: number;
+  totalNetSalary: number;
+  totalEmployerContributions: number;
+  payslipsCount: number;
+  monthlyTrend: MonthlyPayrollTrendDto[];
+}
+
+export interface TrainingKpiDto {
+  totalTrainings: number;
+  activeSessions: number;
+  completedSessions: number;
+  totalParticipants: number;
+}
+
+export interface LeaveKpiDto {
+  pendingRequests: number;
+  approvedRequests: number;
+  rejectedRequests: number;
+  totalDaysTaken: number;
+}
+
+export interface DashboardStatsDto {
+  periodYear: number;
+  headcount: HeadcountKpiDto;
+  agePyramid: AgePyramidBracketDto[];
+  turnover: TurnoverKpiDto;
+  payroll: PayrollKpiDto;
+  training: TrainingKpiDto;
+  leaves: LeaveKpiDto;
 }
 
 
