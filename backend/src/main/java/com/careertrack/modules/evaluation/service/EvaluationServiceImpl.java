@@ -43,14 +43,60 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     @Transactional
     public EvaluationCampaignDto createCampaign(EvaluationCampaignDto dto) {
+        int year = dto.getCampaignYear() > 0 ? dto.getCampaignYear() : LocalDate.now().getYear();
+        LocalDate startDate = dto.getStartDate() != null ? dto.getStartDate() : LocalDate.of(year, 1, 1);
+        LocalDate endDate = dto.getEndDate() != null ? dto.getEndDate() : LocalDate.of(year, 12, 31);
+        String title = (dto.getTitle() != null && !dto.getTitle().isBlank())
+                ? dto.getTitle()
+                : "Campagne Annuelle d'Évaluation " + year;
+
         EvaluationCampaign campaign = EvaluationCampaign.builder()
-                .title(dto.getTitle())
-                .campaignYear(dto.getCampaignYear())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .status(dto.getStatus() != null ? dto.getStatus() : CampaignStatus.PLANNED)
+                .title(title)
+                .campaignYear(year)
+                .startDate(startDate)
+                .endDate(endDate)
+                .status(dto.getStatus() != null ? dto.getStatus() : CampaignStatus.IN_PROGRESS)
                 .build();
-        return mapCampaignToDto(campaignRepository.save(campaign));
+        EvaluationCampaign savedCampaign = campaignRepository.save(campaign);
+
+        // Auto-génération des fiches d'évaluation pour tous les collaborateurs actifs
+        List<Employee> activeEmployees = employeeRepository.findAllActiveWithDetails();
+        for (Employee emp : activeEmployees) {
+            Optional<Evaluation> existing = evaluationRepository.findByCampaignIdAndEmployeeId(savedCampaign.getId(), emp.getId());
+            if (existing.isEmpty()) {
+                Evaluation eval = Evaluation.builder()
+                        .campaign(savedCampaign)
+                        .employee(emp)
+                        .evaluator(emp.getManager())
+                        .status(EvaluationStatus.DRAFT)
+                        .build();
+                Evaluation savedEval = evaluationRepository.save(eval);
+
+                Objective obj1 = Objective.builder()
+                        .evaluation(savedEval)
+                        .title("Objectifs de performance opérationnelle et livrables " + year)
+                        .category(ObjectiveCategory.OPERATIONAL)
+                        .weight(BigDecimal.valueOf(60))
+                        .description("Taux de respect des engagements et qualité des livrables")
+                        .achievementRate(BigDecimal.valueOf(100))
+                        .status("IN_PROGRESS")
+                        .build();
+                objectiveRepository.save(obj1);
+
+                Objective obj2 = Objective.builder()
+                        .evaluation(savedEval)
+                        .title("Développement des compétences et esprit d'équipe")
+                        .category(ObjectiveCategory.LEARNING)
+                        .weight(BigDecimal.valueOf(40))
+                        .description("Participation active aux revues et acquisition de nouvelles compétences")
+                        .achievementRate(BigDecimal.valueOf(100))
+                        .status("IN_PROGRESS")
+                        .build();
+                objectiveRepository.save(obj2);
+            }
+        }
+
+        return mapCampaignToDto(savedCampaign);
     }
 
     @Override

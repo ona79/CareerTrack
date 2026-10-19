@@ -27,6 +27,13 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, UUID
     );
 
     @Query("SELECT lr FROM LeaveRequest lr " +
+           "WHERE lr.status IN :statuses " +
+           "ORDER BY lr.createdAt DESC")
+    List<LeaveRequest> findByStatuses(
+            @Param("statuses") Collection<LeaveStatus> statuses
+    );
+
+    @Query("SELECT lr FROM LeaveRequest lr " +
            "WHERE lr.employee.department.id = :departmentId " +
            "AND lr.status IN :statuses " +
            "AND lr.startDate <= :endDate AND lr.endDate >= :startDate " +

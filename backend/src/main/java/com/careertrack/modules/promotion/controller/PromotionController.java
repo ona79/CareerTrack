@@ -23,21 +23,21 @@ public class PromotionController {
     private final PromotionService promotionService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Lister les propositions de promotion", description = "Accessible à la DRH et aux managers")
     public ResponseEntity<ApiResponse<List<PromotionProposalDto>>> getAllProposals() {
         return ResponseEntity.ok(ApiResponse.success(promotionService.getAllProposals()));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('DRH', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('DRH', 'MANAGER', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Soumettre une proposition de promotion ou revalorisation", description = "Accessible au manager N+1 ou à la DRH")
     public ResponseEntity<ApiResponse<PromotionProposalDto>> createProposal(@RequestBody PromotionProposalDto dto) {
         return ResponseEntity.ok(ApiResponse.success("Proposition soumise", promotionService.createProposal(dto)));
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('DRH')")
+    @PreAuthorize("hasAnyRole('DRH', 'ADMIN')")
     @Operation(summary = "Valider ou refuser une proposition de promotion", description = "Réservé à la DRH uniquement")
     public ResponseEntity<ApiResponse<PromotionProposalDto>> updateStatus(
             @PathVariable UUID id,
@@ -47,7 +47,7 @@ public class PromotionController {
     }
 
     @PostMapping("/simulations")
-    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Simuler l'impact d'une revalorisation sur la masse salariale en FCFA", description = "Réservé à la DRH et à la DIRECTION")
     public ResponseEntity<ApiResponse<com.careertrack.modules.promotion.dto.SalarySimulationResultDto>> simulateSalaryImpact(
             @jakarta.validation.Valid @RequestBody com.careertrack.modules.promotion.dto.SalarySimulationRequestDto dto) {
@@ -55,7 +55,7 @@ public class PromotionController {
     }
 
     @GetMapping("/simulations")
-    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION')")
+    @PreAuthorize("hasAnyRole('DRH', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Lister l'historique des simulations de masse salariale", description = "Réservé à la DRH et à la DIRECTION")
     public ResponseEntity<ApiResponse<List<com.careertrack.modules.promotion.dto.SalarySimulationResultDto>>> getSalarySimulations() {
         return ResponseEntity.ok(ApiResponse.success(promotionService.getSalarySimulations()));

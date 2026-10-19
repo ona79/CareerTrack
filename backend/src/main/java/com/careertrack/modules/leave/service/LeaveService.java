@@ -18,4 +18,6 @@ public interface LeaveService {
     List<TeamCalendarItemDto> getTeamCalendar(UUID departmentId, LocalDate startDate, LocalDate endDate, Authentication authentication);
     WorkingDaysCalculationDto calculateWorkingDays(LocalDate startDate, LocalDate endDate);
     List<LeaveRequestResponseDto> getAllLeaveRequests();
+    List<LeaveRequestResponseDto> getPendingRequests(Authentication authentication);
+    List<LeaveTypeDto> getAllLeaveTypes();
 }

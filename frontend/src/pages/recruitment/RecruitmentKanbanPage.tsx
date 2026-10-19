@@ -313,7 +313,17 @@ export const RecruitmentKanbanPage: React.FC = () => {
 
   // Mutation Création Offre
   const createOfferMutation = useMutation({
-    mutationFn: async (payload: JobOfferCreateDto) => {
+    mutationFn: async (form: JobOfferCreateDto) => {
+      const payload = {
+        title: form.title.trim(),
+        contractType: form.contractType,
+        description: form.description.trim(),
+        requirements: form.requirements ? form.requirements.trim() : null,
+        openPositions: Number(form.openPositions) || 1,
+        departmentId: form.departmentId ? form.departmentId : null,
+        positionId: form.positionId ? form.positionId : null,
+        closingDate: form.closingDate ? form.closingDate : null,
+      };
       const res = await api.post<ApiResponse<JobOfferDto>>('/recruitment/offers', payload);
       return res.data?.data;
     },
@@ -341,7 +351,17 @@ export const RecruitmentKanbanPage: React.FC = () => {
 
   // Mutation Dépôt Candidature
   const createApplicationMutation = useMutation({
-    mutationFn: async (payload: JobApplicationCreateDto) => {
+    mutationFn: async (form: JobApplicationCreateDto) => {
+      const payload = {
+        jobOfferId: form.jobOfferId,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        phone: form.phone ? form.phone.trim() : null,
+        cvUrl: form.cvUrl ? form.cvUrl.trim() : null,
+        linkedinUrl: form.linkedinUrl ? form.linkedinUrl.trim() : null,
+        notes: form.notes ? form.notes.trim() : null,
+      };
       const res = await api.post<ApiResponse<JobApplicationDto>>('/recruitment/applications', payload);
       return res.data?.data;
     },

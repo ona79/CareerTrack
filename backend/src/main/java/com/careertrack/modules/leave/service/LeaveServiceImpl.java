@@ -188,9 +188,49 @@ public class LeaveServiceImpl implements LeaveService {
     @Override
     @Transactional(readOnly = true)
     public List<LeaveRequestResponseDto> getPendingRequestsForManager(UUID managerId) {
-        return leaveMapper.toDtoList(leaveRequestRepository.findByManagerIdAndStatuses(
+        List<LeaveRequest> requests = leaveRequestRepository.findByManagerIdAndStatuses(
                 managerId, List.of(LeaveStatus.SUBMITTED, LeaveStatus.EN_ATTENTE)
-        ));
+        );
+        if (requests.isEmpty()) {
+            Employee emp = employeeRepository.findById(managerId).orElse(null);
+            if (emp != null && emp.getUser() != null && emp.getUser().getRoles().stream().anyMatch(
+                    r -> r.getName().name().equals("ROLE_DRH") || r.getName().name().equals("ROLE_DIRECTION") || r.getName().name().equals("ROLE_ADMIN"))) {
+                return leaveMapper.toDtoList(leaveRequestRepository.findByStatuses(List.of(LeaveStatus.SUBMITTED, LeaveStatus.EN_ATTENTE)));
+            }
+        }
+        return leaveMapper.toDtoList(requests);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LeaveRequestResponseDto> getPendingRequests(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof com.careertrack.common.security.UserPrincipal principal) {
+            boolean isDrhOrAdmin = principal.getAuthorities().stream().anyMatch(a ->
+                    a.getAuthority().equals("ROLE_DRH") || a.getAuthority().equals("ROLE_DIRECTION") || a.getAuthority().equals("ROLE_ADMIN"));
+            if (isDrhOrAdmin) {
+                return leaveMapper.toDtoList(leaveRequestRepository.findByStatuses(List.of(LeaveStatus.SUBMITTED, LeaveStatus.EN_ATTENTE)));
+            }
+            Employee emp = employeeRepository.findByUserId(principal.getId()).orElse(null);
+            if (emp != null) {
+                return getPendingRequestsForManager(emp.getId());
+            }
+        }
+        return leaveMapper.toDtoList(leaveRequestRepository.findByStatuses(List.of(LeaveStatus.SUBMITTED, LeaveStatus.EN_ATTENTE)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LeaveTypeDto> getAllLeaveTypes() {
+        return leaveTypeRepository.findAll().stream()
+                .map(lt -> LeaveTypeDto.builder()
+                        .id(lt.getId())
+                        .code(lt.getCode())
+                        .name(lt.getName())
+                        .maxDaysPerYear(lt.getMaxDaysPerYear())
+                        .isPaid(lt.isPaid())
+                        .requiresJustification(lt.isRequiresJustification())
+                        .build())
+                .toList();
     }
 
     @Override

@@ -73,8 +73,13 @@ public class PromotionServiceImpl implements PromotionService {
     public PromotionProposalDto createProposal(PromotionProposalDto dto) {
         Employee employee = employeeRepository.findById(dto.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employé introuvable : " + dto.getEmployeeId()));
-        Position position = positionRepository.findById(dto.getProposedPositionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Poste introuvable : " + dto.getProposedPositionId()));
+        Position position = null;
+        if (dto.getProposedPositionId() != null) {
+            position = positionRepository.findById(dto.getProposedPositionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Poste introuvable : " + dto.getProposedPositionId()));
+        } else {
+            position = employee.getPosition();
+        }
 
         BigDecimal currentSalary = dto.getCurrentSalary();
         if (currentSalary == null) {
