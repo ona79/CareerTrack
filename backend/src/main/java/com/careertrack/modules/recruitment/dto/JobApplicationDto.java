@@ -25,4 +25,5 @@ public class JobApplicationDto {
     private int rating;
     private String notes;
     private String cvUrl;
+    private String appliedAt;
 }
