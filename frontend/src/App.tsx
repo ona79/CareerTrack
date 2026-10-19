@@ -5,6 +5,7 @@ import { queryClient } from '@/lib/queryClient';
 import { AuthProvider } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
+import EmployeeDetailPage from '@/pages/employees/EmployeeDetailPage';
 
 // Lazy loading des pages pour optimisation mobile, PWA et code splitting
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
@@ -51,6 +52,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER']}>
                       <EmployeeListPage />
+                    </ProtectedRoute>
+                  }
+                />
+                                <Route
+                  path="/employees/:id"
+                  element={
+                    <ProtectedRoute roles={['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE']}>
+                      <EmployeeDetailPage />
                     </ProtectedRoute>
                   }
                 />

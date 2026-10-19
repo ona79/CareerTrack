@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useEmployees } from '@/hooks/useEmployees';
 import type { EmployeeStatus } from '@/types';
+import { Link } from 'react-router-dom';
 
 const PAGE_SIZE = 20;
 
@@ -197,7 +198,9 @@ export const EmployeeListPage: React.FC = () => {
                     <td>
                       <div className="flex items-center gap-3">
                         <div className="avatar avatar-md avatar-primary font-bold">{initialsOf(emp.fullName)}</div>
-                        <div className="font-semibold text-gray-900">{emp.fullName}</div>
+                                                <Link to={`/employees/${emp.id}`} className="font-semibold text-gray-900 hover:text-[#1A6B3C]">
+                          {emp.fullName}
+                        </Link>
                       </div>
                     </td>
                     <td>
@@ -242,7 +245,9 @@ export const EmployeeListPage: React.FC = () => {
                   <div className="flex items-center gap-2.5">
                     <div className="avatar avatar-md avatar-primary font-bold">{initialsOf(emp.fullName)}</div>
                     <div>
-                      <div className="font-bold text-sm text-gray-900">{emp.fullName}</div>
+                                            <Link to={`/employees/${emp.id}`} className="font-bold text-sm text-gray-900 hover:text-[#1A6B3C]">
+                        {emp.fullName}
+                      </Link>
                       <div className="text-xs text-gray-400 font-mono">{emp.employeeNumber}</div>
                     </div>
                   </div>
