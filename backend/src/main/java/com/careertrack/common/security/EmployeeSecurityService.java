@@ -18,11 +18,11 @@ public class EmployeeSecurityService {
 
     private final EmployeeRepository employeeRepository;
 
-    private Authentication getAuthentication() {
+    public Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
     }
 
-    private UserPrincipal getCurrentUser() {
+    public UserPrincipal getCurrentUser() {
         Authentication auth = getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof UserPrincipal principal) {
             return principal;
@@ -30,7 +30,7 @@ public class EmployeeSecurityService {
         return null;
     }
 
-    private boolean hasRole(String role) {
+    public boolean hasRole(String role) {
         Authentication auth = getAuthentication();
         if (auth == null) return false;
         String fullRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
@@ -38,7 +38,7 @@ public class EmployeeSecurityService {
                 .anyMatch(a -> a.getAuthority().equals(fullRole));
     }
 
-    private Optional<Employee> getCurrentEmployee() {
+    public Optional<Employee> getCurrentEmployee() {
         UserPrincipal user = getCurrentUser();
         if (user == null) {
             return Optional.empty();
@@ -82,5 +82,16 @@ public class EmployeeSecurityService {
         }
 
         return false;
+    }
+
+    /**
+     * Peut voir les données sensibles (CNI, date de naissance, téléphone, adresse).
+     * DRH : oui. EMPLOYE : uniquement lui-même. Autres (MANAGER, DIRECTION) : non.
+     */
+    public boolean canSeeSensitiveData(UUID employeeId) {
+        if (hasRole("DRH")) return true;
+        return getCurrentEmployee()
+                .map(e -> e.getId().equals(employeeId))
+                .orElse(false);
     }
 }

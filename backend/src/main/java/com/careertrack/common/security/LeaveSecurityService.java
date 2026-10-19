@@ -17,6 +17,7 @@ import java.util.UUID;
 public class LeaveSecurityService {
 
     private final EmployeeRepository employeeRepository;
+    private final com.careertrack.modules.leave.repository.LeaveRequestRepository leaveRequestRepository;
 
     private Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
@@ -91,5 +92,35 @@ public class LeaveSecurityService {
      */
     public boolean canAccessEmployeeBalances(UUID employeeId) {
         return canAccessEmployeeLeaves(employeeId);
+    }
+
+    /**
+     * Annulation d'une demande de congé (PATCH /api/v1/leaves/{id}/cancel) :
+     * - DRH : Oui
+     * - MANAGER / EMPLOYE : Uniquement ses propres demandes ou subordonné direct
+     */
+    public boolean canCancelLeave(UUID requestId) {
+        if (hasRole("DRH")) {
+            return true;
+        }
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        if (currentEmpOpt.isEmpty()) {
+            return false;
+        }
+        Employee currentEmp = currentEmpOpt.get();
+
+        return leaveRequestRepository.findById(requestId)
+                .map(req -> {
+                    if (req.getEmployee() == null) return false;
+                    UUID ownerId = req.getEmployee().getId();
+                    if (currentEmp.getId().equals(ownerId)) {
+                        return true;
+                    }
+                    if (hasRole("MANAGER") && req.getEmployee().getManager() != null) {
+                        return currentEmp.getId().equals(req.getEmployee().getManager().getId());
+                    }
+                    return false;
+                })
+                .orElse(false);
     }
 }

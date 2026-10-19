@@ -45,8 +45,23 @@ public class LeaveController {
         return new ResponseEntity<>(ApiResponse.success("Demande de congé enregistrée", response), HttpStatus.CREATED);
     }
 
+    @GetMapping("/types")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Lister les types de congés", description = "Retourne la liste des types de congés configurés")
+    public ResponseEntity<ApiResponse<List<LeaveTypeDto>>> getLeaveTypes() {
+        return ResponseEntity.ok(ApiResponse.success(leaveService.getAllLeaveTypes()));
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION', 'ADMIN')")
+    @Operation(summary = "Lister les demandes en attente", description = "Retourne toutes les demandes en attente pour la DRH ou celles des subordonnés pour un manager")
+    public ResponseEntity<ApiResponse<List<LeaveRequestResponseDto>>> getPendingLeaves(Authentication authentication) {
+        List<LeaveRequestResponseDto> response = leaveService.getPendingRequests(authentication);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PutMapping("/{id}/validate")
-    @PreAuthorize("hasAnyRole('MANAGER', 'DRH')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Valider ou refuser un congé", description = "Validation N+1 ou DRH avec décompte automatique du solde")
     public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> validateLeave(
             @PathVariable UUID id,
@@ -66,7 +81,7 @@ public class LeaveController {
     }
 
     @GetMapping("/manager/{managerId}/pending")
-    @PreAuthorize("hasAnyRole('MANAGER', 'DRH')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION', 'ADMIN')")
     @Operation(summary = "Demandes en attente pour un manager", description = "Retourne les demandes de congés en attente d'approbation N+1")
     public ResponseEntity<ApiResponse<List<LeaveRequestResponseDto>>> getPendingLeavesForManager(@PathVariable UUID managerId) {
         List<LeaveRequestResponseDto> response = leaveService.getPendingRequestsForManager(managerId);
@@ -85,7 +100,7 @@ public class LeaveController {
     }
 
     @GetMapping("/conflicts")
-    @PreAuthorize("hasAnyRole('MANAGER', 'DRH')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'DRH', 'DIRECTION')")
     @Operation(summary = "Détection des conflits de congés d'équipe", description = "Vérifie les chevauchements d'absences dans une même équipe sur une période")
     public ResponseEntity<ApiResponse<TeamLeaveConflictDto>> detectConflicts(
             @RequestParam UUID departmentId,
@@ -93,6 +108,41 @@ public class LeaveController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         TeamLeaveConflictDto response = leaveService.detectTeamConflicts(departmentId, startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("@leaveSecurity.canCancelLeave(#id)")
+    @Operation(summary = "Annuler une demande de congé", description = "Annulation de la demande avec réincrémentation du solde si elle était déjà validée")
+    public ResponseEntity<ApiResponse<LeaveRequestResponseDto>> cancelLeave(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        LeaveRequestResponseDto response = leaveService.cancelLeaveRequest(id, authentication);
+        return ResponseEntity.ok(ApiResponse.success("Demande de congé annulée", response));
+    }
+
+    @GetMapping("/calendar")
+    @PreAuthorize("hasAnyRole('EMPLOYE', 'MANAGER', 'DRH', 'DIRECTION')")
+    @Operation(summary = "Calendrier d'équipe des congés", description = "Retourne les congés sur une période avec détection des conflits au sein de l'équipe")
+    public ResponseEntity<ApiResponse<List<TeamCalendarItemDto>>> getTeamCalendar(
+            @RequestParam(required = false) UUID departmentId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Authentication authentication
+    ) {
+        List<TeamCalendarItemDto> response = leaveService.getTeamCalendar(departmentId, startDate, endDate, authentication);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/calculate-days")
+    @PreAuthorize("hasAnyRole('EMPLOYE', 'MANAGER', 'DRH', 'DIRECTION')")
+    @Operation(summary = "Calculer les jours ouvrables", description = "Calcule le nombre exact de jours ouvrables (lundi au vendredi) entre deux dates")
+    public ResponseEntity<ApiResponse<WorkingDaysCalculationDto>> calculateWorkingDays(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        WorkingDaysCalculationDto response = leaveService.calculateWorkingDays(startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

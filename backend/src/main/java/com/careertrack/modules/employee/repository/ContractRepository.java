@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface ContractRepository extends JpaRepository<Contract, UUID> {
     List<Contract> findByEmployeeId(UUID employeeId);
     Optional<Contract> findByEmployeeIdAndActiveTrue(UUID employeeId);
+    List<Contract> findByActiveTrue();
 }

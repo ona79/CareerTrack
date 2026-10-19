@@ -21,6 +21,7 @@ public class NotificationDto {
     private String title;
     private String message;
     private UUID recipientId;
+    private String recipientEmail;
     private boolean read;
     private Instant sentAt;
 }

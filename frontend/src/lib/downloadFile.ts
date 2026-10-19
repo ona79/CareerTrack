@@ -52,7 +52,8 @@ export async function downloadFile(
   options?.onStart?.();
 
   try {
-    const response = await api.get(url, {
+    const targetUrl = url.startsWith('/api/v1/') ? url.substring('/api/v1'.length) : url;
+    const response = await api.get(targetUrl, {
       responseType: 'blob',
     });
 

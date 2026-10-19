@@ -92,4 +92,52 @@ public class EvaluationSecurityService {
 
         return false;
     }
+
+    /**
+     * L'employé peut soumettre son auto-évaluation s'il est l'évalué.
+     */
+    public boolean canSelfEvaluate(UUID evaluationId) {
+        Evaluation eval = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fiche d'évaluation introuvable : " + evaluationId));
+
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        return currentEmpOpt.isPresent()
+                && eval.getEmployee() != null
+                && eval.getEmployee().getId().equals(currentEmpOpt.get().getId());
+    }
+
+    /**
+     * Le manager N+1 ou la DRH peut évaluer la fiche.
+     */
+    public boolean canManagerEvaluate(UUID evaluationId) {
+        if (hasRole("DRH") || hasRole("ADMIN")) {
+            return true;
+        }
+        Evaluation eval = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fiche d'évaluation introuvable : " + evaluationId));
+
+        Optional<Employee> currentEmpOpt = getCurrentEmployee();
+        if (currentEmpOpt.isEmpty()) return false;
+        Employee currentEmp = currentEmpOpt.get();
+
+        if (eval.getEvaluator() != null && eval.getEvaluator().getId().equals(currentEmp.getId())) {
+            return true;
+        }
+        return eval.getEmployee() != null && eval.getEmployee().getManager() != null
+                && eval.getEmployee().getManager().getId().equals(currentEmp.getId());
+    }
+
+    /**
+     * La DRH ou le manager N+1 peut clore/valider définitivement l'évaluation.
+     */
+    public boolean canComplete(UUID evaluationId) {
+        return canManagerEvaluate(evaluationId);
+    }
+
+    /**
+     * Téléchargement du bilan d'évaluation en PDF.
+     */
+    public boolean canDownloadPdf(UUID evaluationId) {
+        return canAccessEvaluation(evaluationId);
+    }
 }

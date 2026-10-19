@@ -10,9 +10,14 @@ import java.util.UUID;
 public interface LeaveService {
     LeaveRequestResponseDto createLeaveRequest(LeaveRequestCreateDto createDto);
     LeaveRequestResponseDto approveOrRejectLeave(UUID requestId, LeaveApprovalDto approvalDto, Authentication authentication);
+    LeaveRequestResponseDto cancelLeaveRequest(UUID requestId, Authentication authentication);
     List<LeaveRequestResponseDto> getEmployeeLeaveRequests(UUID employeeId);
     List<LeaveRequestResponseDto> getPendingRequestsForManager(UUID managerId);
     List<LeaveBalanceDto> getEmployeeBalances(UUID employeeId, int year);
     TeamLeaveConflictDto detectTeamConflicts(UUID departmentId, LocalDate startDate, LocalDate endDate);
+    List<TeamCalendarItemDto> getTeamCalendar(UUID departmentId, LocalDate startDate, LocalDate endDate, Authentication authentication);
+    WorkingDaysCalculationDto calculateWorkingDays(LocalDate startDate, LocalDate endDate);
     List<LeaveRequestResponseDto> getAllLeaveRequests();
+    List<LeaveRequestResponseDto> getPendingRequests(Authentication authentication);
+    List<LeaveTypeDto> getAllLeaveTypes();
 }

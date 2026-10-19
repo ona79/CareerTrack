@@ -14,12 +14,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,6 +50,7 @@ class OrgChartServiceImplTest {
                 .position(posDG)
                 .department(depDG)
                 .email("direction@careertrack.sn")
+                .manager(null)
                 .build();
 
         Position posDev = Position.builder().title("Développeur").build();
@@ -65,11 +64,11 @@ class OrgChartServiceImplTest {
                 .position(posDev)
                 .department(depIT)
                 .email("ousmane@careertrack.sn")
+                .manager(root)
                 .build();
 
-        when(employeeRepository.findByManagerIsNull()).thenReturn(List.of(root));
-        when(employeeRepository.findByManagerId(rootId)).thenReturn(List.of(sub));
-        when(employeeRepository.findByManagerId(subId)).thenReturn(List.of());
+        // Le service fait un findAllActiveWithDetails et traite en mémoire
+        when(employeeRepository.findAllActiveWithDetails()).thenReturn(List.of(root, sub));
 
         List<OrgNodeDto> result = orgChartService.getCompanyOrgTree();
 
@@ -90,18 +89,26 @@ class OrgChartServiceImplTest {
                 .lastName("Ndiaye")
                 .employeeNumber("EMP-003")
                 .email("drh@careertrack.sn")
+                .manager(null)
                 .build();
 
-        when(employeeRepository.findById(empId)).thenReturn(Optional.of(emp));
-        when(employeeRepository.findByManagerId(empId)).thenReturn(List.of());
+        when(employeeRepository.findAllActiveWithDetails()).thenReturn(List.of(emp));
 
         OrgNodeDto node = orgChartService.getSubtreeForEmployee(empId);
 
         assertThat(node.getId()).isEqualTo(empId);
         assertThat(node.getName()).isEqualTo("Aminata Ndiaye");
+    }
 
-        when(employeeRepository.findById(any())).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> orgChartService.getSubtreeForEmployee(UUID.randomUUID()))
+    @Test
+    @DisplayName("Lever une exception si le collaborateur est introuvable")
+    void shouldThrowWhenEmployeeNotFound() {
+        UUID missingId = UUID.randomUUID();
+        
+        // Le service cherche dans la liste, on renvoie une liste vide
+        when(employeeRepository.findAllActiveWithDetails()).thenReturn(List.of());
+
+        assertThatThrownBy(() -> orgChartService.getSubtreeForEmployee(missingId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }
