@@ -25,5 +25,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID>, JpaSp
     @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.department LEFT JOIN FETCH e.position WHERE e.manager IS NULL")
     List<Employee> findRootEmployeesWithDetails();
 
+    @Query("SELECT e FROM Employee e LEFT JOIN FETCH e.department LEFT JOIN FETCH e.position LEFT JOIN FETCH e.manager "
+            + "WHERE e.status <> com.careertrack.modules.employee.entity.EmployeeStatus.TERMINATED")
+    List<Employee> findAllActiveWithDetails();
+
     Page<Employee> findByDepartmentId(UUID departmentId, Pageable pageable);
 }
