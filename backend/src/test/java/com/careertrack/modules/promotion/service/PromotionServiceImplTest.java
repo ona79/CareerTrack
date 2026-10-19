@@ -35,12 +35,28 @@ class PromotionServiceImplTest {
     private EmployeeRepository employeeRepository;
     @Mock
     private PositionRepository positionRepository;
+    @Mock
+    private com.careertrack.modules.employee.repository.ContractRepository contractRepository;
+    @Mock
+    private com.careertrack.modules.employee.repository.SalaryHistoryRepository salaryHistoryRepository;
+    @Mock
+    private com.careertrack.modules.employee.repository.PositionHistoryRepository positionHistoryRepository;
+    @Mock
+    private com.careertrack.common.security.EmployeeSecurityService employeeSecurity;
 
     private PromotionServiceImpl promotionService;
 
     @BeforeEach
     void setUp() {
-        promotionService = new PromotionServiceImpl(proposalRepository, employeeRepository, positionRepository);
+        promotionService = new PromotionServiceImpl(
+                proposalRepository,
+                employeeRepository,
+                positionRepository,
+                contractRepository,
+                salaryHistoryRepository,
+                positionHistoryRepository,
+                employeeSecurity
+        );
     }
 
     @Test

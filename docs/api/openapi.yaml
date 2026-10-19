@@ -24,28 +24,32 @@ tags:
   description: "Gestion des dossiers collaborateurs, contrats et fiches de poste"
 - name: Paie & Salaires
   description: "Gestion des bulletins de salaire, cotisations et masse salariale"
-- name: Documents & PDF
-  description: "Gestion documentaire (envoi, téléchargement, suppression) et géné\
-    ration de documents PDF officiels"
+- name: Postes
+  description: Référentiel des postes et fiches de fonction
 - name: Évaluations & Performance
   description: "Campagnes annuelles, objectifs SMART et entretiens N+1"
 - name: Paramètres de l'Entreprise
   description: "Règles réglementaires, taux de cotisations et plafonds légaux"
+- name: Organigramme
+  description: Visualisation hiérarchique de l'entreprise et relations managers/subordonnés
+- name: Formations
+  description: Catalogue des compétences et sessions de formation continue
+- name: Recrutement
+  description: Pipeline Kanban des candidatures et offres d'emploi
+- name: Départements
+  description: Référentiel des départements de l'entreprise
+- name: Documents & PDF
+  description: "Gestion documentaire (envoi, téléchargement, suppression) et géné\
+    ration de documents PDF officiels"
 - name: Authentification
   description: "Endpoints d'authentification JWT, gestion de session et profil"
 - name: Notifications
   description: Alertes in-app et notifications par courrier électronique
-- name: Organigramme
-  description: Visualisation hiérarchique de l'entreprise et relations managers/subordonnés
 - name: Congés & Absences
   description: "Gestion des demandes de congés, soldes et calendrier d'équipe"
 - name: Promotions & Carrières
   description: "Propositions de promotion interne, revalorisations et simulations\
     \ salariales"
-- name: Formations
-  description: Catalogue des compétences et sessions de formation continue
-- name: Recrutement
-  description: Pipeline Kanban des candidatures et offres d'emploi
 paths:
   /api/v1/settings/{key}:
     put:
@@ -105,8 +109,9 @@ paths:
     get:
       tags:
       - Employés
-      summary: Détails d'un employé
-      description: Retourne le dossier complet d'un collaborateur par son ID
+      summary: Détail complet d'un collaborateur
+      description: Retourne le dossier modulaire d'un employé selon les autorisations
+        du rôle
       operationId: getEmployeeById
       parameters:
       - name: id
@@ -121,14 +126,14 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseEmployeeResponseDto"
+                $ref: "#/components/schemas/ApiResponseEmployeeDetailDto"
       security:
       - BearerAuth: []
     put:
       tags:
       - Employés
-      summary: Mettre à jour un employé
-      description: Modifie les informations administratives d'un employé
+      summary: Mettre à jour un employé (DRH)
+      description: Modifie l'ensemble du dossier employé avec contrôle de cycle hiérarchique
       operationId: updateEmployee
       parameters:
       - name: id
@@ -141,7 +146,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EmployeeCreateDto"
+              $ref: "#/components/schemas/EmployeeUpdateDto"
         required: true
       responses:
         "200":
@@ -149,14 +154,14 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponseEmployeeResponseDto"
+                $ref: "#/components/schemas/ApiResponseEmployeeDetailDto"
       security:
       - BearerAuth: []
     delete:
       tags:
       - Employés
       summary: Supprimer un employé
-      description: Supprime un dossier collaborateur
+      description: Supprime un dossier collaborateur sans dépendances
       operationId: deleteEmployee
       parameters:
       - name: id
@@ -346,8 +351,9 @@ paths:
     get:
       tags:
       - Employés
-      summary: Liste paginée des employés
-      description: Récupère les employés avec pagination et tri (DRH et Managers)
+      summary: Liste paginée des employés (DTO réduit)
+      description: "Récupère les employés avec pagination, recherche et filtres (DRH\
+        \ et Managers)"
       operationId: getAllEmployees
       parameters:
       - name: page
@@ -364,19 +370,47 @@ paths:
           type: integer
           format: int32
           default: 10
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: departmentId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
       - name: sortBy
         in: query
         required: false
         schema:
           type: string
           default: lastName
+      - name: sortDir
+        in: query
+        required: false
+        schema:
+          type: string
+          default: asc
       responses:
         "200":
           description: OK
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ApiResponsePageResponseEmployeeResponseDto"
+                $ref: "#/components/schemas/ApiResponsePageResponseEmployeeSummaryDto"
       security:
       - BearerAuth: []
     post:
@@ -638,6 +672,66 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
+  /api/v1/employees/{id}/deactivate:
+    patch:
+      tags:
+      - Employés
+      summary: Désactiver un employé
+      description: "Passe le statut à TERMINATED, clôture le contrat actif et désactive\
+        \ le compte utilisateur lié"
+      operationId: deactivateEmployee
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeDeactivateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+      security:
+      - BearerAuth: []
+  /api/v1/employees/{id}/contact:
+    patch:
+      tags:
+      - Employés
+      summary: Mise à jour des coordonnées personnelles
+      description: Permet à l'employé ou au manager de modifier son propre téléphone
+        et son adresse
+      operationId: updateSelfContact
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeSelfUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeDetailDto"
+      security:
+      - BearerAuth: []
   /api/v1/trainings/{id}:
     get:
       tags:
@@ -701,6 +795,29 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListJobApplicationDto"
+  /api/v1/positions:
+    get:
+      tags:
+      - Postes
+      summary: Liste des postes
+      description: "Retourne la liste des postes, éventuellement filtrée par département"
+      operationId: getPositions
+      parameters:
+      - name: departmentId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPositionDto"
+      security:
+      - BearerAuth: []
   /api/v1/payroll/stats:
     get:
       tags:
@@ -1055,12 +1172,36 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListEvaluationDto"
+  /api/v1/employees/{id}/history:
+    get:
+      tags:
+      - Employés
+      summary: Historique des avancements
+      description: Retourne l'historique des changements de poste et de salaire du
+        collaborateur
+      operationId: getEmployeeHistory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEmployeeHistoryDto"
+      security:
+      - BearerAuth: []
   /api/v1/employees/department/{departmentId}:
     get:
       tags:
       - Employés
       summary: Employés par département
-      description: Retourne les employés affectés à un département donné (DRH et Managers)
+      description: Retourne les employés affectés à un département donné
       operationId: getEmployeesByDepartment
       parameters:
       - name: departmentId
@@ -1235,6 +1376,22 @@ paths:
                 format: byte
       security:
       - BearerAuth: []
+  /api/v1/departments:
+    get:
+      tags:
+      - Départements
+      summary: Liste des départements
+      description: Retourne la liste des départements pour les filtres et formulaires
+      operationId: getAllDepartments
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListDepartmentDto"
+      security:
+      - BearerAuth: []
   /api/v1/auth/me:
     get:
       tags:
@@ -1377,19 +1534,16 @@ components:
         createdAt:
           type: string
           format: date-time
-    EmployeeCreateDto:
+    EmployeeUpdateDto:
       required:
       - birthDate
       - email
-      - employeeNumber
       - firstName
       - hireDate
       - lastName
       - nationalId
       type: object
       properties:
-        employeeNumber:
-          type: string
         firstName:
           type: string
         lastName:
@@ -1425,7 +1579,18 @@ components:
           - PROBATION
           - SUSPENDED
           - TERMINATED
-    ApiResponseEmployeeResponseDto:
+        isCadre:
+          type: boolean
+        maritalStatus:
+          type: string
+        dependentsCount:
+          type: integer
+          format: int32
+        grossSalary:
+          type: number
+        changeReason:
+          type: string
+    ApiResponseEmployeeDetailDto:
       type: object
       properties:
         success:
@@ -1433,11 +1598,106 @@ components:
         message:
           type: string
         data:
-          $ref: "#/components/schemas/EmployeeResponseDto"
+          $ref: "#/components/schemas/EmployeeDetailDto"
         timestamp:
           type: string
           format: date-time
-    EmployeeResponseDto:
+    ContractBlock:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contractType:
+          type: string
+          enum:
+          - CDI
+          - CDD
+          - STAGE
+          - PRESTATION
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        active:
+          type: boolean
+        grossSalary:
+          type: number
+    DocumentResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifiant unique du document
+          format: uuid
+        employeeId:
+          type: string
+          description: Identifiant de l'employé associé
+          format: uuid
+        documentType:
+          type: string
+          description: Type de document officiel
+          enum:
+          - CNI
+          - PASSEPORT
+          - DIPLOME
+          - CV
+          - CONTRAT
+          - ATTESTATION
+          - FICHE_PAIE
+          - CERTIFICAT_MEDICAL
+          - AUTRE
+        title:
+          type: string
+          description: Libellé / Titre du document
+        fileName:
+          type: string
+          description: Nom assaini du fichier
+        fileSize:
+          type: integer
+          description: Taille du fichier en octets
+          format: int64
+        mimeType:
+          type: string
+          description: Type MIME déterminé par la signature
+        uploadedAt:
+          type: string
+          description: Date et heure de téléversement
+          format: date-time
+        uploadedBy:
+          type: string
+          description: Identifiant de l'utilisateur ayant déposé le fichier
+          format: uuid
+        downloadUrl:
+          type: string
+          description: URL relative de téléchargement direct
+      description: Métadonnées d'un document collaborateur (sans le contenu binaire)
+    EmployeeDetailDto:
+      type: object
+      properties:
+        identity:
+          $ref: "#/components/schemas/IdentityBlock"
+        personalData:
+          $ref: "#/components/schemas/PersonalDataBlock"
+        contract:
+          $ref: "#/components/schemas/ContractBlock"
+        salaryHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalaryHistoryDto"
+        positionHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/PositionHistoryDto"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentResponseDto"
+        permissions:
+          $ref: "#/components/schemas/PermissionsBlock"
+    IdentityBlock:
       type: object
       properties:
         id:
@@ -1451,17 +1711,8 @@ components:
           type: string
         fullName:
           type: string
-        nationalId:
-          type: string
         email:
           type: string
-        phone:
-          type: string
-        address:
-          type: string
-        birthDate:
-          type: string
-          format: date
         hireDate:
           type: string
           format: date
@@ -1488,6 +1739,102 @@ components:
           - PROBATION
           - SUSPENDED
           - TERMINATED
+    PermissionsBlock:
+      type: object
+      properties:
+        canEdit:
+          type: boolean
+        canDeactivate:
+          type: boolean
+        canEditContact:
+          type: boolean
+    PersonalDataBlock:
+      type: object
+      properties:
+        nationalId:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        phone:
+          type: string
+        address:
+          type: string
+        maritalStatus:
+          type: string
+        dependentsCount:
+          type: integer
+          format: int32
+        isCadre:
+          type: boolean
+    PositionHistoryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        previousPositionId:
+          type: string
+          format: uuid
+        previousPositionTitle:
+          type: string
+        newPositionId:
+          type: string
+          format: uuid
+        newPositionTitle:
+          type: string
+        previousDepartmentId:
+          type: string
+          format: uuid
+        previousDepartmentName:
+          type: string
+        newDepartmentId:
+          type: string
+          format: uuid
+        newDepartmentName:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        changeReason:
+          type: string
+        changedById:
+          type: string
+          format: uuid
+        changedByName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    SalaryHistoryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        previousSalary:
+          type: number
+        newSalary:
+          type: number
+        changeReason:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        approvedById:
+          type: string
+          format: uuid
+        approvedByName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     TrainingDto:
       type: object
       properties:
@@ -1757,6 +2104,117 @@ components:
         timestamp:
           type: string
           format: date-time
+    EmployeeCreateDto:
+      required:
+      - birthDate
+      - email
+      - employeeNumber
+      - firstName
+      - hireDate
+      - lastName
+      - nationalId
+      type: object
+      properties:
+        employeeNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        nationalId:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        hireDate:
+          type: string
+          format: date
+        departmentId:
+          type: string
+          format: uuid
+        positionId:
+          type: string
+          format: uuid
+        managerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
+    ApiResponseEmployeeResponseDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EmployeeResponseDto"
+        timestamp:
+          type: string
+          format: date-time
+    EmployeeResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        nationalId:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        hireDate:
+          type: string
+          format: date
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        positionId:
+          type: string
+          format: uuid
+        positionTitle:
+          type: string
+        managerId:
+          type: string
+          format: uuid
+        managerName:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
     ApiResponseDocumentResponseDto:
       type: object
       properties:
@@ -1769,55 +2227,6 @@ components:
         timestamp:
           type: string
           format: date-time
-    DocumentResponseDto:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Identifiant unique du document
-          format: uuid
-        employeeId:
-          type: string
-          description: Identifiant de l'employé associé
-          format: uuid
-        documentType:
-          type: string
-          description: Type de document officiel
-          enum:
-          - CNI
-          - PASSEPORT
-          - DIPLOME
-          - CV
-          - CONTRAT
-          - ATTESTATION
-          - FICHE_PAIE
-          - CERTIFICAT_MEDICAL
-          - AUTRE
-        title:
-          type: string
-          description: Libellé / Titre du document
-        fileName:
-          type: string
-          description: Nom assaini du fichier
-        fileSize:
-          type: integer
-          description: Taille du fichier en octets
-          format: int64
-        mimeType:
-          type: string
-          description: Type MIME déterminé par la signature
-        uploadedAt:
-          type: string
-          description: Date et heure de téléversement
-          format: date-time
-        uploadedBy:
-          type: string
-          description: Identifiant de l'utilisateur ayant déposé le fichier
-          format: uuid
-        downloadUrl:
-          type: string
-          description: URL relative de téléchargement direct
-      description: Métadonnées d'un document collaborateur (sans le contenu binaire)
     RefreshTokenRequest:
       required:
       - refreshToken
@@ -1966,6 +2375,27 @@ components:
         timestamp:
           type: string
           format: date-time
+    EmployeeDeactivateDto:
+      required:
+      - reason
+      type: object
+      properties:
+        reason:
+          type: string
+        departureDate:
+          type: string
+          format: date
+    EmployeeSelfUpdateDto:
+      type: object
+      properties:
+        phone:
+          maxLength: 50
+          minLength: 0
+          type: string
+        address:
+          maxLength: 255
+          minLength: 0
+          type: string
     ApiResponseListTrainingDto:
       type: object
       properties:
@@ -2245,6 +2675,41 @@ components:
         timestamp:
           type: string
           format: date-time
+    ApiResponseListPositionDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PositionDto"
+        timestamp:
+          type: string
+          format: date-time
+    PositionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        minSalary:
+          type: number
+        maxSalary:
+          type: number
+        description:
+          type: string
     ApiResponsePayrollStatsResponseDto:
       type: object
       properties:
@@ -2394,6 +2859,9 @@ components:
           type: string
         phone:
           type: string
+        subordinateCount:
+          type: integer
+          format: int32
       description: Nœud de l'arbre hiérarchique de l'entreprise
     ApiResponseOrgNodeDto:
       type: object
@@ -2651,7 +3119,7 @@ components:
         timestamp:
           type: string
           format: date-time
-    ApiResponsePageResponseEmployeeResponseDto:
+    ApiResponsePageResponseEmployeeSummaryDto:
       type: object
       properties:
         success:
@@ -2659,17 +3127,39 @@ components:
         message:
           type: string
         data:
-          $ref: "#/components/schemas/PageResponseEmployeeResponseDto"
+          $ref: "#/components/schemas/PageResponseEmployeeSummaryDto"
         timestamp:
           type: string
           format: date-time
-    PageResponseEmployeeResponseDto:
+    EmployeeSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeNumber:
+          type: string
+        fullName:
+          type: string
+        positionTitle:
+          type: string
+        departmentName:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ON_LEAVE
+          - PROBATION
+          - SUSPENDED
+          - TERMINATED
+    PageResponseEmployeeSummaryDto:
       type: object
       properties:
         content:
           type: array
           items:
-            $ref: "#/components/schemas/EmployeeResponseDto"
+            $ref: "#/components/schemas/EmployeeSummaryDto"
         pageNumber:
           type: integer
           format: int32
@@ -2684,6 +3174,29 @@ components:
           format: int32
         last:
           type: boolean
+    ApiResponseEmployeeHistoryDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EmployeeHistoryDto"
+        timestamp:
+          type: string
+          format: date-time
+    EmployeeHistoryDto:
+      type: object
+      properties:
+        salaryHistories:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalaryHistoryDto"
+        positionHistories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PositionHistoryDto"
     ApiResponseListEmployeeResponseDto:
       type: object
       properties:
@@ -2712,6 +3225,37 @@ components:
         timestamp:
           type: string
           format: date-time
+    ApiResponseListDepartmentDto:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentDto"
+        timestamp:
+          type: string
+          format: date-time
+    DepartmentDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        managerId:
+          type: string
+          format: uuid
+        managerName:
+          type: string
     ApiResponseUserDto:
       type: object
       properties:

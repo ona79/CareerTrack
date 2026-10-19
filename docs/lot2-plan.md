@@ -1,7 +1,5 @@
-# Plan — Lot 2 : Dossier employé et organigramme
-
-> Statut : **PROPOSÉ, en attente de validation**. Aucune ligne de code n'est écrite avant validation.
-> Branche prévue : `feature/CT-02-employee-orgchart`, créée depuis `develop` à jour (contient la PR #9 paie, déjà fusionnée).
+> Statut : **VALIDÉ** (19/10/2026).
+> Branche : `feature/CT-02-employee-orgchart`, créée depuis `develop`.
 
 ---
 
@@ -150,9 +148,9 @@ Après **chaque** étape : `mvn verify` (0 test ignoré, % JaCoCo) et `npm run b
 
 ---
 
-## 7. Questions ouvertes (à trancher avant de coder)
-1. **DELETE physique** : le supprimer complètement (seulement désactiver), ou le garder pour un employé créé par erreur sans aucune donnée liée ?
-2. **Auto-modification** : l'EMPLOYE peut-il modifier lui-même son téléphone et son adresse, ou tout passe-t-il par la DRH ?
-3. **Promotions** : une promotion approuvée doit-elle écrire automatiquement dans l'historique (salaire et poste), ce qui touche le module `promotion` ?
-4. **Liste pour un MANAGER** : limitée à ses subordonnés directs (proposé), ou toute l'équipe récursive (N-2, N-3…), ou tout l'annuaire en DTO réduit ?
-5. **Organigramme** : retirer email et téléphone des nœuds (proposé), ou garder l'email professionnel comme annuaire interne ?
+## 7. Décisions validées (19/10/2026)
+1. **DELETE physique supprimé** : Remplacé par la désactivation (`PATCH /api/v1/employees/{id}/deactivate`). L'endpoint `DELETE /api/v1/employees/{id}` est supprimé ou désactivé pour protéger l'intégrité de l'historique (bulletins, congés, évaluations).
+2. **Auto-modification des coordonnées** : L'employé et le manager peuvent modifier leur propre `phone` et `address` via `PATCH /api/v1/employees/{id}/contact`. La DRH modifie tout le reste.
+3. **Promotions et historique** : Une promotion approuvée dans `PromotionServiceImpl` enregistre automatiquement les entrées dans `salary_histories` et `position_histories`.
+4. **Périmètre liste pour MANAGER** : Limité à ses subordonnés directs (`manager_id = currentEmp.id`) + lui-même (`id = currentEmp.id`).
+5. **Organigramme** : L'email professionnel est conservé (annuaire d'entreprise), mais le numéro de téléphone personnel est exclu des nœuds.
