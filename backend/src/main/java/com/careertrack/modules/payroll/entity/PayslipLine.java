@@ -39,4 +39,9 @@ public class PayslipLine {
 
     @Column(name = "amount", precision = 14, scale = 2, nullable = false)
     private BigDecimal amount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", length = 30, nullable = false)
+    @Builder.Default
+    private PayslipLineCategory category = PayslipLineCategory.DEDUCTION_SALARIALE;
 }

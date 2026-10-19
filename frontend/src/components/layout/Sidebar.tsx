@@ -26,7 +26,7 @@ const navItems: NavItemConfig[] = [
   { label: 'Tableau de bord', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Employés & Contrats', to: '/employees', icon: Users, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Congés & Absences', to: '/leaves', icon: Calendar },
-  { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH'] },
+  { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
   { label: 'Recrutement (Kanban)', to: '/recruitment', icon: Briefcase, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
   { label: 'Évaluations Annuelles', to: '/evaluations', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE'] },
   { label: 'Promotions & Carrières', to: '/promotions', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER'] },
@@ -100,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Profil connecté & Déconnexion */}
       <div className="sidebar-footer">
-        <div className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-gray-50 border border-gray-100">
+        <div className="flex items-center gap-2.5 p-2 rounded-lg bg-gray-50 border border-gray-100 hover:border-gray-200 transition-colors">
           <div className="avatar avatar-sm avatar-primary font-bold">
             {user?.username?.substring(0, 2).toUpperCase() || 'CT'}
           </div>
@@ -112,16 +112,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               {user?.roles?.[0]?.replace('ROLE_', '') || 'UTILISATEUR'}
             </span>
           </div>
+          <button
+            onClick={logout}
+            title="Se déconnecter"
+            aria-label="Se déconnecter"
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+            type="button"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
-
-        <button
-          onClick={logout}
-          className="btn btn-secondary w-full text-xs text-red-700 hover:bg-red-50 hover:border-red-200"
-          type="button"
-        >
-          <LogOut className="w-4 h-4 text-red-600" />
-          Se déconnecter
-        </button>
       </div>
     </aside>
   );

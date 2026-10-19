@@ -36,6 +36,7 @@ public class PdfDocumentBuilder {
     private final PdfWriter writer;
     private final PdfDocument pdfDoc;
     private final Document document;
+    private final PdfHeaderFooterEventHandler headerFooter;
     private final PdfFont fontRegular;
     private final PdfFont fontBold;
     private final PdfFont fontItalic;
@@ -53,11 +54,11 @@ public class PdfDocumentBuilder {
             info.setSubject(subject != null ? subject : "Système de Gestion RH");
             info.setCreator("CareerTrack PME Sénégal");
 
-            // Événement d'en-tête et pied de page
-            pdfDoc.addEventHandler(com.itextpdf.kernel.events.PdfDocumentEvent.END_PAGE,
-                    new PdfHeaderFooterEventHandler(companyName, footerNote));
+            // En-tête / pied de page : appliqués dans build(), une fois le nombre total
+            // de pages connu ("Page X / Y"). immediateFlush=false garde les pages modifiables.
+            this.headerFooter = new PdfHeaderFooterEventHandler(companyName, footerNote);
 
-            this.document = new Document(pdfDoc, pageSize != null ? pageSize : PageSize.A4);
+            this.document = new Document(pdfDoc, pageSize != null ? pageSize : PageSize.A4, false);
             this.document.setMargins(40, 40, 45, 40);
 
             // Polices avec encodage StandardFonts (Helvetica gère parfaitement les caractères ISO français)
@@ -174,13 +175,15 @@ public class PdfDocumentBuilder {
     }
 
     /**
-     * Bloc de signature bilatéral "Fait à [Ville], le jj/mm/aaaa".
+     * Bloc de signature "Fait à [Ville], le jj/mm/aaaa".
+     * Ville absente : "Fait le jj/mm/aaaa" (aucune ville inventée).
+     * leftTitle null : seul le bloc de droite (signataire employeur) est affiché.
      */
     public PdfDocumentBuilder addSignatureBlock(String city, LocalDate date, String leftTitle, String leftRole, String rightTitle, String rightRole) {
-        String effectiveCity = (city != null && !city.isBlank()) ? city : "Dakar";
         String dateFormatted = PdfFormatUtils.formatDate(date != null ? date : LocalDate.now());
+        String place = (city != null && !city.isBlank()) ? "Fait à " + city + ", le " : "Fait le ";
 
-        document.add(new Paragraph("Fait à " + effectiveCity + ", le " + dateFormatted)
+        document.add(new Paragraph(place + dateFormatted)
                 .setFont(fontRegular)
                 .setFontSize(10)
                 .setTextAlignment(TextAlignment.RIGHT)
@@ -191,11 +194,13 @@ public class PdfDocumentBuilder {
                 .useAllAvailableWidth()
                 .setMarginBottom(10);
 
-        Cell leftCell = new Cell().setBorder(Border.NO_BORDER)
-                .add(new Paragraph((leftTitle != null ? leftTitle : "") + "\n" + (leftRole != null ? "(" + leftRole + ")" : ""))
-                        .setFont(fontItalic)
-                        .setFontSize(9)
-                        .setFontColor(PdfTheme.TEXT_SECONDARY));
+        Cell leftCell = new Cell().setBorder(Border.NO_BORDER);
+        if (leftTitle != null && !leftTitle.isBlank()) {
+            leftCell.add(new Paragraph(leftTitle + (leftRole != null ? "\n(" + leftRole + ")" : ""))
+                    .setFont(fontItalic)
+                    .setFontSize(9)
+                    .setFontColor(PdfTheme.TEXT_SECONDARY));
+        }
 
         Cell rightCell = new Cell().setBorder(Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT)
@@ -279,6 +284,10 @@ public class PdfDocumentBuilder {
      * Finalise et renvoie les octets du fichier PDF.
      */
     public byte[] build() {
+        int total = pdfDoc.getNumberOfPages();
+        for (int i = 1; i <= total; i++) {
+            headerFooter.decoratePage(pdfDoc, pdfDoc.getPage(i), i, total);
+        }
         document.close();
         return baos.toByteArray();
     }

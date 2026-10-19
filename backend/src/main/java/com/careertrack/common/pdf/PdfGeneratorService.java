@@ -1,11 +1,16 @@
 package com.careertrack.common.pdf;
 
+import com.careertrack.common.exception.BadRequestException;
 import com.careertrack.common.pdf.template.AnnualEvaluationPdfData;
 import com.careertrack.common.pdf.template.TrainingCertificatePdfData;
 import com.careertrack.modules.employee.entity.Contract;
 import com.careertrack.modules.employee.entity.Employee;
+import com.careertrack.modules.employee.entity.EmployeeStatus;
 import com.careertrack.modules.payroll.entity.Payslip;
 import com.careertrack.modules.payroll.entity.PayslipLine;
+import com.careertrack.modules.payroll.entity.PayslipLineCategory;
+import com.careertrack.modules.payroll.entity.PayslipLineType;
+import com.careertrack.modules.payroll.entity.PayslipStatus;
 import com.careertrack.modules.setting.repository.CompanySettingRepository;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.layout.borders.SolidBorder;
@@ -14,9 +19,10 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,17 +36,37 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PdfGeneratorService {
 
     private final CompanySettingRepository companySettingRepository;
+    private final Environment environment;
 
-    public PdfGeneratorService() {
-        this.companySettingRepository = null;
+    @Value("${careertrack.company-name:Teranga Tech PME SARL (démo)}")
+    private String defaultCompanyName = "Teranga Tech PME SARL (démo)";
+
+    @Autowired
+    public PdfGeneratorService(CompanySettingRepository companySettingRepository, Environment environment) {
+        this.companySettingRepository = companySettingRepository;
+        this.environment = environment;
     }
 
-    @Value("${careertrack.company-name:Sénégal Digital Solutions PME (Démo)}")
-    private String defaultCompanyName = "Sénégal Digital Solutions PME (Démo)";
+    public PdfGeneratorService(CompanySettingRepository companySettingRepository) {
+        this(companySettingRepository, null);
+    }
+
+    public PdfGeneratorService() {
+        this(null, null);
+    }
+
+    private boolean isProdProfile() {
+        if (environment == null) return false;
+        for (String profile : environment.getActiveProfiles()) {
+            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private String getSetting(String key, String fallback) {
         if (companySettingRepository == null) return fallback;
@@ -55,11 +81,21 @@ public class PdfGeneratorService {
     }
 
     private String getCompanyName() {
-        return getSetting("COMPANY_NAME", defaultCompanyName);
+        String companyName = getSetting("COMPANY_NAME", null);
+        if (companyName != null && !companyName.isBlank()) {
+            return companyName;
+        }
+        // En profil prod : aucun nom inventé. Une erreur claire en français exige la configuration des paramètres.
+        if (isProdProfile() || (defaultCompanyName != null && defaultCompanyName.isBlank())) {
+            throw new BadRequestException("Les informations de l'entreprise (raison sociale) doivent être renseignées dans les paramètres avant de générer un document officiel.");
+        }
+        // En dev / démo uniquement : nom de repli fictif pour le confort de test.
+        return defaultCompanyName;
     }
 
     private String getCompanyCity() {
-        return getSetting("COMPANY_CITY", "Dakar");
+        // Pas de ville inventée : absente => "Fait le ..." et pas de ligne "Siège".
+        return getSetting("COMPANY_CITY", null);
     }
 
     private String getCompanyNinea() {
@@ -71,9 +107,17 @@ public class PdfGeneratorService {
     }
 
     /**
-     * 1. Attestation de travail officielle.
+     * 1. Attestation de travail officielle (sans numéro de CNI par défaut).
      */
     public byte[] generateWorkCertificate(Employee employee, Contract contract) {
+        return generateWorkCertificate(employee, contract, false);
+    }
+
+    /**
+     * Attestation de travail avec option d'affichage du numéro de CNI (désactivée par défaut :
+     * le PDF ne contient que les données utiles au document).
+     */
+    public byte[] generateWorkCertificate(Employee employee, Contract contract, boolean includeNationalId) {
         String compName = getCompanyName();
         String city = getCompanyCity();
         String ninea = getCompanyNinea();
@@ -91,38 +135,70 @@ public class PdfGeneratorService {
 
         String empName = (employee != null && employee.getFullName() != null) ? employee.getFullName() : "N/A";
         String empNumber = (employee != null && employee.getEmployeeNumber() != null) ? employee.getEmployeeNumber() : "N/A";
-        String nationalId = (employee != null && employee.getNationalId() != null) ? employee.getNationalId() : "N/A";
         String position = (employee != null && employee.getPosition() != null && employee.getPosition().getTitle() != null)
                 ? employee.getPosition().getTitle() : "Collaborateur";
         String department = (employee != null && employee.getDepartment() != null && employee.getDepartment().getName() != null)
-                ? employee.getDepartment().getName() : "Non spécifié";
-        String hireDateStr = (employee != null && employee.getHireDate() != null)
-                ? PdfFormatUtils.formatDate(employee.getHireDate()) : "N/A";
-        String contractType = (contract != null && contract.getContractType() != null)
-                ? contract.getContractType().name() : "CDI";
+                ? employee.getDepartment().getName() : null;
 
-        String textBody = "Je soussigné(e), Direction des Ressources Humaines de la société " + compName + ",\n\n" +
-                "Certifie par la présente que :\n\n" +
-                "Monsieur / Madame : " + empName + "\n" +
-                "Numéro d'immatriculation RH : " + empNumber + "\n" +
-                "Numéro de CNI / Passeport : " + nationalId + "\n\n" +
-                "Est employé(e) au sein de notre entreprise depuis le " + hireDateStr + " en qualité de " +
-                position + " au sein du département " + department + ",\n" +
-                "dans le cadre d'un contrat de travail à durée " + ("CDD".equals(contractType) ? "déterminée (CDD)" : "indéterminée (CDI)") + ".\n\n" +
-                "La présente attestation lui est délivrée sur sa demande pour servir et valoir ce que de droit.";
+        LocalDate start = (employee != null && employee.getHireDate() != null) ? employee.getHireDate()
+                : (contract != null ? contract.getStartDate() : null);
+        LocalDate end = contract != null ? contract.getEndDate() : null;
+        boolean terminated = employee != null && employee.getStatus() == EmployeeStatus.TERMINATED;
+        boolean ended = terminated || (end != null && end.isBefore(LocalDate.now()));
 
-        builder.addParagraph(textBody, 11, false, TextAlignment.LEFT, 40);
+        StringBuilder text = new StringBuilder();
+        text.append("Nous soussignés, la Direction des Ressources Humaines de la société ")
+                .append(compName).append(", certifions que :\n\n")
+                .append("Monsieur / Madame : ").append(empName).append("\n")
+                .append("Matricule : ").append(empNumber).append("\n");
+        if (includeNationalId && employee != null && employee.getNationalId() != null) {
+            text.append("Numéro de CNI / Passeport : ").append(employee.getNationalId()).append("\n");
+        }
+        text.append("\n");
+
+        String startStr = PdfFormatUtils.formatDate(start);
+        if (ended) {
+            if (end != null) {
+                text.append("a été employé(e) au sein de notre entreprise du ").append(startStr)
+                        .append(" au ").append(PdfFormatUtils.formatDate(end));
+            } else {
+                text.append("a été employé(e) au sein de notre entreprise à compter du ").append(startStr);
+            }
+        } else {
+            text.append("est employé(e) au sein de notre entreprise depuis le ").append(startStr);
+        }
+        text.append(" en qualité de ").append(position);
+        if (department != null) {
+            text.append(" au sein du département ").append(department);
+        }
+        String contractPhrase = contractPhrase(contract);
+        if (contractPhrase != null) {
+            text.append(",\n").append(contractPhrase);
+        }
+        text.append(".\n\nLa présente attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.");
+
+        builder.addParagraph(text.toString(), 11, false, TextAlignment.LEFT, 40);
 
         builder.addSignatureBlock(
                 city,
                 LocalDate.now(),
-                "Le Collaborateur",
-                "Lu et approuvé",
+                null,
+                null,
                 "Pour la Direction Générale",
                 "La Direction des Ressources Humaines"
         );
 
         return builder.build();
+    }
+
+    private static String contractPhrase(Contract contract) {
+        if (contract == null || contract.getContractType() == null) return null;
+        return switch (contract.getContractType()) {
+            case CDI -> "dans le cadre d'un contrat de travail à durée indéterminée (CDI)";
+            case CDD -> "dans le cadre d'un contrat de travail à durée déterminée (CDD)";
+            case STAGE -> "dans le cadre d'une convention de stage";
+            case PRESTATION -> "dans le cadre d'un contrat de prestation";
+        };
     }
 
     /**
@@ -133,7 +209,7 @@ public class PdfGeneratorService {
         String city = getCompanyCity();
         String ninea = getCompanyNinea();
         String rccm = getCompanyRccm();
-        String leaveDays = getSetting("LEAVE_DAYS_PER_MONTH", "2.0");
+        String leaveDays = formatSettingNumber(getSetting("LEAVE_DAYS_PER_MONTH", null));
 
         String contractType = (contract != null && contract.getContractType() != null)
                 ? contract.getContractType().name() : "CDI";
@@ -150,16 +226,20 @@ public class PdfGeneratorService {
 
         String empName = (employee != null && employee.getFullName() != null) ? employee.getFullName() : "N/A";
         String empNationalId = (employee != null && employee.getNationalId() != null) ? employee.getNationalId() : "N/A";
-        String empAddress = (employee != null && employee.getAddress() != null) ? employee.getAddress() : (city != null ? city + ", Sénégal" : "Sénégal");
+        String empAddress = (employee != null && employee.getAddress() != null) ? employee.getAddress() : "Non renseignée";
         String position = (employee != null && employee.getPosition() != null && employee.getPosition().getTitle() != null)
                 ? employee.getPosition().getTitle() : "Collaborateur";
         String department = (employee != null && employee.getDepartment() != null && employee.getDepartment().getName() != null)
-                ? employee.getDepartment().getName() : "Non spécifié";
+                ? employee.getDepartment().getName() : null;
 
         String grossSalaryStr = (contract != null && contract.getGrossSalary() != null)
-                ? PdfFormatUtils.formatCurrency(contract.getGrossSalary()) : "À convenir";
+                ? PdfFormatUtils.formatCurrency(contract.getGrossSalary()) : "à convenir";
         String startDateStr = (contract != null && contract.getStartDate() != null)
                 ? PdfFormatUtils.formatDate(contract.getStartDate()) : PdfFormatUtils.formatDate(LocalDate.now());
+        String durationStr = "CDD".equals(contractType)
+                ? "durée déterminée (CDD)" + (contract != null && contract.getEndDate() != null
+                        ? ", jusqu'au " + PdfFormatUtils.formatDate(contract.getEndDate()) : "")
+                : "durée indéterminée (CDI)";
 
         String body = "ENTRE LES SOUSSIGNÉS :\n\n" +
                 "1. La société " + compName + ",\n" +
@@ -169,10 +249,13 @@ public class PdfGeneratorService {
                 "Demeurant à : " + empAddress + ",\n" +
                 "Ci-après dénommé(e) « Le Salarié »,\n\nD'AUTRE PART.\n\n" +
                 "IL A ÉTÉ CONVENU CE QUI SUIT :\n\n" +
-                "Article 1 - Engagement et Fonction : Le Salarié est engagé en qualité de " + position + " au sein du département " + department + ".\n\n" +
-                "Article 2 - Prise d'effet et Durée : Le présent contrat prend effet le " + startDateStr + " sous le régime du contrat à " + ("CDD".equals(contractType) ? "durée déterminée (CDD)" : "durée indéterminée (CDI)") + ".\n\n" +
-                "Article 3 - Rémunération : En contrepartie de ses prestations, le Salarié percevra un salaire brut mensuel de " + grossSalaryStr + ", soumis aux cotisations sociales et fiscales obligatoires (IPRES, CSS, IPM, IR).\n\n" +
-                "Article 4 - Congés payés : Le Salarié acquiert " + leaveDays + " jours ouvrables de congé par mois de travail effectif, conformément aux dispositions conventionnelles en vigueur.";
+                "Article 1 - Engagement et Fonction : Le Salarié est engagé en qualité de " + position
+                + (department != null ? " au sein du département " + department : "") + ".\n\n" +
+                "Article 2 - Prise d'effet et Durée : Le présent contrat prend effet le " + startDateStr + " sous le régime du contrat à " + durationStr + ".\n\n" +
+                "Article 3 - Rémunération : En contrepartie de ses prestations, le Salarié percevra un salaire brut mensuel de " + grossSalaryStr + ", soumis aux cotisations sociales et fiscales en vigueur." +
+                (leaveDays != null
+                        ? "\n\nArticle 4 - Congés payés : Le Salarié acquiert " + leaveDays + " jours ouvrables de congé par mois de travail effectif, selon le paramétrage en vigueur dans l'entreprise."
+                        : "");
 
         builder.addParagraph(body, 9.5f, false, TextAlignment.LEFT, 20);
 
@@ -218,6 +301,9 @@ public class PdfGeneratorService {
         String empName = emp != null ? emp.getFullName() : "N/A";
         String empNumber = emp != null ? emp.getEmployeeNumber() : "N/A";
         String empPosition = (emp != null && emp.getPosition() != null) ? emp.getPosition().getTitle() : "N/A";
+        if (emp != null && emp.isCadre()) {
+            empPosition += " (Cadre)";
+        }
         String empDept = (emp != null && emp.getDepartment() != null) ? emp.getDepartment().getName() : "N/A";
         String paymentDateStr = (payslip != null && payslip.getPaymentDate() != null)
                 ? PdfFormatUtils.formatDate(payslip.getPaymentDate()) : "N/A";
@@ -235,11 +321,15 @@ public class PdfGeneratorService {
                         .setFontSize(9)
                         .setFontColor(PdfTheme.TEXT_DARK));
 
+        String statusLabel = payslip != null ? payslipStatusLabel(payslip.getStatus()) : null;
+        String periodStr = payslip != null ? String.format("%02d/%04d", payslip.getPeriodMonth(), payslip.getPeriodYear()) : "N/A";
+
         Cell rightInfo = new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
                 .setTextAlignment(TextAlignment.RIGHT)
-                .add(new Paragraph("Date de règlement : " + paymentDateStr + "\n" +
-                        "Devise : FCFA\n" +
-                        "Statut bulletin : " + (payslip != null && payslip.getStatus() != null ? payslip.getStatus().name() : "DÉFINITIF"))
+                .add(new Paragraph("Période : " + periodStr + "\n" +
+                        "Date de règlement : " + paymentDateStr + "\n" +
+                        "Devise : FCFA" +
+                        (statusLabel != null ? "\nStatut : " + statusLabel : ""))
                         .setFont(builder.getFontRegular())
                         .setFontSize(9)
                         .setFontColor(PdfTheme.TEXT_DARK));
@@ -248,15 +338,16 @@ public class PdfGeneratorService {
         infoTable.addCell(rightInfo);
         builder.getDocument().add(infoTable);
 
-        // Tableau des Rubriques de paie réelles
-        Table linesTable = new Table(UnitValue.createPercentArray(new float[]{42, 20, 18, 20}))
+        // Tableau des Rubriques de paie réelles (5 colonnes)
+        Table linesTable = new Table(UnitValue.createPercentArray(new float[]{38, 16, 14, 16, 16}))
                 .useAllAvailableWidth()
                 .setMarginBottom(15);
 
         linesTable.addHeaderCell(createHeaderCell("Rubrique de paie", builder));
         linesTable.addHeaderCell(createHeaderCell("Base (FCFA)", builder));
-        linesTable.addHeaderCell(createHeaderCell("Taux appliqué", builder));
-        linesTable.addHeaderCell(createHeaderCell("Montant (FCFA)", builder));
+        linesTable.addHeaderCell(createHeaderCell("Taux", builder));
+        linesTable.addHeaderCell(createHeaderCell("Part Salariale", builder));
+        linesTable.addHeaderCell(createHeaderCell("Part Patronale", builder));
 
         List<PayslipLine> lines = (payslip != null && payslip.getLines() != null) ? payslip.getLines() : List.of();
         boolean alternate = false;
@@ -264,15 +355,25 @@ public class PdfGeneratorService {
         for (PayslipLine line : lines) {
             alternate = !alternate;
             String label = line.getLabel() != null ? line.getLabel() : "Rubrique";
-            String baseStr = line.getBaseAmount() != null ? PdfFormatUtils.formatCurrency(line.getBaseAmount()).replace(" FCFA", "") : "-";
-            String rateStr = line.getRate() != null && line.getRate().compareTo(BigDecimal.ZERO) > 0
-                    ? String.format(java.util.Locale.US, "%.2f %%", line.getRate().doubleValue() * 100) : "-";
-            String amountStr = line.getAmount() != null ? PdfFormatUtils.formatCurrency(line.getAmount()).replace(" FCFA", "") : "0";
+            String baseStr = line.getBaseAmount() != null ? PdfFormatUtils.formatAmount(line.getBaseAmount()) : "-";
+            boolean isBaseSalary = line.getLineType() == PayslipLineType.BASE_SALARY;
+            String rateStr = !isBaseSalary && line.getRate() != null && line.getRate().compareTo(BigDecimal.ZERO) > 0
+                    ? PdfFormatUtils.formatRate(line.getRate()) : "-";
+
+            String salarialAmountStr = "-";
+            String patronalAmountStr = "-";
+
+            if (line.getCategory() == PayslipLineCategory.COTISATION_PATRONALE) {
+                patronalAmountStr = line.getAmount() != null ? PdfFormatUtils.formatAmount(line.getAmount()) : "0";
+            } else {
+                salarialAmountStr = line.getAmount() != null ? PdfFormatUtils.formatAmount(line.getAmount()) : "0";
+            }
 
             linesTable.addCell(createDataCell(label, alternate, TextAlignment.LEFT, builder));
             linesTable.addCell(createDataCell(baseStr, alternate, TextAlignment.RIGHT, builder));
             linesTable.addCell(createDataCell(rateStr, alternate, TextAlignment.CENTER, builder));
-            linesTable.addCell(createDataCell(amountStr, alternate, TextAlignment.RIGHT, builder));
+            linesTable.addCell(createDataCell(salarialAmountStr, alternate, TextAlignment.RIGHT, builder));
+            linesTable.addCell(createDataCell(patronalAmountStr, alternate, TextAlignment.RIGHT, builder));
         }
 
         builder.getDocument().add(linesTable);
@@ -281,6 +382,8 @@ public class PdfGeneratorService {
         BigDecimal gross = payslip != null && payslip.getGrossSalary() != null ? payslip.getGrossSalary() : BigDecimal.ZERO;
         BigDecimal deductions = payslip != null && payslip.getTotalDeductions() != null ? payslip.getTotalDeductions() : BigDecimal.ZERO;
         BigDecimal net = payslip != null && payslip.getNetSalary() != null ? payslip.getNetSalary() : BigDecimal.ZERO;
+        BigDecimal employerContrib = payslip != null && payslip.getEmployerContributions() != null ? payslip.getEmployerContributions() : BigDecimal.ZERO;
+        BigDecimal totalEmployerCost = gross.add(employerContrib);
 
         Table totalTable = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .useAllAvailableWidth()
@@ -290,7 +393,7 @@ public class PdfGeneratorService {
         totalTable.addCell(createTotalAmountCell(PdfFormatUtils.formatCurrency(gross), false, builder));
 
         totalTable.addCell(createTotalCell("TOTAL RETENUES SALARIALES :", false, builder));
-        totalTable.addCell(createTotalAmountCell("- " + PdfFormatUtils.formatCurrency(deductions), false, builder));
+        totalTable.addCell(createTotalAmountCell("-" + PdfFormatUtils.NBSP + PdfFormatUtils.formatCurrency(deductions), false, builder));
 
         Cell netLabelCell = new Cell()
                 .setBackgroundColor(PdfTheme.PRIMARY_GREEN)
@@ -313,11 +416,39 @@ public class PdfGeneratorService {
 
         totalTable.addCell(netLabelCell);
         totalTable.addCell(netAmountCell);
+
+        totalTable.addCell(createTotalCell("TOTAL COTISATIONS PATRONALES :", false, builder));
+        totalTable.addCell(createTotalAmountCell(PdfFormatUtils.formatCurrency(employerContrib), false, builder));
+
+        totalTable.addCell(createTotalCell("COÛT GLOBAL EMPLOYEUR :", false, builder));
+        totalTable.addCell(createTotalAmountCell(PdfFormatUtils.formatCurrency(totalEmployerCost), false, builder));
+
         builder.getDocument().add(totalTable);
 
         builder.addNoticeBox("Modèle de démonstration, taux à valider");
 
         return builder.build();
+    }
+
+    private static String payslipStatusLabel(PayslipStatus status) {
+        if (status == null) return null;
+        return switch (status) {
+            case DRAFT -> "Brouillon";
+            case GENERATED -> "Généré";
+            case VALIDATED -> "Validé";
+            case PAID -> "Payé";
+            case CANCELLED -> "Annulé";
+        };
+    }
+
+    /** "2.0" -> "2", "2.5" -> "2,5" ; valeur absente ou invalide -> null (clause omise). */
+    private static String formatSettingNumber(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return PdfFormatUtils.formatDecimal(new BigDecimal(raw.trim()));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private Cell createHeaderCell(String text, PdfDocumentBuilder builder) {
@@ -394,7 +525,7 @@ public class PdfGeneratorService {
             String dept = data.departmentName() != null ? data.departmentName() : "N/A";
             String eval = data.evaluatorName() != null ? data.evaluatorName() : "N/A";
             String dateStr = data.interviewDate() != null ? PdfFormatUtils.formatDate(data.interviewDate()) : "N/A";
-            String scoreStr = data.finalScore() != null ? data.finalScore() + " / 5.0" : "Non noté";
+            String scoreStr = data.finalScore() != null ? PdfFormatUtils.formatDecimal(data.finalScore()) + " / 5" : "Non noté";
 
             Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
                     .useAllAvailableWidth()

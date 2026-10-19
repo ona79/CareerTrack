@@ -19,4 +19,5 @@ public class UserDto {
     private String email;
     private boolean enabled;
     private List<String> roles;
+    private UUID employeeId;
 }
