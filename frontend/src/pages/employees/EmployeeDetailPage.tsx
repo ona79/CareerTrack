@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
-import { AlertTriangle, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Loader2, RefreshCw, Pencil } from 'lucide-react'; // <-- Pencil ajouté
 import { useEmployee, useSalaryHistory } from '@/hooks/useEmployeeDetail';
+import { useAuth } from '@/context/AuthContext'; // <-- NOUVEL IMPORT
 import type { EmployeeStatus } from '@/types';
 
 const STATUS_LABELS: Record<EmployeeStatus, string> = {
@@ -32,6 +33,10 @@ const Field: React.FC<{ label: string; value?: string | null }> = ({ label, valu
 
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate(); // <-- NOUVEAU
+  const { hasRole } = useAuth(); // <-- NOUVEAU
+  const isDrh = hasRole('ROLE_DRH') || hasRole('DRH'); // <-- NOUVEAU
+  
   const { data: employee, isLoading, isError, error, refetch } = useEmployee(id);
   const { data: salaryHistory } = useSalaryHistory(id);
 
@@ -72,13 +77,24 @@ export const EmployeeDetailPage: React.FC = () => {
         Retour à la liste
       </Link>
 
-      <div className="page-header">
+      <div className="page-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="page-header-info">
           <h1>{employee.fullName}</h1>
           <p>
             {employee.positionTitle || 'Poste non défini'} · {employee.departmentName || 'Département non défini'}
           </p>
         </div>
+        {/* NOUVEAU : Bouton Modifier visible par le DRH */}
+        {isDrh && (
+          <button
+            type="button"
+            onClick={() => navigate(`/employees/${employee.id}/edit`)}
+            className="btn btn-primary text-xs flex items-center gap-2"
+          >
+            <Pencil className="w-4 h-4" />
+            Modifier
+          </button>
+        )}
       </div>
 
       <div className="card p-4 space-y-4">
