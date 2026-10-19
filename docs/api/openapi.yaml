@@ -250,9 +250,21 @@ paths:
       parameters:
       - name: period
         in: query
-        required: true
+        required: false
         schema:
           type: string
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
       responses:
         "200":
           description: OK
@@ -700,9 +712,21 @@ paths:
       parameters:
       - name: period
         in: query
-        required: true
+        required: false
         schema:
           type: string
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
       responses:
         "200":
           description: OK
@@ -751,6 +775,28 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePayslipResponseDto"
+  /api/v1/payroll/payslips/{id}/pdf:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Télécharger le bulletin de paie au format PDF
+      description: Accessible à la DRH et au titulaire du bulletin
+      operationId: getPayslipPdf
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: byte
   /api/v1/payroll/payslips/employee/{employeeId}:
     get:
       tags:
@@ -786,6 +832,21 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListPayrollParameterResponseDto"
+  /api/v1/payroll/my-payslips:
+    get:
+      tags:
+      - Paie & Salaires
+      summary: Lister les bulletins de l'employé connecté
+      description: Accessible à tout collaborateur connecté pour consulter ses propres
+        bulletins
+      operationId: getMyPayslips
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPayslipResponseDto"
   /api/v1/orgchart/tree:
     get:
       tags:
@@ -1047,7 +1108,7 @@ paths:
       - Documents & PDF
       summary: Télécharger le bulletin de paie officiel en PDF
       description: Accessible à la DRH et à l'employé concerné uniquement
-      operationId: getPayslipPdf
+      operationId: getPayslipPdf_1
       parameters:
       - name: payslipId
         in: path
@@ -2210,11 +2271,23 @@ components:
           type: number
         employerCost:
           type: number
+        totalGrossSalary:
+          type: number
+        totalNetSalary:
+          type: number
+        totalEmployerContributions:
+          type: number
     PayrollStatsResponseDto:
       type: object
       properties:
         period:
           type: string
+        periodYear:
+          type: integer
+          format: int32
+        periodMonth:
+          type: integer
+          format: int32
         totalEmployeesPaid:
           type: integer
           format: int32
@@ -2228,7 +2301,15 @@ components:
           type: number
         totalEmployerCost:
           type: number
+        totalPayrollCost:
+          type: number
+        anonymized:
+          type: boolean
         departmentBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentPayrollStatsDto"
+        departmentBreakdowns:
           type: array
           items:
             $ref: "#/components/schemas/DepartmentPayrollStatsDto"

@@ -293,4 +293,70 @@ class PayrollControllerIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("GET /api/v1/payroll/my-payslips : EMPLOYE et MANAGER accèdent à leurs propres bulletins sans ID")
+    void shouldAccessMyPayslips() throws Exception {
+        // DRH génère la paie
+        mockMvc.perform(post("/api/v1/payroll/generate?year=2026&month=9")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk());
+
+        // Employé appelle /my-payslips
+        mockMvc.perform(get("/api/v1/payroll/my-payslips")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].employeeNumber").value("EMP-REG"));
+
+        // Manager appelle /my-payslips
+        mockMvc.perform(get("/api/v1/payroll/my-payslips")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].employeeNumber").value("EMP-MGR"));
+    }
+
+    @Test
+    @DisplayName("Paramètres year et month : supportés sur /generate et /stats en alternative à period")
+    void shouldSupportYearAndMonthParameters() throws Exception {
+        mockMvc.perform(post("/api/v1/payroll/generate?year=2026&month=9")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.period").value("2026-09"));
+
+        mockMvc.perform(get("/api/v1/payroll/stats?year=2026&month=9")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.periodYear").value(2026))
+                .andExpect(jsonPath("$.data.periodMonth").value(9));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/payroll/payslips/{id}/pdf : Téléchargement PDF du bulletin")
+    void shouldDownloadPayslipPdf() throws Exception {
+        mockMvc.perform(post("/api/v1/payroll/generate?period=2026-09")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk());
+
+        Payslip empSlip = payslipRepository.findByEmployeeIdAndPeriodYearAndPeriodMonth(
+                regularEmployee.getId(), 2026, 9).orElseThrow();
+
+        // Employé télécharge son propre PDF
+        mockMvc.perform(get("/api/v1/payroll/payslips/" + empSlip.getId() + "/pdf")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_PDF));
+
+        // DRH télécharge le PDF
+        mockMvc.perform(get("/api/v1/payroll/payslips/" + empSlip.getId() + "/pdf")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + drhToken))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_PDF));
+
+        // Autre salarié (manager) tente de télécharger le bulletin de l'employé -> 403
+        mockMvc.perform(get("/api/v1/payroll/payslips/" + empSlip.getId() + "/pdf")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+                .andExpect(status().isForbidden());
+    }
 }
