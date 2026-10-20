@@ -17,6 +17,8 @@ import java.util.UUID;
 @Builder
 public class EmployeeUpdateDto {
 
+    private String employeeNumber;
+
     @NotBlank(message = "Le prénom est obligatoire")
     private String firstName;
 

@@ -172,8 +172,8 @@ export const EmployeeFormPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Matricule *" error={errors.employeeNumber?.message}>
               <input
-                className="form-control text-sm"
-                readOnly={isEdit}
+                className="form-control text-sm font-medium"
+                placeholder="Ex: EMP-2026-001"
                 {...register('employeeNumber', { required: 'Le matricule est obligatoire' })}
               />
             </Field>
@@ -183,9 +183,9 @@ export const EmployeeFormPage: React.FC = () => {
             <Field label="Département">
               <select className="form-control text-sm" {...register('departmentId')}>
                 <option value="">Aucun</option>
-                {(departments.data ?? []).map((d) => (
+                {(departments.data ?? []).map((d: any) => (
                   <option key={d.id} value={d.id}>
-                    {d.label}
+                    {d.label || d.name}
                   </option>
                 ))}
               </select>
@@ -193,9 +193,9 @@ export const EmployeeFormPage: React.FC = () => {
             <Field label="Poste">
               <select className="form-control text-sm" {...register('positionId')}>
                 <option value="">Aucun</option>
-                {availablePositions.map((p) => (
+                {availablePositions.map((p: any) => (
                   <option key={p.id} value={p.id}>
-                    {p.label}
+                    {p.label || p.title || p.name}
                   </option>
                 ))}
               </select>

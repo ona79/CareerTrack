@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Award,
   ChevronRight,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';

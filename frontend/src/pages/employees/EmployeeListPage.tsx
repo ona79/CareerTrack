@@ -285,9 +285,9 @@ export const EmployeeListPage: React.FC = () => {
               className="input w-full text-xs"
             >
               <option value="">Tous les départements</option>
-              {departments?.map((d) => (
+              {departments?.map((d: any) => (
                 <option key={d.id} value={d.id}>
-                  {d.name}
+                  {d.label || d.name}
                 </option>
               ))}
             </select>
@@ -648,9 +648,9 @@ export const EmployeeListPage: React.FC = () => {
                     className="input w-full text-sm"
                   >
                     <option value="">-- Choisir un département --</option>
-                    {departments?.map((d) => (
+                    {departments?.map((d: any) => (
                       <option key={d.id} value={d.id}>
-                        {d.name}
+                        {d.label || d.name}
                       </option>
                     ))}
                   </select>
@@ -664,9 +664,9 @@ export const EmployeeListPage: React.FC = () => {
                     className="input w-full text-sm"
                   >
                     <option value="">-- Choisir un poste --</option>
-                    {positions?.map((p) => (
+                    {positions?.map((p: any) => (
                       <option key={p.id} value={p.id}>
-                        {p.title}
+                        {p.label || p.title || p.name}
                       </option>
                     ))}
                   </select>

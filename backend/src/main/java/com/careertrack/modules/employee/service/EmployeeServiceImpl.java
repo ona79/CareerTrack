@@ -274,6 +274,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employé", "id", id));
 
+        // 0. Mise à jour éventuelle du matricule
+        if (updateDto.getEmployeeNumber() != null && !updateDto.getEmployeeNumber().isBlank()
+                && !updateDto.getEmployeeNumber().trim().equals(employee.getEmployeeNumber())) {
+            Optional<Employee> existing = employeeRepository.findByEmployeeNumber(updateDto.getEmployeeNumber().trim());
+            if (existing.isPresent() && !existing.get().getId().equals(id)) {
+                throw new ConflictException("Un employé avec le matricule " + updateDto.getEmployeeNumber() + " existe déjà");
+            }
+            employee.setEmployeeNumber(updateDto.getEmployeeNumber().trim());
+        }
+
         // 1. Contrôle anti-cycle hiérarchique et manager
         if (updateDto.getManagerId() != null) {
             if (updateDto.getManagerId().equals(id)) {
