@@ -510,14 +510,20 @@ export const EmployeeListPage: React.FC = () => {
 
       {/* Modal Création Collaborateur (DRH uniquement) */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-[#1A6B3C]" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <UserPlus className="w-5 h-5 text-[#1A6B3C]" />
+                </div>
                 Enregistrer un nouveau collaborateur
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -527,11 +533,11 @@ export const EmployeeListPage: React.FC = () => {
                 e.preventDefault();
                 createMutation.mutate(createForm);
               }}
-              className="space-y-4 max-h-[65vh] overflow-y-auto p-1"
+              className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Matricule <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -539,12 +545,12 @@ export const EmployeeListPage: React.FC = () => {
                     required
                     value={createForm.employeeNumber}
                     onChange={(e) => setCreateForm({ ...createForm, employeeNumber: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Numéro CNI <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -553,12 +559,12 @@ export const EmployeeListPage: React.FC = () => {
                     placeholder="1 990 1990 00123"
                     value={createForm.nationalId}
                     onChange={(e) => setCreateForm({ ...createForm, nationalId: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Prénom <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -566,12 +572,12 @@ export const EmployeeListPage: React.FC = () => {
                     required
                     value={createForm.firstName}
                     onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Nom de famille <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -579,12 +585,12 @@ export const EmployeeListPage: React.FC = () => {
                     required
                     value={createForm.lastName}
                     onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Email professionnel <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -593,23 +599,23 @@ export const EmployeeListPage: React.FC = () => {
                     placeholder="prenom.nom@careertrack.sn"
                     value={createForm.email}
                     onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Téléphone</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Téléphone</label>
                   <input
                     type="text"
                     placeholder="+221 77 000 00 00"
                     value={createForm.phone || ''}
                     onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Date de naissance <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -617,12 +623,12 @@ export const EmployeeListPage: React.FC = () => {
                     required
                     value={createForm.birthDate}
                     onChange={(e) => setCreateForm({ ...createForm, birthDate: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Date d'embauche <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -630,16 +636,16 @@ export const EmployeeListPage: React.FC = () => {
                     required
                     value={createForm.hireDate}
                     onChange={(e) => setCreateForm({ ...createForm, hireDate: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Département</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Département</label>
                   <select
                     value={createForm.departmentId || ''}
                     onChange={(e) => setCreateForm({ ...createForm, departmentId: e.target.value || undefined })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   >
                     <option value="">-- Choisir un département --</option>
                     {departments?.map((d) => (
@@ -651,11 +657,11 @@ export const EmployeeListPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Poste</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Poste</label>
                   <select
                     value={createForm.positionId || ''}
                     onChange={(e) => setCreateForm({ ...createForm, positionId: e.target.value || undefined })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   >
                     <option value="">-- Choisir un poste --</option>
                     {positions?.map((p) => (
@@ -667,13 +673,13 @@ export const EmployeeListPage: React.FC = () => {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Responsable hiérarchique (N+1)
                   </label>
                   <select
                     value={createForm.managerId || ''}
                     onChange={(e) => setCreateForm({ ...createForm, managerId: e.target.value || undefined })}
-                    className="input w-full"
+                    className="input w-full text-sm"
                   >
                     <option value="">-- Aucun (Direction Générale) --</option>
                     {potentialManagers?.map((m) => (
@@ -685,18 +691,18 @@ export const EmployeeListPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="btn btn-secondary text-xs min-h-[44px]"
+                  className="btn btn-secondary px-5 text-sm min-h-[44px]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="btn btn-primary text-xs min-h-[44px]"
+                  className="btn btn-primary px-5 text-sm min-h-[44px]"
                 >
                   {createMutation.isPending ? 'Création en cours...' : 'Créer le collaborateur'}
                 </button>

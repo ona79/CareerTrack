@@ -14,12 +14,12 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
-import { Building, Loader2, AlertTriangle, RefreshCw, RotateCcw, ExternalLink } from 'lucide-react';
+import { Building, Loader2, AlertTriangle, RefreshCw, RotateCcw, User, ExternalLink } from 'lucide-react';
 import type { OrgNode } from '@/types';
 import { useOrgChart } from '@/hooks/useOrgChart';
 
 const NODE_WIDTH = 220;
-const NODE_HEIGHT = 108;
+const NODE_HEIGHT = 105;
 
 type EmployeeNodeData = { org: OrgNode };
 type EmployeeFlowNode = Node<EmployeeNodeData, 'employee'>;
@@ -68,6 +68,7 @@ function buildLayout(roots: OrgNode[]): { nodes: EmployeeFlowNode[]; edges: Edge
       type: 'employee',
       position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 },
       data: { org },
+      draggable: true,
     };
   });
 
@@ -80,30 +81,33 @@ const EmployeeNodeCard: React.FC<NodeProps<EmployeeFlowNode>> = ({ data }) => {
 
   return (
     <div
-      className="bg-white rounded-xl p-3 shadow-sm hover:shadow-md text-center border-2 border-[#1A6B3C]/20 hover:border-[#1A6B3C] transition-shadow cursor-grab active:cursor-grabbing group select-none"
+      className="bg-white rounded-xl p-3 shadow-xs hover:shadow-md text-center border-2 border-[#1A6B3C]/20 hover:border-[#1A6B3C] transition-shadow cursor-grab active:cursor-grabbing group select-none"
       style={{ width: NODE_WIDTH }}
-      title={`Glisser pour déplacer · Cliquer pour ouvrir le dossier de ${org.name}`}
+      title={`Glisser pour réorganiser · Cliquer sur 'Accéder au dossier' pour voir la fiche de ${org.name}`}
     >
       <Handle type="target" position={Position.Top} className="!opacity-0" />
-      <div className="w-9 h-9 rounded-full bg-[#1A6B3C] text-white font-bold flex items-center justify-center mx-auto mb-1 text-xs shadow-sm">
+      <div className="w-9 h-9 rounded-full bg-[#1A6B3C] text-white font-bold flex items-center justify-center mx-auto mb-1 text-xs shadow-2xs">
         {initialsOf(org.name)}
       </div>
-      <div className="font-bold text-xs text-gray-900 leading-tight truncate">{org.name}</div>
+      <div className="font-bold text-xs text-gray-900 leading-tight truncate group-hover:text-[#1A6B3C] transition-colors">
+        {org.name}
+      </div>
       <div className="text-[11px] font-medium text-[#1A6B3C] mt-0.5 truncate">{org.title}</div>
       <div className="text-[10px] text-gray-500 mt-0.5 flex items-center justify-center gap-1">
         <Building className="w-3 h-3 text-gray-400 shrink-0" />
         <span className="truncate">{org.department}</span>
       </div>
 
-      <div className="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-center">
+      <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex items-center justify-center">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/employees/${org.id}`);
           }}
-          className="nodrag inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-semibold text-[#1A6B3C] bg-[#1A6B3C]/5 hover:bg-[#1A6B3C]/15 transition-colors cursor-pointer"
+          className="nodrag inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-semibold text-[#1A6B3C] bg-[#1A6B3C]/5 hover:bg-[#1A6B3C]/15 transition-colors cursor-pointer group-hover:underline"
         >
+          <User className="w-3 h-3" />
           <span>Accéder au dossier</span>
           <ExternalLink className="w-2.5 h-2.5" />
         </button>
@@ -151,15 +155,17 @@ export const OrgChartPage: React.FC = () => {
     <div className="space-y-4">
       <div className="page-header flex flex-wrap items-center justify-between gap-4">
         <div className="page-header-info">
-          <h1>Organigramme de l'entreprise</h1>
-          <p>Glissez-déposez les blocs pour modifier la disposition. Cliquez sur un collaborateur pour ouvrir son dossier.</p>
+          <h1>Organigramme interactif de l'entreprise</h1>
+          <p>
+            Glissez-déposez les blocs pour modifier et écarter la structure. Cliquez sur « Accéder au dossier » pour ouvrir la fiche.
+          </p>
         </div>
         {roots && roots.length > 0 && (
           <button
             type="button"
             onClick={handleResetLayout}
-            className="btn btn-secondary text-xs flex items-center gap-1.5"
-            title="Réorganiser automatiquement l'arbre"
+            className="btn btn-secondary text-xs flex items-center gap-1.5 cursor-pointer"
+            title="Réorganiser automatiquement l'arbre hiérarchique"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Réorganiser automatiquement</span>
@@ -183,7 +189,7 @@ export const OrgChartPage: React.FC = () => {
               type="button"
               onClick={() => refetch()}
               disabled={isFetching}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A6B3C] text-white text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A6B3C] text-white text-sm cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
               Réessayer
