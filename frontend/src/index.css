@@ -650,6 +650,14 @@ select.input {
   padding-right: 2.25rem;
 }
 
+select option,
+select.form-control option,
+select.input option {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+  padding: 6px 10px;
+}
+
 /* Checkbox & Radio */
 .form-check {
   display: flex;
