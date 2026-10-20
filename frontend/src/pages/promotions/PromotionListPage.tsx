@@ -413,155 +413,157 @@ export const PromotionListPage: React.FC = () => {
 
       {/* ─── MODALE : SIMULATEUR MASSE SALARIALE ─────────────────────────────── */}
       {showSimulateModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
-                  <Calculator className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <Calculator className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Simulateur d'Impact sur la Masse Salariale</h3>
-                  <p className="text-[11px] text-gray-500">Calcul financier en FCFA basé sur les contrats actifs</p>
+                  <h3 className="text-base font-bold text-gray-900">Simulateur d'Impact sur la Masse Salariale</h3>
+                  <p className="text-xs text-gray-500">Calcul financier en FCFA basé sur les contrats actifs</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowSimulateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                runSimulationMutation.mutate(simulationForm);
-              }}
-              className="space-y-3.5 text-xs"
-            >
-              <div>
-                <label className="block font-semibold text-gray-700 mb-1">
-                  Intitulé du plan de simulation <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={simulationForm.title}
-                  onChange={(e) => setSimulationForm({ ...simulationForm, title: e.target.value })}
-                  placeholder="Ex: Revalorisation générale 2026 / Plan Cadres"
-                  className="input w-full rounded-lg border-gray-300"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  runSimulationMutation.mutate(simulationForm);
+                }}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Périmètre / Département</label>
-                  <select
-                    value={simulationForm.departmentId || ''}
-                    onChange={(e) => setSimulationForm({ ...simulationForm, departmentId: e.target.value })}
-                    className="input w-full rounded-lg border-gray-300"
-                  >
-                    <option value="">Toute l'entreprise (Global)</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">
-                    Pourcentage d'augmentation (%) <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Intitulé du plan de simulation <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="100"
+                    type="text"
                     required
-                    value={simulationForm.averageIncreasePercentage}
-                    onChange={(e) =>
-                      setSimulationForm({
-                        ...simulationForm,
-                        averageIncreasePercentage: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    className="input w-full rounded-lg border-gray-300 font-bold text-gray-800"
+                    value={simulationForm.title}
+                    onChange={(e) => setSimulationForm({ ...simulationForm, title: e.target.value })}
+                    placeholder="Ex: Revalorisation générale 2026 / Plan Cadres"
+                    className="input w-full text-sm font-medium"
                   />
                 </div>
-              </div>
 
-              <div className="flex justify-end pt-1">
-                <button
-                  type="submit"
-                  disabled={runSimulationMutation.isPending}
-                  className="btn btn-primary px-4 text-xs inline-flex items-center gap-1.5"
-                >
-                  {runSimulationMutation.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5" />
-                  )}
-                  Lancer la Simulation
-                </button>
-              </div>
-            </form>
-
-            {/* Résultat du calcul */}
-            {latestSimulationResult && (
-              <div className="mt-4 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-3 animate-fadeIn text-xs">
-                <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
-                  <span className="font-bold text-sm text-[#1A6B3C] flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4" />
-                    Impact Budgétaire Projeté
-                  </span>
-                  <span className="badge badge-success text-[10px]">
-                    {latestSimulationResult.affectedEmployeesCount} collaborateur(s)
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white p-3 rounded-lg border border-emerald-100">
-                    <span className="text-[10px] text-gray-400 block uppercase">Masse Salariale Mensuelle Actuelle</span>
-                    <strong className="text-sm text-gray-900 block mt-0.5">
-                      {formatFCFA(latestSimulationResult.currentMonthlyPayroll)}
-                    </strong>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Périmètre / Département</label>
+                    <select
+                      value={simulationForm.departmentId || ''}
+                      onChange={(e) => setSimulationForm({ ...simulationForm, departmentId: e.target.value })}
+                      className="input w-full text-sm"
+                    >
+                      <option value="">Toute l'entreprise (Global)</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="bg-white p-3 rounded-lg border border-emerald-100">
-                    <span className="text-[10px] text-gray-400 block uppercase">Masse Salariale Mensuelle Projetée</span>
-                    <strong className="text-sm text-[#1A6B3C] block mt-0.5">
-                      {formatFCFA(latestSimulationResult.projectedMonthlyPayroll)}
-                    </strong>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                      Pourcentage d'augmentation (%) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      required
+                      value={simulationForm.averageIncreasePercentage}
+                      onChange={(e) =>
+                        setSimulationForm({
+                          ...simulationForm,
+                          averageIncreasePercentage: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="input w-full text-sm font-bold text-gray-800"
+                    />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white p-3 rounded-lg border border-emerald-100">
-                    <span className="text-[10px] text-gray-400 block uppercase">Surcoût Mensuel Additionnel</span>
-                    <strong className="text-sm text-amber-700 block mt-0.5">
-                      +{formatFCFA(latestSimulationResult.monthlyDifference)}
-                    </strong>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={runSimulationMutation.isPending}
+                    className="btn btn-primary px-5 text-sm inline-flex items-center gap-2 min-h-[44px]"
+                  >
+                    {runSimulationMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    Lancer la Simulation
+                  </button>
+                </div>
+              </form>
+
+              {/* Résultat du calcul */}
+              {latestSimulationResult && (
+                <div className="mt-4 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-3 animate-fadeIn text-xs">
+                  <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                    <span className="font-bold text-sm text-[#1A6B3C] flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4" />
+                      Impact Budgétaire Projeté
+                    </span>
+                    <span className="badge badge-success text-[10px]">
+                      {latestSimulationResult.affectedEmployeesCount} collaborateur(s)
+                    </span>
                   </div>
 
-                  <div className="bg-white p-3 rounded-lg border border-emerald-100">
-                    <span className="text-[10px] text-gray-400 block uppercase">Impact Budgétaire Annuel</span>
-                    <strong className="text-sm text-emerald-800 block mt-0.5">
-                      +{formatFCFA(latestSimulationResult.projectedAnnualPayrollImpact)}
-                    </strong>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-white p-3 rounded-lg border border-emerald-100">
+                      <span className="text-[10px] text-gray-400 block uppercase">Masse Salariale Mensuelle Actuelle</span>
+                      <strong className="text-sm text-gray-900 block mt-0.5">
+                        {formatFCFA(latestSimulationResult.currentMonthlyPayroll)}
+                      </strong>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-lg border border-emerald-100">
+                      <span className="text-[10px] text-gray-400 block uppercase">Masse Salariale Mensuelle Projetée</span>
+                      <strong className="text-sm text-[#1A6B3C] block mt-0.5">
+                        {formatFCFA(latestSimulationResult.projectedMonthlyPayroll)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-white p-3 rounded-lg border border-emerald-100">
+                      <span className="text-[10px] text-gray-400 block uppercase">Surcoût Mensuel Additionnel</span>
+                      <strong className="text-sm text-amber-700 block mt-0.5">
+                        +{formatFCFA(latestSimulationResult.monthlyDifference)}
+                      </strong>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-lg border border-emerald-100">
+                      <span className="text-[10px] text-gray-400 block uppercase">Impact Budgétaire Annuel</span>
+                      <strong className="text-sm text-emerald-800 block mt-0.5">
+                        +{formatFCFA(latestSimulationResult.projectedAnnualPayrollImpact)}
+                      </strong>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            <div className="flex justify-end pt-3 border-t border-gray-100">
+            <div className="flex justify-end p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowSimulateModal(false)}
-                className="btn btn-secondary px-4 text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Fermer
               </button>
@@ -572,22 +574,22 @@ export const PromotionListPage: React.FC = () => {
 
       {/* ─── MODALE : PROPOSER UNE PROMOTION ─────────────────────────────────── */}
       {showProposeModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
-                  <Plus className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Proposer une Promotion / Revalorisation</h3>
-                  <p className="text-[11px] text-gray-500">Soumission pour validation par la Direction RH</p>
+                  <h3 className="text-base font-bold text-gray-900">Proposer une Promotion / Revalorisation</h3>
+                  <p className="text-xs text-gray-500">Soumission pour validation par la Direction RH</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowProposeModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -598,17 +600,17 @@ export const PromotionListPage: React.FC = () => {
                 e.preventDefault();
                 createProposalMutation.mutate(proposalForm);
               }}
-              className="space-y-3.5 text-xs"
+              className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4"
             >
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Collaborateur concerné <span className="text-red-500">*</span>
                 </label>
                 <select
                   required
                   value={proposalForm.employeeId}
                   onChange={(e) => setProposalForm({ ...proposalForm, employeeId: e.target.value })}
-                  className="input w-full rounded-lg border-gray-300"
+                  className="input w-full text-sm"
                 >
                   <option value="">Sélectionner un collaborateur...</option>
                   {employees.map((emp) => (
@@ -620,14 +622,14 @@ export const PromotionListPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Nouveau Poste Cible <span className="text-red-500">*</span>
                 </label>
                 <select
                   required
                   value={proposalForm.proposedPositionId}
                   onChange={(e) => setProposalForm({ ...proposalForm, proposedPositionId: e.target.value })}
-                  className="input w-full rounded-lg border-gray-300"
+                  className="input w-full text-sm"
                 >
                   <option value="">Sélectionner le poste cible...</option>
                   {positions.map((pos) => (
@@ -639,7 +641,7 @@ export const PromotionListPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Nouveau Salaire Brut Proposé (FCFA) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -654,12 +656,12 @@ export const PromotionListPage: React.FC = () => {
                     })
                   }
                   placeholder="Ex: 1500000"
-                  className="input w-full rounded-lg border-gray-300 font-bold text-[#1A6B3C]"
+                  className="input w-full text-sm font-bold text-[#1A6B3C]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Justification managériale <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -668,24 +670,24 @@ export const PromotionListPage: React.FC = () => {
                   value={proposalForm.justification}
                   onChange={(e) => setProposalForm({ ...proposalForm, justification: e.target.value })}
                   placeholder="Arguments, accomplissements récents, prise de responsabilités..."
-                  className="input w-full rounded-lg border-gray-300 py-2"
+                  className="input w-full text-sm"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowProposeModal(false)}
-                  className="btn btn-secondary px-4 text-xs"
+                  className="btn btn-secondary px-5 text-sm min-h-[44px]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={createProposalMutation.isPending}
-                  className="btn btn-primary px-4 text-xs inline-flex items-center gap-1.5"
+                  className="btn btn-primary px-5 text-sm inline-flex items-center gap-2 min-h-[44px]"
                 >
-                  {createProposalMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {createProposalMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Soumettre la Proposition
                 </button>
               </div>
@@ -696,56 +698,60 @@ export const PromotionListPage: React.FC = () => {
 
       {/* ─── MODALE : CONFIRMATION VALIDATION PROMOTION (DRH) ────────────────── */}
       {approvalModalProposal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
-                  <UserCheck className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Valider la Promotion</h3>
-                  <p className="text-[11px] text-gray-500">{approvalModalProposal.employeeFullName}</p>
+                  <h3 className="text-base font-bold text-gray-900">Valider la Promotion</h3>
+                  <p className="text-xs text-gray-500">{approvalModalProposal.employeeFullName}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setApprovalModalProposal(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-xl space-y-2 text-xs border border-gray-100">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Poste Cible :</span>
-                <span className="font-bold text-gray-900">{approvalModalProposal.proposedPositionTitle}</span>
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="p-3.5 bg-gray-50 rounded-xl space-y-2.5 text-xs border border-gray-100">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Poste Cible :</span>
+                  <span className="font-bold text-gray-900">{approvalModalProposal.proposedPositionTitle}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Nouveau Salaire :</span>
+                  <span className="font-bold text-[#1A6B3C]">
+                    {formatFCFA(approvalModalProposal.proposedSalary)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Nouveau Salaire :</span>
-                <span className="font-bold text-[#1A6B3C]">
-                  {formatFCFA(approvalModalProposal.proposedSalary)}
-                </span>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Commentaire d'approbation DRH (optionnel)
+                </label>
+                <textarea
+                  rows={2}
+                  value={approvalComment}
+                  onChange={(e) => setApprovalComment(e.target.value)}
+                  placeholder="Ex: Avis favorable Direction générale - prise d'effet immédiate"
+                  className="input w-full text-sm"
+                />
               </div>
             </div>
 
-            <div className="text-xs">
-              <label className="block font-semibold text-gray-700 mb-1">Commentaire d'approbation DRH (optionnel)</label>
-              <textarea
-                rows={2}
-                value={approvalComment}
-                onChange={(e) => setApprovalComment(e.target.value)}
-                placeholder="Ex: Avis favorable Direction générale - prise d'effet immédiate"
-                className="input w-full rounded-lg border-gray-300 py-1.5"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 text-xs">
+            <div className="flex justify-end gap-2.5 p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setApprovalModalProposal(null)}
-                className="btn btn-secondary px-3"
+                className="btn btn-secondary px-4 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -759,7 +765,7 @@ export const PromotionListPage: React.FC = () => {
                     comment: approvalComment,
                   })
                 }
-                className="btn btn-secondary px-3 text-red-600 hover:bg-red-50 inline-flex items-center gap-1.5"
+                className="btn btn-secondary px-4 text-red-600 hover:bg-red-50 inline-flex items-center gap-1.5 min-h-[44px] text-sm"
               >
                 Refuser
               </button>
@@ -773,9 +779,9 @@ export const PromotionListPage: React.FC = () => {
                     comment: approvalComment,
                   })
                 }
-                className="btn btn-primary px-3 inline-flex items-center gap-1.5"
+                className="btn btn-primary px-4 inline-flex items-center gap-2 min-h-[44px] text-sm"
               >
-                {validatePromotionMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {validatePromotionMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Confirmer l'Approbation
               </button>
             </div>
@@ -785,37 +791,37 @@ export const PromotionListPage: React.FC = () => {
 
       {/* ─── MODALE : DÉTAILS DE SIMULATION (HISTORIQUE) ────────────────────── */}
       {showSimulationsListModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
-                  <Calculator className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                  <Calculator className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Historique des Simulations de Masse Salariale</h3>
-                  <p className="text-[11px] text-gray-500">Traçabilité des études budgétaires réalisées</p>
+                  <h3 className="text-base font-bold text-gray-900">Historique des Simulations de Masse Salariale</h3>
+                  <p className="text-xs text-gray-500">Traçabilité des études budgétaires réalisées</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowSimulationsListModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 flex-1 overflow-y-auto pr-1 text-xs">
+            <div className="p-4 sm:p-6 space-y-3 flex-1 overflow-y-auto">
               {simulations.length === 0 ? (
-                <div className="text-center py-10 text-gray-400">
+                <div className="text-center py-10 text-sm text-gray-400">
                   Aucune simulation salariale n'a encore été enregistrée.
                 </div>
               ) : (
                 simulations.map((sim) => (
                   <div
                     key={sim.id}
-                    className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/70 hover:bg-white space-y-2"
+                    className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/70 hover:bg-white space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -842,11 +848,11 @@ export const PromotionListPage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-gray-100">
+            <div className="flex justify-end p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowSimulationsListModal(false)}
-                className="btn btn-secondary px-4 text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Fermer
               </button>

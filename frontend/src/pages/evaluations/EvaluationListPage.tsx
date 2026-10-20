@@ -717,63 +717,75 @@ export const EvaluationListPage: React.FC = () => {
       </div>
 
       {/* MODALE : NOUVELLE CAMPAGNE (DRH) */}
+      {/* MODALE : NOUVELLE CAMPAGNE (DRH) */}
       {showNewCampaignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-gray-900">Lancer une Nouvelle Campagne Annuelle</h3>
-            <div className="space-y-3 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Lancer une Nouvelle Campagne Annuelle</h3>
+              <button
+                type="button"
+                onClick={() => setShowNewCampaignModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Titre de la campagne</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Titre de la campagne</label>
                 <input
                   type="text"
                   value={newCampaignTitle}
                   onChange={(e) => setNewCampaignTitle(e.target.value)}
                   placeholder="Ex: Campagne Annuelle d'Évaluation 2026"
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm font-medium"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Année</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Année</label>
                   <input
                     type="number"
                     value={newCampaignYear}
                     onChange={(e) => setNewCampaignYear(parseInt(e.target.value, 10))}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Date Début</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date Début</label>
                   <input
                     type="date"
                     value={newCampaignStartDate}
                     onChange={(e) => setNewCampaignStartDate(e.target.value)}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Date Fin</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date Fin</label>
                 <input
                   type="date"
                   value={newCampaignEndDate}
                   onChange={(e) => setNewCampaignEndDate(e.target.value)}
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm"
                 />
               </div>
 
               {campaignError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-start gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <span>{campaignError}</span>
                 </div>
               )}
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t">
+
+            <div className="flex justify-end gap-2.5 p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowNewCampaignModal(false)}
-                className="btn btn-secondary text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -781,10 +793,10 @@ export const EvaluationListPage: React.FC = () => {
                 type="button"
                 onClick={() => createCampaignMutation.mutate()}
                 disabled={createCampaignMutation.isPending}
-                className="btn btn-primary text-xs flex items-center gap-1.5"
+                className="btn btn-primary px-5 text-sm flex items-center gap-2 min-h-[44px]"
               >
                 {createCampaignMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 Lancer la campagne
               </button>
@@ -795,12 +807,22 @@ export const EvaluationListPage: React.FC = () => {
 
       {/* MODALE : AUTO-ÉVALUATION COLLABORATEUR */}
       {showSelfEvalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-gray-900">Soumettre mon Auto-évaluation</h3>
-            <div className="space-y-3 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Soumettre mon Auto-évaluation</h3>
+              <button
+                type="button"
+                onClick={() => setShowSelfEvalModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Note d'auto-évaluation (/ 5.0)
                 </label>
                 <input
@@ -810,11 +832,11 @@ export const EvaluationListPage: React.FC = () => {
                   max="5"
                   value={selfScoreInput}
                   onChange={(e) => setSelfScoreInput(parseFloat(e.target.value))}
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm font-bold text-gray-800"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Commentaires & Souhaits d'évolution
                 </label>
                 <textarea
@@ -822,15 +844,16 @@ export const EvaluationListPage: React.FC = () => {
                   value={selfFeedbackInput}
                   onChange={(e) => setSelfFeedbackInput(e.target.value)}
                   placeholder="Points forts de l'année, difficultés rencontrées, besoins de formation..."
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t">
+
+            <div className="flex justify-end gap-2.5 p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowSelfEvalModal(false)}
-                className="btn btn-secondary text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -838,10 +861,10 @@ export const EvaluationListPage: React.FC = () => {
                 type="button"
                 onClick={() => selfEvalMutation.mutate()}
                 disabled={selfEvalMutation.isPending}
-                className="btn btn-primary text-xs"
+                className="btn btn-primary px-5 text-sm flex items-center gap-2 min-h-[44px]"
               >
                 {selfEvalMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 Enregistrer mon auto-évaluation
               </button>
@@ -852,13 +875,23 @@ export const EvaluationListPage: React.FC = () => {
 
       {/* MODALE : ÉVALUATION MANAGÉRIALE N+1 */}
       {showManagerEvalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-sm font-bold text-gray-900">Évaluation Managériale N+1</h3>
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Évaluation Managériale N+1</h3>
+              <button
+                type="button"
+                onClick={() => setShowManagerEvalModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Note globale (/ 5.0)</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Note globale (/ 5.0)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -866,26 +899,26 @@ export const EvaluationListPage: React.FC = () => {
                     max="5"
                     value={managerScoreInput}
                     onChange={(e) => setManagerScoreInput(parseFloat(e.target.value))}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm font-bold text-gray-800"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Date d'entretien</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date d'entretien</label>
                   <input
                     type="date"
                     value={interviewDateInput}
                     onChange={(e) => setInterviewDateInput(e.target.value)}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
 
               {/* Taux d'atteinte par objectif SMART */}
-              <div className="space-y-2 pt-2 border-t">
-                <span className="font-semibold text-gray-800">Taux d'atteinte par Objectif SMART (%) :</span>
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <span className="font-bold text-gray-800 text-xs uppercase tracking-wider">Taux d'atteinte par Objectif SMART (%) :</span>
                 {selectedEval?.objectives.map((obj) => (
-                  <div key={obj.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                    <span className="text-gray-700 truncate max-w-[240px]">{obj.title}</span>
+                  <div key={obj.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-gray-700 truncate max-w-[240px] text-xs font-medium">{obj.title}</span>
                     <input
                       type="number"
                       min="0"
@@ -897,14 +930,14 @@ export const EvaluationListPage: React.FC = () => {
                           [obj.id || '']: parseFloat(e.target.value) || 0
                         })
                       }
-                      className="w-20 border rounded p-1 text-right"
+                      className="w-24 input text-right text-sm"
                     />
                   </div>
                 ))}
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Commentaires du manager & Perspectives
                 </label>
                 <textarea
@@ -912,15 +945,16 @@ export const EvaluationListPage: React.FC = () => {
                   value={managerFeedbackInput}
                   onChange={(e) => setManagerFeedbackInput(e.target.value)}
                   placeholder="Appréciation globale, objectifs pour l'année suivante..."
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t">
+
+            <div className="flex justify-end gap-2.5 p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowManagerEvalModal(false)}
-                className="btn btn-secondary text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -928,10 +962,10 @@ export const EvaluationListPage: React.FC = () => {
                 type="button"
                 onClick={() => managerEvalMutation.mutate()}
                 disabled={managerEvalMutation.isPending}
-                className="btn btn-primary text-xs"
+                className="btn btn-primary px-5 text-sm flex items-center gap-2 min-h-[44px]"
               >
                 {managerEvalMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 Calculer score & Enregistrer
               </button>

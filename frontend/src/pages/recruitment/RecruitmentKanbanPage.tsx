@@ -580,22 +580,22 @@ export const RecruitmentKanbanPage: React.FC = () => {
 
       {/* ─── MODALE : CRÉER UNE OFFRE D'EMPLOI ──────────────────────────────── */}
       {showCreateOfferModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
-                  <Briefcase className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-xl w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <Briefcase className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Publier une Nouvelle Offre d'Emploi</h3>
-                  <p className="text-[11px] text-gray-500">L'offre sera ouverte à la réception des candidatures</p>
+                  <h3 className="text-base font-bold text-gray-900">Publier une Nouvelle Offre d'Emploi</h3>
+                  <p className="text-xs text-gray-500">L'offre sera ouverte à la réception des candidatures</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCreateOfferModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -606,10 +606,10 @@ export const RecruitmentKanbanPage: React.FC = () => {
                 e.preventDefault();
                 createOfferMutation.mutate(newOfferForm);
               }}
-              className="space-y-3.5 text-xs"
+              className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4"
             >
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Intitulé du poste <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -618,17 +618,17 @@ export const RecruitmentKanbanPage: React.FC = () => {
                   value={newOfferForm.title}
                   onChange={(e) => setNewOfferForm({ ...newOfferForm, title: e.target.value })}
                   placeholder="Ex: Ingénieur DevOps Cloud / Développeur React"
-                  className="input w-full rounded-lg border-gray-300"
+                  className="input w-full text-sm font-medium"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Département</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Département</label>
                   <select
                     value={newOfferForm.departmentId}
                     onChange={(e) => setNewOfferForm({ ...newOfferForm, departmentId: e.target.value })}
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   >
                     <option value="">Sélectionner un département...</option>
                     {departments.map((d) => (
@@ -640,11 +640,11 @@ export const RecruitmentKanbanPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Type de Contrat</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Type de Contrat</label>
                   <select
                     value={newOfferForm.contractType}
                     onChange={(e) => setNewOfferForm({ ...newOfferForm, contractType: e.target.value })}
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   >
                     <option value="CDI">CDI (Indéterminée)</option>
                     <option value="CDD">CDD (Déterminée)</option>
@@ -654,31 +654,31 @@ export const RecruitmentKanbanPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Nombre de postes</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Nombre de postes</label>
                   <input
                     type="number"
                     min={1}
                     value={newOfferForm.openPositions}
                     onChange={(e) => setNewOfferForm({ ...newOfferForm, openPositions: parseInt(e.target.value) || 1 })}
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Date limite de candidature</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date limite de candidature</label>
                   <input
                     type="date"
                     value={newOfferForm.closingDate}
                     onChange={(e) => setNewOfferForm({ ...newOfferForm, closingDate: e.target.value })}
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Description des missions <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -687,35 +687,35 @@ export const RecruitmentKanbanPage: React.FC = () => {
                   value={newOfferForm.description}
                   onChange={(e) => setNewOfferForm({ ...newOfferForm, description: e.target.value })}
                   placeholder="Responsabilités, contexte d'équipe et livrables attendus..."
-                  className="input w-full rounded-lg border-gray-300 py-2"
+                  className="input w-full text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Prérequis & Compétences requises</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Prérequis & Compétences requises</label>
                 <textarea
                   rows={2}
                   value={newOfferForm.requirements}
                   onChange={(e) => setNewOfferForm({ ...newOfferForm, requirements: e.target.value })}
                   placeholder="Expérience, diplôme, outils et technologies..."
-                  className="input w-full rounded-lg border-gray-300 py-2"
+                  className="input w-full text-sm"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCreateOfferModal(false)}
-                  className="btn btn-secondary px-4 text-xs"
+                  className="btn btn-secondary px-5 text-sm min-h-[44px]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={createOfferMutation.isPending}
-                  className="btn btn-primary px-4 text-xs inline-flex items-center gap-1.5"
+                  className="btn btn-primary px-5 text-sm inline-flex items-center gap-2 min-h-[44px]"
                 >
-                  {createOfferMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {createOfferMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Publier l'Offre
                 </button>
               </div>
@@ -726,30 +726,30 @@ export const RecruitmentKanbanPage: React.FC = () => {
 
       {/* ─── MODALE : VOIR LES OFFRES ────────────────────────────────────────── */}
       {showOffersListModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
-                  <Briefcase className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                  <Briefcase className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Catalogue des Offres de Recrutement ({offers.length})</h3>
-                  <p className="text-[11px] text-gray-500">Offres ouvertes et suivi des postes vacants</p>
+                  <h3 className="text-base font-bold text-gray-900">Catalogue des Offres de Recrutement ({offers.length})</h3>
+                  <p className="text-xs text-gray-500">Offres ouvertes et suivi des postes vacants</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowOffersListModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+            <div className="p-4 sm:p-6 space-y-3 flex-1 overflow-y-auto">
               {offers.length === 0 ? (
-                <div className="text-center py-12 text-xs text-gray-400">
+                <div className="text-center py-12 text-sm text-gray-400">
                   Aucune offre d'emploi n'est actuellement publiée.
                 </div>
               ) : (
@@ -785,24 +785,24 @@ export const RecruitmentKanbanPage: React.FC = () => {
                             setSelectedOfferFilter(offer.id);
                             setShowOffersListModal(false);
                           }}
-                          className="btn btn-secondary btn-sm text-[11px] py-1"
+                          className="btn btn-secondary btn-sm text-xs py-1.5 min-h-[38px]"
                         >
                           Filtrer le Kanban
                         </button>
                       </div>
                     </div>
 
-                    <p className="text-gray-600 text-[11px] line-clamp-2">{offer.description}</p>
+                    <p className="text-gray-600 text-xs line-clamp-2">{offer.description}</p>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-gray-100">
+            <div className="flex justify-end p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowOffersListModal(false)}
-                className="btn btn-secondary px-4 text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Fermer
               </button>
@@ -813,22 +813,22 @@ export const RecruitmentKanbanPage: React.FC = () => {
 
       {/* ─── MODALE : NOUVELLE CANDIDATURE ──────────────────────────────────── */}
       {showNewApplicationModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
-                  <User className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Enregistrer une Nouvelle Candidature</h3>
-                  <p className="text-[11px] text-gray-500">Ajout dans la colonne "Reçus" du pipeline</p>
+                  <h3 className="text-base font-bold text-gray-900">Enregistrer une Nouvelle Candidature</h3>
+                  <p className="text-xs text-gray-500">Ajout dans la colonne "Reçus" du pipeline</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowNewApplicationModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -839,17 +839,17 @@ export const RecruitmentKanbanPage: React.FC = () => {
                 e.preventDefault();
                 createApplicationMutation.mutate(newAppForm);
               }}
-              className="space-y-3.5 text-xs"
+              className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4"
             >
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                   Offre d'emploi associée <span className="text-red-500">*</span>
                 </label>
                 <select
                   required
                   value={newAppForm.jobOfferId}
                   onChange={(e) => setNewAppForm({ ...newAppForm, jobOfferId: e.target.value })}
-                  className="input w-full rounded-lg border-gray-300"
+                  className="input w-full text-sm"
                 >
                   <option value="">Sélectionner une offre...</option>
                   {offers.map((o) => (
@@ -860,9 +860,9 @@ export const RecruitmentKanbanPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Prénom <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -871,11 +871,11 @@ export const RecruitmentKanbanPage: React.FC = () => {
                     value={newAppForm.firstName}
                     onChange={(e) => setNewAppForm({ ...newAppForm, firstName: e.target.value })}
                     placeholder="Moussa"
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Nom <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -884,14 +884,14 @@ export const RecruitmentKanbanPage: React.FC = () => {
                     value={newAppForm.lastName}
                     onChange={(e) => setNewAppForm({ ...newAppForm, lastName: e.target.value })}
                     placeholder="Diallo"
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Adresse Email <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -900,57 +900,57 @@ export const RecruitmentKanbanPage: React.FC = () => {
                     value={newAppForm.email}
                     onChange={(e) => setNewAppForm({ ...newAppForm, email: e.target.value })}
                     placeholder="candidat@email.com"
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Téléphone</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Téléphone</label>
                   <input
                     type="tel"
                     value={newAppForm.phone}
                     onChange={(e) => setNewAppForm({ ...newAppForm, phone: e.target.value })}
                     placeholder="+221 77 000 00 00"
-                    className="input w-full rounded-lg border-gray-300"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Lien vers le CV (URL)</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Lien vers le CV (URL)</label>
                 <input
                   type="url"
                   value={newAppForm.cvUrl}
                   onChange={(e) => setNewAppForm({ ...newAppForm, cvUrl: e.target.value })}
                   placeholder="https://..."
-                  className="input w-full rounded-lg border-gray-300"
+                  className="input w-full text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Commentaires / Profil</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Commentaires / Profil</label>
                 <textarea
                   rows={2}
                   value={newAppForm.notes}
                   onChange={(e) => setNewAppForm({ ...newAppForm, notes: e.target.value })}
                   placeholder="Expérience clé, prétentions salariales..."
-                  className="input w-full rounded-lg border-gray-300 py-2"
+                  className="input w-full text-sm"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowNewApplicationModal(false)}
-                  className="btn btn-secondary px-4 text-xs"
+                  className="btn btn-secondary px-5 text-sm min-h-[44px]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={createApplicationMutation.isPending}
-                  className="btn btn-primary px-4 text-xs inline-flex items-center gap-1.5"
+                  className="btn btn-primary px-5 text-sm inline-flex items-center gap-2 min-h-[44px]"
                 >
-                  {createApplicationMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {createApplicationMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Enregistrer
                 </button>
               </div>
@@ -961,9 +961,9 @@ export const RecruitmentKanbanPage: React.FC = () => {
 
       {/* ─── MODALE : DÉTAILS CANDIDAT & CHANGEMENT RAPIDE DE STATUT ───────── */}
       {selectedCandidate && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
               <div>
                 <h3 className="text-base font-bold text-gray-900">{selectedCandidate.candidateFullName}</h3>
                 <p className="text-xs text-[#1A6B3C] font-semibold">{selectedCandidate.jobOfferTitle}</p>
@@ -971,42 +971,42 @@ export const RecruitmentKanbanPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="p-4 sm:p-6 space-y-4 text-sm overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                 <div>
-                  <span className="text-gray-400 text-[10px]">Email :</span>
-                  <div className="font-semibold text-gray-800">{selectedCandidate.candidateEmail}</div>
+                  <span className="text-gray-400 text-xs">Email :</span>
+                  <div className="font-semibold text-gray-800 text-sm truncate">{selectedCandidate.candidateEmail}</div>
                 </div>
                 <div>
-                  <span className="text-gray-400 text-[10px]">Téléphone :</span>
-                  <div className="font-semibold text-gray-800">{selectedCandidate.candidatePhone || 'Non renseigné'}</div>
+                  <span className="text-gray-400 text-xs">Téléphone :</span>
+                  <div className="font-semibold text-gray-800 text-sm">{selectedCandidate.candidatePhone || 'Non renseigné'}</div>
                 </div>
               </div>
 
               {selectedCandidate.cvUrl && (
-                <div className="flex items-center justify-between p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                  <span className="text-gray-700 font-medium">Curriculum Vitae (PDF)</span>
+                <div className="flex items-center justify-between p-3.5 bg-blue-50/50 rounded-xl border border-blue-100">
+                  <span className="text-gray-700 font-medium text-sm">Curriculum Vitae (PDF)</span>
                   <a
                     href={selectedCandidate.cvUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn btn-primary btn-sm text-xs inline-flex items-center gap-1"
+                    className="btn btn-primary btn-sm text-xs inline-flex items-center gap-1.5 min-h-[38px] px-3.5"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" /> Ouvrir le CV
+                    <ExternalLink className="w-4 h-4" /> Ouvrir le CV
                   </a>
                 </div>
               )}
 
               {selectedCandidate.notes && (
-                <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-100">
-                  <span className="font-bold text-gray-800 text-[11px] block mb-1">Notes du recruteur :</span>
-                  <p className="text-gray-700 text-xs leading-relaxed">{selectedCandidate.notes}</p>
+                <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-100">
+                  <span className="font-bold text-gray-800 text-xs block mb-1">Notes du recruteur :</span>
+                  <p className="text-gray-700 text-sm leading-relaxed">{selectedCandidate.notes}</p>
                 </div>
               )}
 
@@ -1015,7 +1015,7 @@ export const RecruitmentKanbanPage: React.FC = () => {
                 <span className="font-bold text-gray-700 text-xs block mb-2">
                   Changer d'étape (Notifie immédiatement le candidat) :
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {COLUMNS.map((col) => (
                     <button
                       key={col.id}
@@ -1026,7 +1026,7 @@ export const RecruitmentKanbanPage: React.FC = () => {
                         setSelectedCandidate(null);
                         updateStatusMutation.mutate({ id: candId, status: col.id });
                       }}
-                      className={`px-2.5 py-2 rounded-lg text-xs font-semibold text-left transition-colors border ${
+                      className={`px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-colors border min-h-[42px] ${
                         selectedCandidate.status === col.id
                           ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-default'
                           : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-800 hover:border-[#1A6B3C]'
@@ -1039,11 +1039,11 @@ export const RecruitmentKanbanPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-gray-100">
+            <div className="flex justify-end p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setSelectedCandidate(null)}
-                className="btn btn-secondary px-4 text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Fermer
               </button>

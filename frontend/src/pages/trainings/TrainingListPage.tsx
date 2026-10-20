@@ -450,27 +450,37 @@ export const TrainingListPage: React.FC = () => {
 
       {/* MODALE : NOUVEAU MODULE DE FORMATION (DRH) */}
       {showNewTrainingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-gray-900">Ajouter une Formation au Catalogue</h3>
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Ajouter une Formation au Catalogue</h3>
+              <button
+                type="button"
+                onClick={() => setShowNewTrainingModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Code Module</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Code Module</label>
                   <input
                     type="text"
                     value={newCode}
                     onChange={(e) => setNewCode(e.target.value)}
                     placeholder="Ex: TECH-SPRING"
-                    className="w-full border rounded-lg p-2.5 font-mono"
+                    className="input w-full font-mono text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Catégorie</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Catégorie</label>
                   <select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full border rounded-lg p-2.5 bg-white"
+                    className="input w-full text-sm"
                   >
                     <option value="Technique">Technique</option>
                     <option value="Management">Management</option>
@@ -480,52 +490,53 @@ export const TrainingListPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Intitulé de la formation</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Intitulé de la formation</label>
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="Ex: Spring Boot 3 & Microservices"
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm font-medium"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Volume Horaire (h)</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Volume Horaire (h)</label>
                   <input
                     type="number"
                     value={newDuration}
                     onChange={(e) => setNewDuration(parseInt(e.target.value, 10))}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Organisme / Formateur</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Organisme / Formateur</label>
                   <input
                     type="text"
                     value={newProvider}
                     onChange={(e) => setNewProvider(e.target.value)}
                     placeholder="Ex: SupInfo Dakar"
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Description pédagogique</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Description pédagogique</label>
                 <textarea
                   rows={3}
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="Objectifs pédagogiques et compétences visées..."
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t">
+
+            <div className="flex justify-end gap-2.5 p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowNewTrainingModal(false)}
-                className="btn btn-secondary text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -533,10 +544,10 @@ export const TrainingListPage: React.FC = () => {
                 type="button"
                 onClick={() => createTrainingMutation.mutate()}
                 disabled={!newCode || !newTitle || createTrainingMutation.isPending}
-                className="btn btn-primary text-xs"
+                className="btn btn-primary px-5 text-sm flex items-center gap-2 min-h-[44px]"
               >
                 {createTrainingMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 Enregistrer la formation
               </button>
@@ -547,16 +558,26 @@ export const TrainingListPage: React.FC = () => {
 
       {/* MODALE : PLANIFIER UNE SESSION (DRH) */}
       {showNewSessionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-gray-900">Planifier une Session de Formation</h3>
-            <div className="space-y-3 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Planifier une Session de Formation</h3>
+              <button
+                type="button"
+                onClick={() => setShowNewSessionModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Module de formation</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Module de formation</label>
                 <select
                   value={selectedTrainingIdForSession}
                   onChange={(e) => setSelectedTrainingIdForSession(e.target.value)}
-                  className="w-full border rounded-lg p-2.5 bg-white"
+                  className="input w-full text-sm"
                 >
                   {trainings.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -565,63 +586,64 @@ export const TrainingListPage: React.FC = () => {
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Code Session</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Code Session</label>
                   <input
                     type="text"
                     value={newSessionCode}
                     onChange={(e) => setNewSessionCode(e.target.value)}
                     placeholder="Ex: SESS-2026-01"
-                    className="w-full border rounded-lg p-2.5 font-mono"
+                    className="input w-full font-mono text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Places max</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Places max</label>
                   <input
                     type="number"
                     value={newMaxParticipants}
                     onChange={(e) => setNewMaxParticipants(parseInt(e.target.value, 10))}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Date Début</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date Début</label>
                   <input
                     type="date"
                     value={newStartDate}
                     onChange={(e) => setNewStartDate(e.target.value)}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Date Fin</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date Fin</label>
                   <input
                     type="date"
                     value={newEndDate}
                     onChange={(e) => setNewEndDate(e.target.value)}
-                    className="w-full border rounded-lg p-2.5"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="block font-semibold text-gray-700 mb-1">Lieu / Salle</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Lieu / Salle</label>
                 <input
                   type="text"
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
                   placeholder="Ex: Salle SupInfo Dakar ou distanciel"
-                  className="w-full border rounded-lg p-2.5"
+                  className="input w-full text-sm"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t">
+
+            <div className="flex justify-end gap-2.5 p-4 border-t border-gray-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowNewSessionModal(false)}
-                className="btn btn-secondary text-xs"
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -629,10 +651,10 @@ export const TrainingListPage: React.FC = () => {
                 type="button"
                 onClick={() => createSessionMutation.mutate()}
                 disabled={!newSessionCode || !newStartDate || !newEndDate || createSessionMutation.isPending}
-                className="btn btn-primary text-xs"
+                className="btn btn-primary px-5 text-sm flex items-center gap-2 min-h-[44px]"
               >
                 {createSessionMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 Planifier la session
               </button>

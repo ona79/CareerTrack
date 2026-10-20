@@ -550,25 +550,37 @@ export const LeaveListPage: React.FC = () => {
 
       {/* MODALE : Poser un congé */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-gray-900">Demande de Congé</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600 p-1">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#1A6B3C] flex items-center justify-center font-bold">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Demande de Congé</h3>
+                  <p className="text-xs text-gray-500">Posez vos jours de repos ou absences autorisées</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               {(isDrh || !user?.employeeId) && employeeList.length > 0 && (
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                     Collaborateur concerné <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={effectiveEmployeeId}
                     onChange={(e) => setSelectedTargetEmployeeId(e.target.value)}
-                    className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="input w-full text-sm"
                   >
                     {employeeList.map((emp: any) => (
                       <option key={emp.id} value={emp.id}>
@@ -580,11 +592,11 @@ export const LeaveListPage: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Type de congé</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Type de congé</label>
                 <select
                   value={leaveTypeId}
                   onChange={(e) => setLeaveTypeId(e.target.value)}
-                  className="w-full text-xs border border-gray-300 rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="input w-full text-sm"
                 >
                   {availableLeaveTypes.map((lt: any) => (
                     <option key={lt.id} value={lt.id}>{lt.name}</option>
@@ -592,37 +604,37 @@ export const LeaveListPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Date de début</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date de début</label>
                   <input
                     type="date"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="input w-full text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Date de fin</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Date de fin</label>
                   <input
                     type="date"
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="input w-full text-sm"
                   />
                 </div>
               </div>
 
               {/* Indicateur de calcul automatique des jours ouvrés */}
               {workingDaysCalc && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
-                  <div className="font-semibold flex items-center gap-1.5">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
+                  <div className="font-semibold flex items-center gap-1.5 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     {workingDaysCalc.workingDays} jour(s) ouvrable(s) décompté(s)
                   </div>
-                  <div className="text-[11px] text-emerald-600 mt-0.5">
+                  <div className="text-xs text-emerald-600 mt-1">
                     Lundi au vendredi inclus, hors samedis et dimanches
                   </div>
                 </div>
@@ -630,7 +642,7 @@ export const LeaveListPage: React.FC = () => {
 
               {/* Alerte de conflit d'équipe en direct */}
               {formConflict?.hasConflict && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold">Alerte de chevauchement d'équipe :</span> {formConflict.overlappingRequestsCount} collègue(s) de votre département ont déjà posé un congé sur ces dates.
@@ -639,37 +651,37 @@ export const LeaveListPage: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Motif (facultatif)</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Motif (facultatif)</label>
                 <textarea
                   rows={3}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="Ex : Repos familial, convenances personnelles..."
-                  className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="input w-full text-sm"
                 />
               </div>
 
               {(errorMessage || createMutation.isError) && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-start gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <span>{errorMessage || (createMutation.error as any)?.response?.data?.message || 'Erreur lors de la soumission de la demande'}</span>
                 </div>
               )}
 
-              <div className="flex gap-2 justify-end pt-2">
+              <div className="flex gap-2.5 justify-end pt-4 border-t border-gray-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg min-h-[44px]"
+                  className="btn btn-secondary px-5 text-sm min-h-[44px]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending || !startDate || !endDate}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg flex items-center gap-1.5 min-h-[44px]"
+                  className="btn btn-primary px-5 text-sm flex items-center gap-2 min-h-[44px]"
                 >
-                  {createMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Soumettre la demande
                 </button>
               </div>
@@ -680,35 +692,47 @@ export const LeaveListPage: React.FC = () => {
 
       {/* MODALE : Validation / Refus Manager */}
       {approvalModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="font-bold text-gray-900">
-              {approvalModalData.action === 'APPROVE' ? 'Valider la demande de congé' : 'Refuser la demande de congé'}
-            </h3>
-            <p className="text-xs text-gray-600">
-              Demande de <span className="font-semibold">{approvalModalData.request.employeeName}</span> du{' '}
-              <span className="font-semibold">{approvalModalData.request.startDate}</span> au{' '}
-              <span className="font-semibold">{approvalModalData.request.endDate}</span> ({approvalModalData.request.requestedDays} j).
-            </p>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Commentaire du manager {approvalModalData.action === 'REJECT' && <span className="text-red-500">*</span>}
-              </label>
-              <textarea
-                rows={3}
-                value={managerComment}
-                onChange={(e) => setManagerComment(e.target.value)}
-                placeholder="Ex : Accordé / Période de forte activité nécessitant un report..."
-                className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500"
-              />
-            </div>
-
-            <div className="flex gap-2 justify-end pt-2">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-5 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">
+                {approvalModalData.action === 'APPROVE' ? 'Valider la demande de congé' : 'Refuser la demande de congé'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setApprovalModalData(null)}
-                className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg min-h-[44px]"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <p className="text-sm text-gray-600">
+                Demande de <span className="font-semibold text-gray-900">{approvalModalData.request.employeeName}</span> du{' '}
+                <span className="font-semibold text-gray-900">{approvalModalData.request.startDate}</span> au{' '}
+                <span className="font-semibold text-gray-900">{approvalModalData.request.endDate}</span> ({approvalModalData.request.requestedDays} j).
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Commentaire du manager {approvalModalData.action === 'REJECT' && <span className="text-red-500">*</span>}
+                </label>
+                <textarea
+                  rows={3}
+                  value={managerComment}
+                  onChange={(e) => setManagerComment(e.target.value)}
+                  placeholder="Ex : Accordé / Période de forte activité nécessitant un report..."
+                  className="input w-full text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2.5 justify-end p-4 border-t border-gray-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setApprovalModalData(null)}
+                className="btn btn-secondary px-5 text-sm min-h-[44px]"
               >
                 Annuler
               </button>
@@ -720,11 +744,11 @@ export const LeaveListPage: React.FC = () => {
                   status: approvalModalData.action === 'APPROVE' ? 'APPROVED_N1' : 'REJECTED',
                   comment: managerComment,
                 })}
-                className={`px-4 py-2 text-xs font-semibold text-white rounded-lg flex items-center gap-1.5 min-h-[44px] ${
+                className={`btn text-sm text-white flex items-center gap-2 min-h-[44px] px-5 ${
                   approvalModalData.action === 'APPROVE' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
-                {approvalMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {approvalMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Confirmer la décision
               </button>
             </div>
