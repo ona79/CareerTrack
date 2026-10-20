@@ -1,24 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ReactFlow,
   Background,
   Controls,
   Handle,
   Position,
+  useNodesState,
+  useEdgesState,
   type Edge,
   type Node,
   type NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
-import { Building, Loader2, AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { Building, Loader2, AlertTriangle, RefreshCw, RotateCcw, ExternalLink } from 'lucide-react';
 import type { OrgNode } from '@/types';
 import { useOrgChart } from '@/hooks/useOrgChart';
 
 const NODE_WIDTH = 220;
-const NODE_HEIGHT = 92;
+const NODE_HEIGHT = 108;
 
-type EmployeeNodeData = { org: OrgNode; isSelected: boolean };
+type EmployeeNodeData = { org: OrgNode };
 type EmployeeFlowNode = Node<EmployeeNodeData, 'employee'>;
 
 function initialsOf(name: string): string {
@@ -33,7 +36,7 @@ function initialsOf(name: string): string {
 
 function buildLayout(roots: OrgNode[]): { nodes: EmployeeFlowNode[]; edges: Edge[] } {
   const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: 'TB', nodesep: 24, ranksep: 56 });
+  graph.setGraph({ rankdir: 'TB', nodesep: 28, ranksep: 60 });
   graph.setDefaultEdgeLabel(() => ({}));
 
   const flat: OrgNode[] = [];
@@ -44,7 +47,13 @@ function buildLayout(roots: OrgNode[]): { nodes: EmployeeFlowNode[]; edges: Edge
     graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
     if (parentId) {
       graph.setEdge(parentId, node.id);
-      edges.push({ id: `${parentId}-${node.id}`, source: parentId, target: node.id, type: 'smoothstep' });
+      edges.push({
+        id: `${parentId}-${node.id}`,
+        source: parentId,
+        target: node.id,
+        type: 'smoothstep',
+        style: { stroke: '#1A6B3C', strokeWidth: 1.5 },
+      });
     }
     node.children?.forEach((child) => walk(child, node.id));
   };
@@ -58,7 +67,7 @@ function buildLayout(roots: OrgNode[]): { nodes: EmployeeFlowNode[]; edges: Edge
       id: org.id,
       type: 'employee',
       position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 },
-      data: { org, isSelected: false },
+      data: { org },
     };
   });
 
@@ -66,25 +75,40 @@ function buildLayout(roots: OrgNode[]): { nodes: EmployeeFlowNode[]; edges: Edge
 }
 
 const EmployeeNodeCard: React.FC<NodeProps<EmployeeFlowNode>> = ({ data }) => {
-  const { org, isSelected } = data;
+  const { org } = data;
+  const navigate = useNavigate();
+
   return (
     <div
-      className={`bg-white rounded-xl p-3 shadow-sm text-center border-2 hover:border-[#1A6B3C] transition-all cursor-pointer ${
-        isSelected ? 'border-[#1A6B3C]' : 'border-[#1A6B3C]/20'
-      }`}
+      className="bg-white rounded-xl p-3 shadow-sm hover:shadow-md text-center border-2 border-[#1A6B3C]/20 hover:border-[#1A6B3C] transition-shadow cursor-grab active:cursor-grabbing group select-none"
       style={{ width: NODE_WIDTH }}
+      title={`Glisser pour déplacer · Cliquer pour ouvrir le dossier de ${org.name}`}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-      <div className="w-9 h-9 rounded-full bg-[#1A6B3C] text-white font-bold flex items-center justify-center mx-auto mb-1 text-xs">
+      <Handle type="target" position={Position.Top} className="!opacity-0" />
+      <div className="w-9 h-9 rounded-full bg-[#1A6B3C] text-white font-bold flex items-center justify-center mx-auto mb-1 text-xs shadow-sm">
         {initialsOf(org.name)}
       </div>
       <div className="font-bold text-xs text-gray-900 leading-tight truncate">{org.name}</div>
       <div className="text-[11px] font-medium text-[#1A6B3C] mt-0.5 truncate">{org.title}</div>
       <div className="text-[10px] text-gray-500 mt-0.5 flex items-center justify-center gap-1">
-        <Building className="w-3 h-3 text-gray-400" />
+        <Building className="w-3 h-3 text-gray-400 shrink-0" />
         <span className="truncate">{org.department}</span>
       </div>
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+
+      <div className="mt-2 pt-1.5 border-t border-gray-100 flex items-center justify-center">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/employees/${org.id}`);
+          }}
+          className="nodrag inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-semibold text-[#1A6B3C] bg-[#1A6B3C]/5 hover:bg-[#1A6B3C]/15 transition-colors cursor-pointer"
+        >
+          <span>Accéder au dossier</span>
+          <ExternalLink className="w-2.5 h-2.5" />
+        </button>
+      </div>
+      <Handle type="source" position={Position.Bottom} className="!opacity-0" />
     </div>
   );
 };
@@ -92,31 +116,58 @@ const EmployeeNodeCard: React.FC<NodeProps<EmployeeFlowNode>> = ({ data }) => {
 const nodeTypes = { employee: EmployeeNodeCard };
 
 export const OrgChartPage: React.FC = () => {
+  const navigate = useNavigate();
   const { data: roots, isLoading, isError, refetch, isFetching } = useOrgChart();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<EmployeeFlowNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  const layout = useMemo(() => buildLayout(roots ?? []), [roots]);
+  useEffect(() => {
+    if (roots && roots.length > 0) {
+      const layout = buildLayout(roots);
+      setNodes(layout.nodes);
+      setEdges(layout.edges);
+    } else {
+      setNodes([]);
+      setEdges([]);
+    }
+  }, [roots, setNodes, setEdges]);
 
-  const nodes = useMemo(
-    () => layout.nodes.map((n) => ({ ...n, data: { ...n.data, isSelected: n.id === selectedId } })),
-    [layout, selectedId],
-  );
+  const handleResetLayout = useCallback(() => {
+    if (roots && roots.length > 0) {
+      const layout = buildLayout(roots);
+      setNodes(layout.nodes);
+      setEdges(layout.edges);
+    }
+  }, [roots, setNodes, setEdges]);
 
-  const selected = useMemo(
-    () => layout.nodes.find((n) => n.id === selectedId)?.data.org ?? null,
-    [layout, selectedId],
+  const handleNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      navigate(`/employees/${node.id}`);
+    },
+    [navigate],
   );
 
   return (
     <div className="space-y-4">
-      <div className="page-header">
+      <div className="page-header flex flex-wrap items-center justify-between gap-4">
         <div className="page-header-info">
           <h1>Organigramme de l'entreprise</h1>
-          <p>Touchez un collaborateur pour voir sa fiche. Pincez ou utilisez la molette pour zoomer.</p>
+          <p>Glissez-déposez les blocs pour modifier la disposition. Cliquez sur un collaborateur pour ouvrir son dossier.</p>
         </div>
+        {roots && roots.length > 0 && (
+          <button
+            type="button"
+            onClick={handleResetLayout}
+            className="btn btn-secondary text-xs flex items-center gap-1.5"
+            title="Réorganiser automatiquement l'arbre"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Réorganiser automatiquement</span>
+          </button>
+        )}
       </div>
 
-      <div className="card overflow-hidden" style={{ height: 'calc(100dvh - 240px)', minHeight: 420 }}>
+      <div className="card overflow-hidden" style={{ height: 'calc(100dvh - 220px)', minHeight: 460 }}>
         {isLoading && (
           <div className="h-full flex items-center justify-center gap-2 text-gray-500">
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -140,52 +191,33 @@ export const OrgChartPage: React.FC = () => {
           </div>
         )}
 
-        {!isLoading && !isError && layout.nodes.length === 0 && (
+        {!isLoading && !isError && nodes.length === 0 && (
           <div className="h-full flex items-center justify-center text-gray-500 text-sm">
             Aucun collaborateur actif dans l'organigramme.
           </div>
         )}
 
-        {!isLoading && !isError && layout.nodes.length > 0 && (
+        {!isLoading && !isError && nodes.length > 0 && (
           <ReactFlow
             nodes={nodes}
-            edges={layout.edges}
+            edges={edges}
             nodeTypes={nodeTypes}
-            onNodeClick={(_, node) => setSelectedId(node.id)}
-            onPaneClick={() => setSelectedId(null)}
-            nodesDraggable={false}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodeClick={handleNodeClick}
+            nodesDraggable={true}
             nodesConnectable={false}
+            elementsSelectable={true}
             minZoom={0.1}
             maxZoom={1.5}
             fitView
             fitViewOptions={{ padding: 0.2 }}
           >
-            <Background gap={20} />
+            <Background gap={20} color="#E2E8F0" />
             <Controls showInteractive={false} />
           </ReactFlow>
         )}
       </div>
-
-      {selected && (
-        <div className="card p-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-bold text-gray-900">{selected.name}</div>
-            <div className="text-sm text-[#1A6B3C]">{selected.title}</div>
-            <div className="text-xs text-gray-500 mt-1">
-              {selected.department}
-              {selected.employeeNumber ? ` · Matricule ${selected.employeeNumber}` : ''}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSelectedId(null)}
-            aria-label="Fermer"
-            className="p-1 rounded hover:bg-gray-100"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };
