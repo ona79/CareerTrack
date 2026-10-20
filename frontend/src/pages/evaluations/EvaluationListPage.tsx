@@ -40,7 +40,8 @@ export const EvaluationListPage: React.FC = () => {
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
 
-  const isDRH = hasRole('DRH') || hasRole('ADMIN') || hasRole('DIRECTION') || hasRole('ROLE_DRH') || hasRole('ROLE_ADMIN') || hasRole('ROLE_DIRECTION');
+  const isDRH = hasRole('DRH') || hasRole('ADMIN') || hasRole('ROLE_DRH') || hasRole('ROLE_ADMIN');
+  const isDirection = hasRole('DIRECTION') || hasRole('ROLE_DIRECTION');
   const isManager = hasRole('MANAGER') || hasRole('ROLE_MANAGER');
 
   const [notificationMsg, setNotificationMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);

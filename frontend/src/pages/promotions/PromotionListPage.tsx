@@ -40,7 +40,7 @@ export const PromotionListPage: React.FC = () => {
   const isDrh = hasRole('DRH') || hasRole('ROLE_DRH') || isAdmin;
   const isDirection = hasRole('DIRECTION') || hasRole('ROLE_DIRECTION') || isAdmin;
   const canViewSalaries = isDrh || isDirection;
-  const isManagerOrDrh = hasRole('MANAGER') || hasRole('ROLE_MANAGER') || isDrh || isDirection;
+  const isManagerOrDrh = hasRole('MANAGER') || hasRole('ROLE_MANAGER') || isDrh;
 
   const [notificationMsg, setNotificationMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
