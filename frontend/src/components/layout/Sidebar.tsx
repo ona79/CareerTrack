@@ -24,7 +24,7 @@ interface NavItemConfig {
 
 const navItems: NavItemConfig[] = [
   { label: 'Tableau de bord', to: '/dashboard', icon: LayoutDashboard, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
-  { label: 'Employés & Contrats', to: '/employees', icon: Users, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
+  { label: 'Employés & Contrats', to: '/employees', icon: Users, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_ADMIN'] },
   { label: 'Congés & Absences', to: '/leaves', icon: Calendar },
   { label: 'Paie & Fiches de paie', to: '/payroll', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
   { label: 'Recrutement (Kanban)', to: '/recruitment', icon: Briefcase, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
@@ -32,7 +32,7 @@ const navItems: NavItemConfig[] = [
   { label: 'Promotions & Carrières', to: '/promotions', icon: Award, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
   { label: 'Plans de Formation', to: '/trainings', icon: GraduationCap },
   { label: 'Organigramme', to: '/orgchart', icon: Network },
-  { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
+  { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE', 'ROLE_ADMIN'] },
 ];
 
 interface SidebarProps {

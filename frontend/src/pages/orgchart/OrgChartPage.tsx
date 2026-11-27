@@ -17,6 +17,7 @@ import dagre from '@dagrejs/dagre';
 import { Building, Loader2, AlertTriangle, RefreshCw, RotateCcw, User, ExternalLink } from 'lucide-react';
 import type { OrgNode } from '@/types';
 import { useOrgChart } from '@/hooks/useOrgChart';
+import { useAuth } from '@/context/AuthContext';
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 105;
@@ -78,6 +79,8 @@ function buildLayout(roots: OrgNode[]): { nodes: EmployeeFlowNode[]; edges: Edge
 const EmployeeNodeCard: React.FC<NodeProps<EmployeeFlowNode>> = ({ data }) => {
   const { org } = data;
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+  const canOpenDossier = !hasRole('DIRECTION') || hasRole('DRH') || hasRole('ADMIN');
 
   return (
     <div
@@ -98,20 +101,22 @@ const EmployeeNodeCard: React.FC<NodeProps<EmployeeFlowNode>> = ({ data }) => {
         <span className="truncate">{org.department}</span>
       </div>
 
-      <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex items-center justify-center">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/employees/${org.id}`);
-          }}
-          className="nodrag inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-semibold text-[#1A6B3C] bg-[#1A6B3C]/5 hover:bg-[#1A6B3C]/15 transition-colors cursor-pointer group-hover:underline"
-        >
-          <User className="w-3 h-3" />
-          <span>Accéder au dossier</span>
-          <ExternalLink className="w-2.5 h-2.5" />
-        </button>
-      </div>
+      {canOpenDossier && (
+        <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/employees/${org.id}`);
+            }}
+            className="nodrag inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-semibold text-[#1A6B3C] bg-[#1A6B3C]/5 hover:bg-[#1A6B3C]/15 transition-colors cursor-pointer group-hover:underline"
+          >
+            <User className="w-3 h-3" />
+            <span>Accéder au dossier</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </button>
+        </div>
+      )}
       <Handle type="source" position={Position.Bottom} className="!opacity-0" />
     </div>
   );
@@ -121,6 +126,8 @@ const nodeTypes = { employee: EmployeeNodeCard };
 
 export const OrgChartPage: React.FC = () => {
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+  const canOpenDossier = !hasRole('DIRECTION') || hasRole('DRH') || hasRole('ADMIN');
   const { data: roots, isLoading, isError, refetch, isFetching } = useOrgChart();
   const [nodes, setNodes, onNodesChange] = useNodesState<EmployeeFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -146,9 +153,10 @@ export const OrgChartPage: React.FC = () => {
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      if (!canOpenDossier) return;
       navigate(`/employees/${node.id}`);
     },
-    [navigate],
+    [navigate, canOpenDossier],
   );
 
   return (

@@ -147,10 +147,12 @@ export const DashboardPage: React.FC = () => {
           <p>Supervision des effectifs, pyramide des âges, masse salariale, congés et formations</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <a href="/employees" className="btn btn-primary text-xs min-h-[40px] flex-1 sm:flex-none justify-center">
-            <Users className="w-4 h-4 mr-1.5" />
-            Collaborateurs
-          </a>
+          {user?.roles?.some((r) => r.includes('DRH') || r.includes('MANAGER') || r.includes('ADMIN')) && (
+            <a href="/employees" className="btn btn-primary text-xs min-h-[40px] flex-1 sm:flex-none justify-center">
+              <Users className="w-4 h-4 mr-1.5" />
+              Collaborateurs
+            </a>
+          )}
           <a href="/leaves" className="btn btn-secondary text-xs min-h-[40px] flex-1 sm:flex-none justify-center">
             <Calendar className="w-4 h-4 mr-1.5" />
             Gestion Congés
