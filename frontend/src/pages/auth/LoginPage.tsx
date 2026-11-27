@@ -1,13 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Lock, User, AlertCircle, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Lock,
+  User,
+  AlertCircle,
+  Users,
+  X,
+  ShieldCheck,
+  Briefcase,
+  UserCheck,
+  Eye,
+} from 'lucide-react';
 
 const DEMO_ACCOUNTS = [
-  { role: 'DRH', username: 'drh.ndiaye', password: 'password123', hint: 'Accès complet' },
-  { role: 'Manager N+1', username: 'mgr.sow', password: 'password123', hint: 'Équipe & congés' },
-  { role: 'Collaborateur', username: 'emp.diallo', password: 'password123', hint: 'Self-service' },
-  { role: 'Direction', username: 'dir.fall', password: 'password123', hint: 'Lecture seule' },
+  {
+    role: 'DRH (Administration)',
+    username: 'drh.ndiaye',
+    password: 'password123',
+    icon: ShieldCheck,
+    iconBox: 'bg-emerald-50 text-emerald-600 border-emerald-200/80',
+  },
+  {
+    role: 'Manager N+1',
+    username: 'mgr.sow',
+    password: 'password123',
+    icon: Briefcase,
+    iconBox: 'bg-sky-50 text-sky-600 border-sky-200/80',
+  },
+  {
+    role: 'Collaborateur',
+    username: 'emp.diallo',
+    password: 'password123',
+    icon: UserCheck,
+    iconBox: 'bg-amber-50 text-amber-600 border-amber-200/80',
+  },
+  {
+    role: 'Direction (Lecture seule)',
+    username: 'dir.fall',
+    password: 'password123',
+    icon: Eye,
+    iconBox: 'bg-indigo-50 text-indigo-600 border-indigo-200/80',
+  },
 ] as const;
 
 export const LoginPage: React.FC = () => {
@@ -22,6 +56,15 @@ export const LoginPage: React.FC = () => {
   const location = useLocation();
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    if (!showDemoAccounts) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowDemoAccounts(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showDemoAccounts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,9 +95,8 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col lg:flex-row overflow-x-hidden">
-      {/* Panneau gauche sombre avec vague organique (desktop) / bandeau compact (mobile) */}
+      {/* Panneau gauche sombre avec vague organique */}
       <div className="relative bg-[#131B2E] text-white lg:w-[48%] lg:min-h-screen flex flex-col justify-center px-8 py-10 lg:px-14 xl:px-20 flex-shrink-0">
-        {/* Halo subtil d'ambiance */}
         <div
           className="absolute -top-24 -left-24 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
           style={{ background: 'radial-gradient(circle, #1A6B3C 0%, transparent 70%)' }}
@@ -85,7 +127,7 @@ export const LoginPage: React.FC = () => {
           />
         </svg>
 
-        {/* Illustration fusée stylisée 3D flottant sur la courbe (Desktop uniquement) */}
+        {/* Illustration fusée stylisée 3D flottant sur la courbe (Desktop) */}
         <div
           className="hidden lg:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-[38%] z-20 pointer-events-none select-none"
           aria-hidden="true"
@@ -122,7 +164,6 @@ export const LoginPage: React.FC = () => {
               </linearGradient>
             </defs>
 
-            {/* Nuage de décollage */}
             <g>
               <ellipse cx="62" cy="182" rx="34" ry="18" fill="url(#ctCloud)" />
               <circle cx="48" cy="172" r="18" fill="url(#ctCloud)" />
@@ -130,30 +171,22 @@ export const LoginPage: React.FC = () => {
               <circle cx="92" cy="177" r="15" fill="url(#ctCloud)" />
             </g>
 
-            {/* Fusée inclinée */}
             <g transform="rotate(11 98 100)">
-              {/* Flamme */}
               <path
                 d="M84 142 C82 162 94 178 98 184 C102 178 114 162 112 142 Z"
                 fill="url(#ctFlame)"
               />
-              {/* Aileron gauche */}
               <path d="M72 106 L52 138 C50 142 54 146 58 144 L78 134 Z" fill="url(#ctFin)" />
-              {/* Aileron droit */}
               <path d="M124 106 L144 138 C146 142 142 146 138 144 L118 134 Z" fill="url(#ctFin)" />
-              {/* Corps */}
               <path
                 d="M98 18 C122 44 128 84 122 134 C121 140 116 144 110 144 L86 144 C80 144 75 140 74 134 C68 84 74 44 98 18 Z"
                 fill="url(#ctBody)"
               />
-              {/* Coiffe verte */}
               <path d="M98 18 C109 30 116 42 119 52 L77 52 C80 42 87 30 98 18 Z" fill="url(#ctNose)" />
-              {/* Hublot */}
               <circle cx="98" cy="84" r="16" fill="#0F172A" opacity="0.12" />
               <circle cx="98" cy="82" r="14" fill="#1A6B3C" />
               <circle cx="98" cy="82" r="9.5" fill="#38BDF8" />
               <circle cx="94" cy="78" r="3" fill="#FFFFFF" opacity="0.85" />
-              {/* Aileron central */}
               <path d="M98 114 C94 124 94 138 98 150 C102 138 102 124 98 114 Z" fill="#F5A623" />
             </g>
           </svg>
@@ -163,7 +196,6 @@ export const LoginPage: React.FC = () => {
       {/* Panneau droit blanc : Formulaire épuré */}
       <div className="flex-1 flex flex-col justify-center items-center px-6 py-10 sm:px-10 lg:px-16 bg-white">
         <div className="w-full max-w-[380px]">
-          {/* Logo centré */}
           <div className="flex flex-col items-center mb-7">
             <div className="w-16 h-16 rounded-full bg-[#1A6B3C]/10 border border-[#1A6B3C]/20 p-2 shadow-sm flex items-center justify-center mb-4">
               <img
@@ -222,68 +254,16 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Bouton discret pour afficher / masquer les comptes de démonstration */}
-          <div className="mt-5">
+          {/* Bouton discret ouvrant la modale flottante des comptes de test */}
+          <div className="mt-4 flex justify-center">
             <button
               type="button"
-              onClick={() => setShowDemoAccounts((prev) => !prev)}
-              aria-expanded={showDemoAccounts}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-semibold text-[#1A6B3C] bg-[#1A6B3C]/5 hover:bg-[#1A6B3C]/10 border border-[#1A6B3C]/20 transition-colors cursor-pointer"
+              onClick={() => setShowDemoAccounts(true)}
+              className="inline-flex items-center justify-center gap-2 py-2 px-4 rounded-full text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200/80 hover:text-[#1A6B3C] transition-colors cursor-pointer"
             >
               <Users className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>
-                {showDemoAccounts
-                  ? 'Masquer les comptes de test'
-                  : 'Comptes de démonstration (Test)'}
-              </span>
-              {showDemoAccounts ? (
-                <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
-              )}
+              <span>Comptes de test</span>
             </button>
-
-            {showDemoAccounts && (
-              <div className="mt-3 space-y-2">
-                <p className="text-[11px] text-slate-500 text-center">
-                  Cliquez sur un profil pour remplir automatiquement :
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {DEMO_ACCOUNTS.map((acc) => {
-                    const isSelected = username === acc.username;
-                    return (
-                      <button
-                        key={acc.username}
-                        type="button"
-                        onClick={() => {
-                          setUsername(acc.username);
-                          setPassword(acc.password);
-                          setError(null);
-                        }}
-                        className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer min-w-0 ${
-                          isSelected
-                            ? 'border-[#1A6B3C] bg-[#1A6B3C]/10 ring-1 ring-[#1A6B3C]/30'
-                            : 'border-slate-200 bg-slate-50/80 hover:border-[#1A6B3C]/50 hover:bg-white'
-                        }`}
-                      >
-                        <div className="text-xs font-bold text-slate-800 truncate">
-                          {acc.role}
-                        </div>
-                        <div className="text-[11px] font-mono text-[#1A6B3C] truncate">
-                          {acc.username}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                          {acc.hint}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-[10px] text-slate-400 text-center">
-                  Mot de passe commun : <span className="font-mono text-slate-600">password123</span>
-                </p>
-              </div>
-            )}
           </div>
 
           <p className="mt-7 text-center text-[11px] text-slate-400">
@@ -291,6 +271,79 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Modale popup centrée avec arrière-plan flouté (ne déforme jamais la page) */}
+      {showDemoAccounts && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setShowDemoAccounts(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="demo-accounts-title"
+        >
+          <div
+            className="w-full max-w-[400px] bg-white rounded-2xl shadow-2xl border border-slate-100 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 id="demo-accounts-title" className="text-base font-bold text-[#131B2E]">
+                  Comptes de test
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Sélectionnez un profil pour préremplir les identifiants.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDemoAccounts(false)}
+                aria-label="Fermer"
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {DEMO_ACCOUNTS.map((acc) => {
+                const Icon = acc.icon;
+                return (
+                  <button
+                    key={acc.username}
+                    type="button"
+                    onClick={() => {
+                      setUsername(acc.username);
+                      setPassword(acc.password);
+                      setError(null);
+                      setShowDemoAccounts(false);
+                    }}
+                    className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:border-[#1A6B3C]/50 hover:bg-slate-50/70 transition-all cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 ${acc.iconBox}`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold text-slate-800 truncate">
+                          {acc.role}
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-500 truncate">
+                          {acc.username}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-xs font-semibold text-[#1A6B3C] flex-shrink-0">
+                      Préremplir
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
