@@ -16,6 +16,79 @@
 
 ---
 
+## 🖼️ Aperçu de l'Interface
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./docs/screenshots/screen_login_desktop.jpg" alt="Page de connexion CareerTrack" width="420" /><br />
+      <sub><strong>Connexion sécurisée JWT</strong> &amp; modale comptes de test</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./docs/screenshots/screen_dashboard_desktop.jpg" alt="Tableau de bord RH" width="420" /><br />
+      <sub><strong>Tableau de bord RH</strong> (KPIs temps réel, FCFA, Africa/Dakar)</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary><strong>📸 Voir plus de captures (Modules Desktop, Version Mobile 375 px &amp; Couverture JaCoCo)</strong></summary>
+<br />
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./docs/screenshots/screen_employees_desktop.jpg" alt="Collaborateurs" width="400" /><br />
+      <sub><strong>Collaborateurs &amp; Contrats</strong></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./docs/screenshots/screen_orgchart_desktop.jpg" alt="Organigramme interactif" width="400" /><br />
+      <sub><strong>Organigramme interactif</strong> (React Flow)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./docs/screenshots/screen_leaves_desktop.jpg" alt="Congés et Absences" width="400" /><br />
+      <sub><strong>Congés &amp; Absences</strong> (2 j/mois, validation N+1)</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./docs/screenshots/screen_payroll_desktop.jpg" alt="Paie sénégalaise" width="400" /><br />
+      <sub><strong>Paie en FCFA</strong> (IPRES, CSS, IR, TRIMF &amp; PDF iText)</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="./docs/screenshots/screen_recruitment_desktop.jpg" alt="Recrutement Kanban" width="520" /><br />
+  <sub><strong>Pipeline Recrutement Kanban</strong> (glisser-déposer 6 étapes)</sub>
+</p>
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="./docs/screenshots/screen_dashboard_mobile.jpg" alt="Dashboard Mobile 375px" width="190" /><br />
+      <sub><strong>Dashboard Mobile (375 px)</strong></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./docs/screenshots/screen_leaves_mobile.jpg" alt="Congés Mobile 375px" width="190" /><br />
+      <sub><strong>Congés Mobile (375 px)</strong></sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="./docs/screenshots/screen_employees_mobile.jpg" alt="Employés Mobile 375px" width="190" /><br />
+      <sub><strong>Employés Mobile (375 px)</strong></sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="./docs/screenshots/jacoco_coverage.jpg" alt="Rapport JaCoCo" width="660" /><br />
+  <sub><strong>Couverture JaCoCo</strong> : 219 tests verts (0 échec) — 80,9 % lignes / 77,7 % instructions</sub>
+</p>
+
+</details>
+
+---
+
 ## 📥 Clonage et Installation du Projet
 
 ### 1. Prérequis Système
@@ -224,7 +297,7 @@ CareerTrack/
 ## 🧪 Tests & Qualité de Code
 
 ```bash
-# Exécuter les 47 tests du backend (Tests unitaires + Testcontainers PostgreSQL + JaCoCo >= 60%)
+# Exécuter les 219 tests du backend (Tests unitaires + Intégration + JaCoCo >= 60%)
 cd backend
 mvn clean verify
 
@@ -233,6 +306,10 @@ cd ../frontend
 npm run lint      # Linter Oxlint ultra-rapide
 npm run build     # Compilation TypeScript stricte & bundle Vite
 ```
+
+**Résultats vérifiés :**
+- **Backend** : 219 tests exécutés (0 échec, 0 erreur) — Couverture JaCoCo : **80,9 % lignes**, **77,7 % instructions**, **88,7 % classes** (seuil minimal requis : 60 %).
+- **Contrat d'API** : 78 routes documentées dans [`docs/api/openapi.yaml`](./docs/api/openapi.yaml) et accessibles via Swagger UI.
 
 ---
 
@@ -253,20 +330,27 @@ Pour tester le fonctionnement hors connexion :
 
 ---
 
-## 🤝 Organisation de l'Équipe (5 Développeurs)
+## 🤝 Organisation de l'Équipe (Projet P4 — UASZ Licence 3 Semestre 6)
+
+**Professeur :** M. Khalifa Gueye — Université Assane Seck de Ziguinchor (UASZ)
 
 Consultez le fichier [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour les règles GitFlow et le découpage par développeur :
-1. **Ibrahima** : Socle technique, Authentification JWT, Sécurité, Collaborateurs & Contrats.
-2. **Eric joel** : Gestion des Congés & Absences (calcul 2j/mois, workflow N+1).
-3. **Assete** : Module Recrutement (Pipeline Kanban, entretiens, notifications e-mail).
-4. **Aminata** : Évaluations de la Performance & Catalogue de Formations.
-5. **Sambay** : Paie (bulletins PDF iText, calculs IPRES/CSS) & Organigramme d'entreprise.
+1. **Ibrahima Kassa Diallo (Lead)** : Socle technique, Authentification JWT, Sécurité RBAC, Collaborateurs, Contrats & Intégration/Déploiement.
+2. **Eric Joel Manga** : Gestion des Congés & Absences (calcul 2j/mois, workflow N+1, détection conflits) & Tableau de bord.
+3. **Assete Faye** : Module Recrutement (Pipeline Kanban, offres, entretiens, notifications e-mail) & Promotions.
+4. **Mouhamed Fam** : Paie sénégalaise (bulletins PDF iText, calculs IPRES/CSS/IR/TRIMF), Documents & Organigramme interactif.
+5. **Aminata Touré** : Évaluations annuelles SMART, Catalogue & Sessions de Formation, Ergonomie & Tests.
 
 ---
 
-## ☁️ Déploiement Cloud Gratuit
+## ☁️ Application Déployée (Cloud Gratuit)
 
-Un guide exhaustif étape par étape est disponible dans [`docs/deployment/DEPLOYMENT.md`](./docs/deployment/DEPLOYMENT.md) pour déployer :
-- **Base PostgreSQL** sur Neon.tech ou Supabase.
-- **Backend API** sur Render.com ou Railway.
-- **Frontend SPA** sur Vercel ou Netlify.
+- 🌐 **Frontend Web (Vercel)** : [https://career-track-steel.vercel.app](https://career-track-steel.vercel.app)
+- ⚙️ **Backend API REST (Render)** : [https://careertrack-to49.onrender.com](https://careertrack-to49.onrender.com)
+- 🗄️ **Base de données** : PostgreSQL 16 Serverless sur Neon Cloud (AWS Francfort)
+- 📄 **Documentation & Livrables** :
+  - Brief du projet : [`docs/BRIEF_PROJET_P4_CAREERTRACK.md`](./docs/BRIEF_PROJET_P4_CAREERTRACK.md)
+  - Contrat d'API OpenAPI 3 : [`docs/api/openapi.yaml`](./docs/api/openapi.yaml)
+  - Rapport technique (LaTeX / PDF) : [`P4_CareerTrack_Rapport.pdf`](./P4_CareerTrack_Rapport.pdf)
+  - Support de présentation : [`P4_CareerTrack_Presentation.pptx`](./P4_CareerTrack_Presentation.pptx)
+  - Guide de déploiement détaillé : [`docs/deployment/DEPLOYMENT.md`](./docs/deployment/DEPLOYMENT.md)
