@@ -335,7 +335,7 @@ Pour tester le fonctionnement hors connexion :
 **Professeur :** M. Khalifa Gueye — Université Assane Seck de Ziguinchor (UASZ)
 
 Consultez le fichier [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour les règles GitFlow et le découpage par développeur :
-1. **Ibrahima Kassa Diallo (Lead)** : Socle technique, Authentification JWT, Sécurité RBAC, Collaborateurs, Contrats & Intégration/Déploiement.
+1. **Ibrahima Diallo (Lead)** : Socle technique, Authentification JWT, Sécurité RBAC, Collaborateurs, Contrats & Intégration/Déploiement.
 2. **Eric Joel Manga** : Gestion des Congés & Absences (calcul 2j/mois, workflow N+1, détection conflits) & Tableau de bord.
 3. **Assete Faye** : Module Recrutement (Pipeline Kanban, offres, entretiens, notifications e-mail) & Promotions.
 4. **Mouhamed Fam** : Paie sénégalaise (bulletins PDF iText, calculs IPRES/CSS/IR/TRIMF), Documents & Organigramme interactif.
