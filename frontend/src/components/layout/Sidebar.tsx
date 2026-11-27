@@ -10,7 +10,7 @@ import {
   Network,
   LogOut,
   LayoutDashboard,
-  ShieldAlert
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -35,8 +35,6 @@ const navItems: NavItemConfig[] = [
   { label: 'Documents & PDF', to: '/documents', icon: FileSpreadsheet, roles: ['ROLE_DRH', 'ROLE_MANAGER', 'ROLE_EMPLOYE', 'ROLE_DIRECTION', 'ROLE_ADMIN'] },
 ];
 
-import { X } from 'lucide-react';
-
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -47,21 +45,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
-      {/* En-tête / Logo */}
+      {/* En-tête compacte sur fond sombre #131B2E */}
       <div className="sidebar-logo justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 p-1 flex items-center justify-center shadow-xs shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center shrink-0 shadow-xs">
             <img
               src="/logo.png"
               alt="CareerTrack"
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="flex flex-col">
-            <span className="sidebar-logo-text">
+          <div className="flex flex-col min-w-0">
+            <span className="sidebar-logo-text truncate">
               Career<span>Track</span>
             </span>
-            <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">
+            <span className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase truncate">
               RH PME Sénégal
             </span>
           </div>
@@ -69,14 +67,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <button
           type="button"
           onClick={onClose}
-          className="md:hidden p-1 text-gray-400 hover:text-gray-600 rounded-lg"
+          className="md:hidden p-1 text-slate-400 hover:text-white rounded-lg cursor-pointer"
           aria-label="Fermer le menu"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation compacte */}
       <nav className="sidebar-nav">
         <div className="nav-section-label">Modules Principaux</div>
         {navItems
@@ -90,8 +88,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={() => onClose?.()}
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
               >
-                <Icon className="w-5 h-5 text-gray-500" />
-                <span>{item.label}</span>
+                <Icon className="w-4 h-4" />
+                <span className="truncate">{item.label}</span>
                 {item.badge && <span className="nav-badge">{item.badge}</span>}
               </NavLink>
             );
@@ -100,15 +98,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       {/* Profil connecté & Déconnexion */}
       <div className="sidebar-footer">
-        <div className="flex items-center gap-2.5 p-2 rounded-lg bg-gray-50 border border-gray-100 hover:border-gray-200 transition-colors">
-          <div className="avatar avatar-sm avatar-primary font-bold">
+        <div className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-white/15 transition-colors">
+          <div className="avatar avatar-sm bg-[#22C55E]/20 text-[#4ADE80] font-bold">
             {user?.username?.substring(0, 2).toUpperCase() || 'CT'}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-xs font-semibold text-gray-900 truncate">
+            <span className="text-xs font-semibold text-white truncate">
               {user?.username}
             </span>
-            <span className="text-[10px] text-gray-500 truncate">
+            <span className="text-[10px] text-slate-400 truncate">
               {user?.roles?.[0]?.replace('ROLE_', '') || 'UTILISATEUR'}
             </span>
           </div>
@@ -116,10 +114,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             onClick={logout}
             title="Se déconnecter"
             aria-label="Se déconnecter"
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
             type="button"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

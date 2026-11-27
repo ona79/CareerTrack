@@ -21,28 +21,29 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
 
   return (
     <header className="topbar">
-      <div className="topbar-left flex items-center gap-3">
+      <div className="topbar-left">
         <button
           type="button"
           onClick={onMenuToggle}
-          className="md:hidden p-1.5 -ml-1 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer"
+          className="md:hidden p-1.5 -ml-1 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
           aria-label="Ouvrir le menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Fuseau horaire détecté automatiquement */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-md text-xs font-medium text-gray-600 shadow-2xs">
-          <Clock className="w-3.5 h-3.5 text-gray-400" />
-          <span>Fuseau horaire : <strong className="text-gray-800">{timeZone}</strong></span>
+        {/* Fuseau horaire compact en pilule */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-600">
+          <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+          <span className="hidden sm:inline">Fuseau :</span>
+          <strong className="text-slate-800">{timeZone}</strong>
         </div>
       </div>
 
-      <div className="topbar-right flex items-center gap-3">
-        {/* Monnaie Sénégal */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-md text-amber-900 text-xs font-semibold">
-          <Globe className="w-3.5 h-3.5 text-amber-600" />
-          <span>Devise : FCFA (XOF)</span>
+      <div className="topbar-right">
+        {/* Monnaie Sénégal compacte en pilule */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/80 rounded-full text-amber-900 text-[11px] font-semibold">
+          <Globe className="w-3 h-3 text-amber-600 shrink-0" />
+          <span>FCFA (XOF)</span>
         </div>
 
         {/* Notifications */}
@@ -59,10 +60,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
               // ignore
             }
           }}
-          className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+          className="relative p-1.5 rounded-full text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
         >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-[#C0392B] rounded-full ring-2 ring-white" />
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#C0392B] rounded-full ring-2 ring-white" />
         </button>
       </div>
     </header>
